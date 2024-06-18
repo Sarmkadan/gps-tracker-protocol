@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -24,7 +25,7 @@ public class ExtensionsTests
     [Fact]
     public void ToHexString_EmptyArray_ReturnsEmptyString()
     {
-        Array.Empty<byte>().ToHexString().Should().Be(string.Empty);
+        new byte[0].ToHexString().Should().Be(string.Empty);
     }
 
     [Fact]

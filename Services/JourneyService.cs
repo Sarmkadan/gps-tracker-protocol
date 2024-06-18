@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -49,11 +50,11 @@ public class JourneyService : IJourneyService
             throw new ArgumentException("Device ID cannot be empty", nameof(deviceId));
 
         var device = await _deviceRepository.GetByIdAsync(deviceId);
-        if (device == null)
+        if (device is null)
             throw new DeviceException($"Device {deviceId} not found", deviceId);
 
         var existingJourney = await _journeyRepository.GetOngoingJourneyAsync(deviceId);
-        if (existingJourney != null)
+        if (existingJourney is not null)
             throw new InvalidOperationException($"Device {deviceId} already has an ongoing journey");
 
         var journey = new Journey
@@ -85,14 +86,14 @@ public class JourneyService : IJourneyService
         if (string.IsNullOrWhiteSpace(journeyId))
             throw new ArgumentException("Journey ID cannot be empty", nameof(journeyId));
 
-        if (location == null)
+        if (location is null)
             throw new ArgumentNullException(nameof(location));
 
         if (!location.IsValid())
             throw new ValidationException("Location data validation failed");
 
         var journey = await _journeyRepository.GetByIdAsync(journeyId);
-        if (journey == null)
+        if (journey is null)
             throw new InvalidOperationException($"Journey {journeyId} not found");
 
         if (journey.Status != 0)
@@ -112,7 +113,7 @@ public class JourneyService : IJourneyService
     public async Task<Journey> CompleteJourneyAsync(string journeyId)
     {
         var journey = await _journeyRepository.GetByIdAsync(journeyId);
-        if (journey == null)
+        if (journey is null)
             throw new InvalidOperationException($"Journey {journeyId} not found");
 
         if (journey.Status != 0)

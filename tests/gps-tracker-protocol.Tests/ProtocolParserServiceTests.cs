@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -78,7 +79,7 @@ public class ProtocolParserServiceTests
     public async Task DetectProtocolAsync_ShouldThrowArgumentException_WhenRawDataIsEmpty()
     {
         // Arrange
-        byte[] rawData = Array.Empty<byte>();
+        byte[] rawData = new byte[0];
 
         // Act
         Func<Task> act = async () => await _sut.DetectProtocolAsync(rawData);
