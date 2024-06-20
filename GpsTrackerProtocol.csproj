@@ -13,7 +13,7 @@
     <Description>Parse GPS tracker protocols (GT06, H02, TK103) - raw TCP/UDP to structured location data</Description>
     <PackageProjectUrl>https://github.com/sarmkadan/gps-tracker-protocol</PackageProjectUrl>
     <RepositoryUrl>https://github.com/sarmkadan/gps-tracker-protocol</RepositoryUrl>
-    <License>MIT</License>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
   </PropertyGroup>
 
   <ItemGroup>
