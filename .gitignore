@@ -46,7 +46,10 @@ Thumbs.db
 .env
 .env.local
 appsettings.local.json
+appsettings.Development.json
 launchSettings.local.json
+*.user
+*.DotSettings.user
 
 # Logs
 logs/
