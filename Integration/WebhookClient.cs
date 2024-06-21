@@ -8,6 +8,7 @@ namespace GpsTrackerProtocol.Integration;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using GpsTrackerProtocol.Domain.Models;
+using GpsTrackerProtocol.Events;
 
 /// <summary>
 /// Webhook delivery service for location updates and events.
@@ -18,6 +19,12 @@ public interface IWebhookClient
     Task SendLocationUpdateAsync(string webhookUrl, LocationData location);
     Task SendJourneyCompletedAsync(string webhookUrl, Journey journey);
     Task SendDeviceStatusAsync(string webhookUrl, Device device);
+
+    /// <summary>
+    /// POSTs a <see cref="GeofenceWebhookPayload"/> to the specified URL.
+    /// Retries up to three times on transient HTTP failures.
+    /// </summary>
+    Task SendGeofenceEventAsync(string webhookUrl, GeofenceWebhookPayload payload);
 }
 
 public class WebhookClient : ExternalApiClient, IWebhookClient
@@ -139,6 +146,46 @@ public class WebhookClient : ExternalApiClient, IWebhookClient
             response.EnsureSuccessStatusCode();
 
             _logger.LogInformation("Device status webhook sent to {Url}", webhookUrl);
+            return true;
+        });
+    }
+
+    public async Task SendGeofenceEventAsync(string webhookUrl, GeofenceWebhookPayload payload)
+    {
+        if (string.IsNullOrWhiteSpace(webhookUrl))
+        {
+            _logger.LogWarning("Webhook URL is empty");
+            return;
+        }
+
+        var envelope = new WebhookPayload
+        {
+            EventType = payload.EventType,
+            Timestamp = DateTime.UtcNow,
+            Data = new
+            {
+                payload.DeviceId,
+                payload.GeofenceId,
+                payload.Latitude,
+                payload.Longitude,
+                payload.Speed,
+                payload.DwellSeconds,
+                payload.Timestamp
+            }
+        };
+
+        await ExecuteWithRetryAsync(async () =>
+        {
+            var content = new StringContent(
+                JsonSerializer.Serialize(envelope),
+                System.Text.Encoding.UTF8,
+                "application/json");
+
+            var response = await _httpClient.PostAsync(webhookUrl, content);
+            response.EnsureSuccessStatusCode();
+
+            _logger.LogInformation("Geofence webhook sent to {Url}: {EventType}",
+                webhookUrl, payload.EventType);
             return true;
         });
     }
