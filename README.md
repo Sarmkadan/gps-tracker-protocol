@@ -6,7 +6,7 @@
 
 A comprehensive .NET library for parsing GPS tracker protocols (GT06, H02, TK103) - converting raw TCP/UDP data streams into structured location information with full device management, journey tracking, and command execution capabilities.
 
-**Status**: Production Ready | **Latest Version**: 1.2.0 | **.NET**: 10.0 | **License**: MIT
+**Status**: Production Ready | **Latest Version**: 1.0.0 | **.NET**: 10.0 | **License**: MIT
 
 ---
 
@@ -172,7 +172,7 @@ dotnet run
 ### Option 2: NuGet Package (when published)
 
 ```bash
-dotnet add package GpsTrackerProtocol
+dotnet add package Zaiets.gps.tracker.protocol
 ```
 
 ### Option 3: Docker Container
