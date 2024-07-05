@@ -8,20 +8,34 @@ namespace GpsTrackerProtocol.Domain.Models;
 
 /// <summary>
 /// Represents parsed GPS location data from a tracking device.
+/// Contains coordinates, motion data, and GPS fix quality metrics.
+/// Includes Haversine distance calculation and bearing computation methods.
 /// </summary>
 public class LocationData
 {
+    /// <summary>Unique record identifier.</summary>
     public string Id { get; set; } = Guid.NewGuid().ToString();
+    /// <summary>IMEI or unique identifier of the tracker device.</summary>
     public string DeviceId { get; set; } = string.Empty;
+    /// <summary>Latitude in decimal degrees (-90 to 90).</summary>
     public double Latitude { get; set; }
+    /// <summary>Longitude in decimal degrees (-180 to 180).</summary>
     public double Longitude { get; set; }
+    /// <summary>Altitude above sea level in meters.</summary>
     public double Altitude { get; set; }
+    /// <summary>Speed in km/h at the time of the GPS fix.</summary>
     public double Speed { get; set; }
+    /// <summary>Heading/bearing in degrees (0-360, where 0 = North).</summary>
     public double Bearing { get; set; }
+    /// <summary>UTC timestamp of the GPS fix from the device.</summary>
     public DateTime Timestamp { get; set; }
+    /// <summary>Horizontal accuracy of the GPS fix in meters.</summary>
     public double Accuracy { get; set; }
+    /// <summary>Number of satellites used for the fix. Higher values indicate better accuracy.</summary>
     public int SatelliteCount { get; set; }
+    /// <summary>Protocol used to receive this data (GT06, H02, TK103).</summary>
     public ProtocolType Protocol { get; set; }
+    /// <summary>Protocol-specific extended data fields (e.g., GSM signal, battery level).</summary>
     public Dictionary<string, object> ExtendedData { get; set; } = [];
 
     /// <summary>
