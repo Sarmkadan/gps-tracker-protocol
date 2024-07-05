@@ -120,8 +120,14 @@ public class DeviceService : IDeviceService
     }
 
     /// <summary>
-    /// Deregisters a device from the system.
+    /// Deregisters a device from the system (soft delete).
+    /// Sets the device to inactive and records the deregistration timestamp.
+    /// Active journeys for this device should be completed before deregistration.
     /// </summary>
+    /// <param name="deviceId">The ID of the device to deregister.</param>
+    /// <returns>True if the device was successfully deregistered.</returns>
+    /// <exception cref="ArgumentException">Thrown when deviceId is null or whitespace.</exception>
+    /// <exception cref="DeviceException">Thrown when the device is not found.</exception>
     public async Task<bool> DeregisterDeviceAsync(string deviceId)
     {
         if (string.IsNullOrWhiteSpace(deviceId))
@@ -132,6 +138,8 @@ public class DeviceService : IDeviceService
             throw new DeviceException($"Device {deviceId} not found", deviceId);
 
         device.IsActive = false;
+        device.Status = DeviceStatus.Offline;
+        device.LastSeen = DateTime.UtcNow;
         await _repository.UpdateAsync(device);
         return true;
     }
