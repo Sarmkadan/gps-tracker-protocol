@@ -108,15 +108,15 @@ public class CommandLineInterface : ICommandLineInterface
             Protocol = Enum.Parse<ProtocolType>(protocol)
         };
 
-        var detectedProtocol = await _parserService.DetectProtocolAsync(rawData);
+        var detectedProtocol = await _parserService.DetectProtocolAsync(rawData).ConfigureAwait(false);
         Console.WriteLine($"Detected protocol: {detectedProtocol}");
 
-        var isValid = await _parserService.ValidateFrameAsync(frame);
+        var isValid = await _parserService.ValidateFrameAsync(frame).ConfigureAwait(false);
         Console.WriteLine($"Valid frame: {isValid}");
 
         if (isValid)
         {
-            var location = await _parserService.ParseFrameAsync(frame);
+            var location = await _parserService.ParseFrameAsync(frame).ConfigureAwait(false);
             var json = _jsonFormatter.Format(location, prettyPrint: true);
             Console.WriteLine("Parsed location:");
             Console.WriteLine(json);
@@ -127,7 +127,7 @@ public class CommandLineInterface : ICommandLineInterface
 
     private async Task<int> ListDevicesCommandAsync(string[] args)
     {
-        var devices = await _deviceService.GetAllDevicesAsync();
+        var devices = await _deviceService.GetAllDevicesAsync().ConfigureAwait(false);
 
         if (!devices.Any())
         {
@@ -155,7 +155,7 @@ public class CommandLineInterface : ICommandLineInterface
         var deviceId = args[0];
         var count = args.Length > 1 && int.TryParse(args[1], out var c) ? c : 10;
 
-        var locations = await _locationService.GetLocationHistoryAsync(deviceId, count);
+        var locations = await _locationService.GetLocationHistoryAsync(deviceId, count).ConfigureAwait(false);
 
         if (!locations.Any())
         {
@@ -178,7 +178,7 @@ public class CommandLineInterface : ICommandLineInterface
         }
 
         var deviceId = args[0];
-        var journeys = await _journeyService.GetJourneyHistoryAsync(deviceId);
+        var journeys = await _journeyService.GetJourneyHistoryAsync(deviceId).ConfigureAwait(false);
 
         if (!journeys.Any())
         {
@@ -207,7 +207,7 @@ public class CommandLineInterface : ICommandLineInterface
         var format = args[1].ToLower();
         var outputFile = args.Length > 2 ? args[2] : $"export-{deviceId}-{DateTime.UtcNow:yyyyMMdd-HHmmss}.{format}";
 
-        var locations = await _locationService.GetLocationHistoryAsync(deviceId, int.MaxValue);
+        var locations = await _locationService.GetLocationHistoryAsync(deviceId, int.MaxValue).ConfigureAwait(false);
 
         if (!locations.Any())
         {
@@ -222,7 +222,7 @@ public class CommandLineInterface : ICommandLineInterface
             _ => throw new InvalidOperationException($"Unsupported format: {format}")
         };
 
-        await File.WriteAllTextAsync(outputFile, content);
+        await File.WriteAllTextAsync(outputFile, content).ConfigureAwait(false);
         Console.WriteLine($"Exported {locations.Count()} locations to {outputFile}");
 
         return 0;

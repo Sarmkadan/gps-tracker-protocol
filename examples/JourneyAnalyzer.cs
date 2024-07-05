@@ -38,7 +38,7 @@ public class JourneyAnalyzer
     /// <summary>Analyzes a single device's journey statistics</summary>
     public async Task AnalyzeDeviceAsync(string deviceId)
     {
-        var device = await _deviceService.GetDeviceAsync(deviceId);
+        var device = await _deviceService.GetDeviceAsync(deviceId).ConfigureAwait(false);
         if (device is null)
         {
             _logger.LogError("Device not found: {0}", deviceId);
@@ -47,7 +47,7 @@ public class JourneyAnalyzer
 
         _logger.LogInformation("Analyzing device: {0} ({1})", device.DeviceName, device.Imei);
 
-        var journeys = await _journeyService.GetJourneyHistoryAsync(deviceId);
+        var journeys = await _journeyService.GetJourneyHistoryAsync(deviceId).ConfigureAwait(false);
         var journeyList = journeys.ToList();
 
         if (journeyList.Count == 0)
@@ -89,7 +89,7 @@ public class JourneyAnalyzer
     /// <summary>Creates a new journey and simulates tracking</summary>
     public async Task SimulateJourneyAsync(string deviceId, int waypointCount = 10)
     {
-        var device = await _deviceService.GetDeviceAsync(deviceId);
+        var device = await _deviceService.GetDeviceAsync(deviceId).ConfigureAwait(false);
         if (device is null)
         {
             _logger.LogError("Device not found: {0}", deviceId);
@@ -98,7 +98,7 @@ public class JourneyAnalyzer
 
         _logger.LogInformation("Starting simulated journey for {0}", device.DeviceName);
 
-        var journey = await _journeyService.StartJourneyAsync(deviceId);
+        var journey = await _journeyService.StartJourneyAsync(deviceId).ConfigureAwait(false);
         var baseTime = DateTime.UtcNow;
 
         double lat = 40.7128;
@@ -123,12 +123,12 @@ public class JourneyAnalyzer
                 Accuracy = 5.0
             };
 
-            await _journeyService.AddWaypointAsync(journey.Id, waypoint);
+            await _journeyService.AddWaypointAsync(journey.Id, waypoint).ConfigureAwait(false);
             _logger.LogInformation("Waypoint {0}: ({1:F4}, {2:F4}) Speed={3:F1}",
                 i + 1, lat, lng, waypoint.Speed);
         }
 
-        var completed = await _journeyService.CompleteJourneyAsync(journey.Id);
+        var completed = await _journeyService.CompleteJourneyAsync(journey.Id).ConfigureAwait(false);
         _logger.LogInformation("Journey completed: Distance={0:F2}km, Duration={1:hh\\:mm\\:ss}",
             completed.GetTotalDistance(), completed.GetDuration());
     }
@@ -136,7 +136,7 @@ public class JourneyAnalyzer
     /// <summary>Generates detailed journey report for all devices</summary>
     public async Task GenerateFleetReportAsync()
     {
-        var devices = await _deviceService.GetAllDevicesAsync();
+        var devices = await _deviceService.GetAllDevicesAsync().ConfigureAwait(false);
         var deviceList = devices.ToList();
 
         _logger.LogInformation("=== Fleet Journey Report ===");
@@ -148,7 +148,7 @@ public class JourneyAnalyzer
 
         foreach (var device in deviceList)
         {
-            var journeys = await _journeyService.GetJourneyHistoryAsync(device.Id);
+            var journeys = await _journeyService.GetJourneyHistoryAsync(device.Id).ConfigureAwait(false);
             var journeyList = journeys.ToList();
 
             if (journeyList.Count == 0) continue;
@@ -192,7 +192,7 @@ public class JourneyAnalyzer
         {
             case "analyze":
                 if (args.Length > 1)
-                    await analyzer.AnalyzeDeviceAsync(args[1]);
+                    await analyzer.AnalyzeDeviceAsync(args[1]).ConfigureAwait(false);
                 else
                     Console.WriteLine("Device ID required");
                 break;
@@ -201,14 +201,14 @@ public class JourneyAnalyzer
                 if (args.Length > 1)
                 {
                     int waypoints = args.Length > 2 && int.TryParse(args[2], out var w) ? w : 10;
-                    await analyzer.SimulateJourneyAsync(args[1], waypoints);
+                    await analyzer.SimulateJourneyAsync(args[1], waypoints).ConfigureAwait(false);
                 }
                 else
                     Console.WriteLine("Device ID required");
                 break;
 
             case "fleet":
-                await analyzer.GenerateFleetReportAsync();
+                await analyzer.GenerateFleetReportAsync().ConfigureAwait(false);
                 break;
 
             default:

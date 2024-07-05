@@ -49,11 +49,11 @@ public class JourneyService : IJourneyService
         if (string.IsNullOrWhiteSpace(deviceId))
             throw new ArgumentException("Device ID cannot be empty", nameof(deviceId));
 
-        var device = await _deviceRepository.GetByIdAsync(deviceId);
+        var device = await _deviceRepository.GetByIdAsync(deviceId).ConfigureAwait(false);
         if (device is null)
             throw new DeviceException($"Device {deviceId} not found", deviceId);
 
-        var existingJourney = await _journeyRepository.GetOngoingJourneyAsync(deviceId);
+        var existingJourney = await _journeyRepository.GetOngoingJourneyAsync(deviceId).ConfigureAwait(false);
         if (existingJourney is not null)
             throw new InvalidOperationException($"Device {deviceId} already has an ongoing journey");
 
@@ -64,7 +64,7 @@ public class JourneyService : IJourneyService
             Status = 0 // ongoing
         };
 
-        return await _journeyRepository.CreateAsync(journey);
+        return await _journeyRepository.CreateAsync(journey).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -75,7 +75,7 @@ public class JourneyService : IJourneyService
         if (string.IsNullOrWhiteSpace(deviceId))
             throw new ArgumentException("Device ID cannot be empty", nameof(deviceId));
 
-        return await _journeyRepository.GetOngoingJourneyAsync(deviceId);
+        return await _journeyRepository.GetOngoingJourneyAsync(deviceId).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -92,7 +92,7 @@ public class JourneyService : IJourneyService
         if (!location.IsValid())
             throw new ValidationException("Location data validation failed");
 
-        var journey = await _journeyRepository.GetByIdAsync(journeyId);
+        var journey = await _journeyRepository.GetByIdAsync(journeyId).ConfigureAwait(false);
         if (journey is null)
             throw new InvalidOperationException($"Journey {journeyId} not found");
 
@@ -103,7 +103,7 @@ public class JourneyService : IJourneyService
             throw new InvalidOperationException("Journey has reached maximum waypoint limit");
 
         journey.AddWaypoint(location);
-        await _journeyRepository.UpdateAsync(journey);
+        await _journeyRepository.UpdateAsync(journey).ConfigureAwait(false);
         return true;
     }
 
@@ -112,7 +112,7 @@ public class JourneyService : IJourneyService
     /// </summary>
     public async Task<Journey> CompleteJourneyAsync(string journeyId)
     {
-        var journey = await _journeyRepository.GetByIdAsync(journeyId);
+        var journey = await _journeyRepository.GetByIdAsync(journeyId).ConfigureAwait(false);
         if (journey is null)
             throw new InvalidOperationException($"Journey {journeyId} not found");
 
@@ -120,7 +120,7 @@ public class JourneyService : IJourneyService
             throw new InvalidOperationException($"Journey {journeyId} is not ongoing");
 
         journey.Complete();
-        await _journeyRepository.UpdateAsync(journey);
+        await _journeyRepository.UpdateAsync(journey).ConfigureAwait(false);
         return journey;
     }
 
@@ -132,7 +132,7 @@ public class JourneyService : IJourneyService
         if (string.IsNullOrWhiteSpace(deviceId))
             throw new ArgumentException("Device ID cannot be empty", nameof(deviceId));
 
-        var journeys = await _journeyRepository.GetByDeviceIdAsync(deviceId);
+        var journeys = await _journeyRepository.GetByDeviceIdAsync(deviceId).ConfigureAwait(false);
         return journeys.OrderByDescending(j => j.StartTime).ToList();
     }
 
@@ -144,7 +144,7 @@ public class JourneyService : IJourneyService
         if (string.IsNullOrWhiteSpace(journeyId))
             throw new ArgumentException("Journey ID cannot be empty", nameof(journeyId));
 
-        return await _journeyRepository.GetByIdAsync(journeyId);
+        return await _journeyRepository.GetByIdAsync(journeyId).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -155,7 +155,7 @@ public class JourneyService : IJourneyService
         if (string.IsNullOrWhiteSpace(deviceId))
             throw new ArgumentException("Device ID cannot be empty", nameof(deviceId));
 
-        return await _journeyRepository.GetTotalDistanceAsync(deviceId);
+        return await _journeyRepository.GetTotalDistanceAsync(deviceId).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -166,6 +166,6 @@ public class JourneyService : IJourneyService
         if (olderThan >= DateTime.UtcNow)
             throw new ArgumentException("Cleanup date must be in the past");
 
-        return await _journeyRepository.DeleteOlderThanAsync(olderThan);
+        return await _journeyRepository.DeleteOlderThanAsync(olderThan).ConfigureAwait(false);
     }
 }

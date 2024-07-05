@@ -41,7 +41,7 @@ try
     };
 
     var registeredDevice = await deviceService.RegisterDeviceAsync(device);
-    logger.LogInformation($"Device registered: {registeredDevice}");
+    logger.LogInformation("Device registered: {RegisteredDevice}", registeredDevice);
 
     // Demo 2: Create and parse a GPS frame
     logger.LogInformation("\n[2] Creating and parsing GPS frame...");
@@ -57,10 +57,10 @@ try
     };
 
     var protocolType = await parserService.DetectProtocolAsync(gpsFrame.RawData);
-    logger.LogInformation($"Detected protocol: {protocolType}");
+    logger.LogInformation("Detected protocol: {ProtocolType}", protocolType);
 
     var isValid = await parserService.ValidateFrameAsync(gpsFrame);
-    logger.LogInformation($"Frame validation: {isValid}");
+    logger.LogInformation("Frame validation: {IsValid}", isValid);
 
     // Demo 3: Store location data
     logger.LogInformation("\n[3] Storing location data...");
@@ -79,15 +79,15 @@ try
     };
 
     var storedLocation = await locationService.StoreLocationAsync(location);
-    logger.LogInformation($"Location stored: {storedLocation}");
+    logger.LogInformation("Location stored: {StoredLocation}", storedLocation);
 
     var latestLocation = await locationService.GetLatestLocationAsync("device-001");
-    logger.LogInformation($"Latest location: {latestLocation}");
+    logger.LogInformation("Latest location: {LatestLocation}", latestLocation);
 
     // Demo 4: Start a journey
     logger.LogInformation("\n[4] Starting a journey...");
     var journey = await journeyService.StartJourneyAsync("device-001");
-    logger.LogInformation($"Journey started: {journey.Id}");
+    logger.LogInformation("Journey started: {Id}", journey.Id);
 
     // Add waypoints to journey
     for (int i = 0; i < 3; i++)
@@ -145,7 +145,7 @@ try
     // Demo 7: Calculate analytics
     logger.LogInformation("\n[7] Calculating analytics...");
     var totalDistance = await journeyService.GetTotalDistanceAsync("device-001");
-    logger.LogInformation($"Total distance traveled: {totalDistance:F2}km");
+    logger.LogInformation("Total distance traveled: {TotalDistance}km", totalDistance);
 
     logger.LogInformation("\n=== Demo completed successfully ===");
 }
