@@ -66,7 +66,7 @@ public class WebhookClient : ExternalApiClient, IWebhookClient
                 System.Text.Encoding.UTF8,
                 "application/json");
 
-            var response = await _httpClient.PostAsync(webhookUrl, content);
+            var response = await _httpClient.PostAsync(webhookUrl, content).ConfigureAwait(false);
             response.EnsureSuccessStatusCode();
 
             _logger.LogInformation("Webhook sent successfully to {Url}", webhookUrl);
@@ -105,7 +105,7 @@ public class WebhookClient : ExternalApiClient, IWebhookClient
                 System.Text.Encoding.UTF8,
                 "application/json");
 
-            var response = await _httpClient.PostAsync(webhookUrl, content);
+            var response = await _httpClient.PostAsync(webhookUrl, content).ConfigureAwait(false);
             response.EnsureSuccessStatusCode();
 
             _logger.LogInformation("Journey webhook sent to {Url}", webhookUrl);
@@ -143,7 +143,7 @@ public class WebhookClient : ExternalApiClient, IWebhookClient
                 System.Text.Encoding.UTF8,
                 "application/json");
 
-            var response = await _httpClient.PostAsync(webhookUrl, content);
+            var response = await _httpClient.PostAsync(webhookUrl, content).ConfigureAwait(false);
             response.EnsureSuccessStatusCode();
 
             _logger.LogInformation("Device status webhook sent to {Url}", webhookUrl);
@@ -182,7 +182,7 @@ public class WebhookClient : ExternalApiClient, IWebhookClient
                 System.Text.Encoding.UTF8,
                 "application/json");
 
-            var response = await _httpClient.PostAsync(webhookUrl, content);
+            var response = await _httpClient.PostAsync(webhookUrl, content).ConfigureAwait(false);
             response.EnsureSuccessStatusCode();
 
             _logger.LogInformation("Geofence webhook sent to {Url}: {EventType}",
