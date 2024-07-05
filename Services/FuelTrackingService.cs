@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -94,7 +95,7 @@ public sealed class FuelTrackingService : IFuelTrackingService
 
         var results = _records.Values
             .Where(r => r.VehicleId == vehicleId)
-            .Where(r => type == null || r.EventType == type)
+            .Where(r => type is null || r.EventType == type)
             .OrderByDescending(r => r.Timestamp)
             .ToList();
 

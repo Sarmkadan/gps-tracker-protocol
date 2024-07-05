@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -62,11 +63,11 @@ public class FrameValidator : IValidator<GpsFrame>
     {
         var errors = new List<string>();
 
-        if (frame == null)
+        if (frame is null)
             errors.Add("Frame cannot be null");
         else
         {
-            if (frame.RawData == null || frame.RawData.Length == 0)
+            if (frame.RawData is null || frame.RawData.Length == 0)
                 errors.Add("Raw data cannot be empty");
             if (string.IsNullOrWhiteSpace(frame.FrameId))
                 errors.Add("Frame ID is required");
@@ -91,7 +92,7 @@ public class LocationValidator : IValidator<LocationData>
     {
         var errors = new List<string>();
 
-        if (location == null)
+        if (location is null)
             errors.Add("Location cannot be null");
         else
         {
@@ -121,7 +122,7 @@ public class DeviceValidator : IValidator<Device>
     {
         var errors = new List<string>();
 
-        if (device == null)
+        if (device is null)
             errors.Add("Device cannot be null");
         else
         {

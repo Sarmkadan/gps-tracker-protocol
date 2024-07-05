@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -52,7 +53,7 @@ public class ProtocolConverter
         }
 
         var location = await _parserService.ExtractLocationDataAsync(sourceFrame);
-        if (location == null)
+        if (location is null)
         {
             _logger.LogWarning("Could not extract location from source frame");
             return null;
@@ -214,7 +215,7 @@ public class ProtocolConverter
 
         var convertedData = await ConvertFrameAsync(inputData, sourceProtocol, targetProtocol);
 
-        if (convertedData == null)
+        if (convertedData is null)
         {
             _logger.LogError("Conversion failed");
             return;
