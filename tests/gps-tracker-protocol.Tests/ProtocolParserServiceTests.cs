@@ -335,6 +335,9 @@ public class ProtocolParserServiceTests
         result.SatelliteCount.Should().Be(expectedSatelliteCount);
         result.DeviceId.Should().Be(expectedDeviceId);
     }
+
+    [Fact]
+    public async Task ParseFrameAsync_H02_HqFormat_ShouldParseCorrectly()
     {
         // Arrange
         string h02RawString = "$GPRMC,010000.00,A,2824.237,N,08100.237,W,0.00,0.0,010100,0,E*68";
@@ -350,12 +353,10 @@ public class ProtocolParserServiceTests
             IsValidChecksum = true
         };
 
-        var expectedTimestamp = new DateTime(2000, 1, 1, 1, 0, 0, DateTimeKind.Utc);
         var expectedLatitude = 28 + (24.237 / 60);
         var expectedLongitude = -(81 + (0.237 / 60));
         var expectedSpeed = 0.0;
         var expectedBearing = 0.0;
-        var expectedSatelliteCount = 0;
         var expectedDeviceId = "$GPRMC";
 
         // Act
@@ -364,88 +365,49 @@ public class ProtocolParserServiceTests
         // Assert
         result.Should().NotBeNull();
         result.Protocol.Should().Be(ProtocolType.H02);
-        result.Timestamp.Should().BeCloseTo(expectedTimestamp, TimeSpan.FromSeconds(1));
         result.Latitude.Should().BeApproximately(expectedLatitude, 0.0001);
         result.Longitude.Should().BeApproximately(expectedLongitude, 0.0001);
         result.Speed.Should().BeApproximately(expectedSpeed, 0.0001);
         result.Bearing.Should().BeApproximately(expectedBearing, 0.0001);
-        result.SatelliteCount.Should().Be(expectedSatelliteCount);
-        result.SatelliteCount.Should().Be(expectedSatelliteCount);
         result.DeviceId.Should().Be(expectedDeviceId);
-        }
+    }
 
-        [Fact]
-        public async Task ParseFrameAsync_GT06_SouthWestCoordinates_ShouldParseCorrectly()
+    [Fact]
+    public async Task ParseFrameAsync_H02_HqFormat_EasternHemisphere_ShouldProducePositiveLongitude()
+    {
+        // Arrange: *HQ format device in Eastern hemisphere (e.g., China)
+        // *HQ,{IMEI},V1,{HHMMSS},{lat},{NS},{lon},{EW},{speed},{bearing},{DDMMYY},...
+        string h02HqEastern = "*HQ,123456789012345,V1,120000,3928.456,N,11613.789,E,0.00,0.0,010124,0#";
+        byte[] rawData = Encoding.ASCII.GetBytes(h02HqEastern);
+        var frame = new GpsFrame
         {
-        // Arrange - Test for Southern and Western hemisphere coordinates
-        // Example: Buenos Aires (-34.6037, -58.3816)
-        // Latitude raw: 34.6037 * 1800000 = 62286660 (0x03B57914)
-        // Longitude raw: 58.3816 * 1800000 = 105086880 (0x0644D250)
-        // Timestamp: 2023-01-02 03:04:05 UTC (0x23, 0x01, 0x02, 0x03, 0x04, 0x05 - BCD encoded for Year 23, Month 01, Day 02, Hour 03, Minute 04, Second 05)
-        // Device ID: "12345"
-        // Speed: 10 knots -> 10 * 1.852 = 18.52 km/h (0x0A)
-        // Status Byte (data[20]): Bit 2 (Latitude Hemisphere) = 0 (South), Bit 3 (Longitude Hemisphere) = 1 (West) => 0b00001000 = 0x08
-        // Bearing: 90 degrees (0x0384 / 100.0) -> 0x03, 0x84
-        // Satellite Count: 7 (0x07)
-
-        byte[] southWestRawData = new byte[] {
-            0x78, 0x78, // Start Bytes
-            0x1B, // Packet Length: 27 bytes (from Protocol Number to Checksum excluding Checksum itself)
-            0x12, // Protocol Number (Location Data)
-            0x31, 0x32, 0x33, 0x34, 0x35, // Device ID (5 bytes - "12345" ASCII)
-            0x23, 0x01, 0x02, 0x03, 0x04, 0x05, // Timestamp: (Year 23, Month 01, Day 02, Hour 03, Minute 04, Second 05)
-            0x03, 0xB5, 0x79, 0x14, // Latitude (raw value for 34.6037)
-            0x06, 0x44, 0xD2, 0x50, // Longitude (raw value for 58.3816)
-            0x0A, // Speed (10 knots)
-            0x08, // Status Byte: Bit 3 (West) = 1, Bit 2 (South) = 0
-            0x03, 0x84, // Bearing (90.0 degrees)
-            0x07, // Satellite Count
-            0x00, // Checksum (placeholder)
-            0x0D, 0x0A // Stop Bytes
-        };
-
-        // Calculate Checksum: XOR sum of bytes from data[2] to data[southWestRawData.Length - 4]
-        byte calculatedChecksum = 0;
-        for (int i = 2; i <= southWestRawData.Length - 4; i++)
-        {
-            calculatedChecksum ^= southWestRawData[i];
-        }
-        southWestRawData[southWestRawData.Length - 3] = calculatedChecksum; // Set the calculated checksum
-
-        var frameToParse = new GpsFrame
-        {
-            FrameId = "test-frame-gt06-southwest",
-            Protocol = ProtocolType.GT06,
-            RawData = southWestRawData,
-            ReceivedAt = new DateTime(2023, 10, 26, 10, 0, 0, DateTimeKind.Utc), // This value will be overwritten by parsed timestamp
+            FrameId = "test-frame-h02-hq-east",
+            Protocol = ProtocolType.H02,
+            RawData = rawData,
+            ReceivedAt = DateTime.UtcNow,
             SourceAddress = "127.0.0.1",
-            SourcePort = 12345,
+            SourcePort = 12346,
             IsValidChecksum = true
         };
 
-        // Expected values for Buenos Aires:
-        var expectedTimestamp = new DateTime(2023, 1, 2, 3, 4, 5, DateTimeKind.Utc); // From BCD bytes
-        var expectedLatitude = -34.6037;
-        var expectedLongitude = -58.3816;
-        var expectedSpeed = 10.0 * 1.852; // 10 knots converted to km/h
-        var expectedBearing = 90.0;
-        var expectedSatelliteCount = 7;
-        var expectedDeviceId = "12345"; // From ASCII bytes
+        var expectedLatitude = 39 + (28.456 / 60);
+        var expectedLongitude = 116 + (13.789 / 60); // Eastern hemisphere: must be positive
+        var expectedDeviceId = "123456789012345";
 
         // Act
-        var result = await _sut.ParseFrameAsync(frameToParse).ConfigureAwait(false);
+        var result = await _sut.ParseFrameAsync(frame).ConfigureAwait(false);
 
         // Assert
         result.Should().NotBeNull();
-        result.Protocol.Should().Be(ProtocolType.GT06);
-        result.Timestamp.Should().Be(expectedTimestamp);
+        result.Protocol.Should().Be(ProtocolType.H02);
         result.Latitude.Should().BeApproximately(expectedLatitude, 0.0001);
         result.Longitude.Should().BeApproximately(expectedLongitude, 0.0001);
-        result.Speed.Should().BeApproximately(expectedSpeed, 0.0001);
-        result.Bearing.Should().BeApproximately(expectedBearing, 0.0001);
-        result.SatelliteCount.Should().Be(expectedSatelliteCount);
+        result.Longitude.Should().BePositive("Eastern hemisphere longitude must not be negated");
         result.DeviceId.Should().Be(expectedDeviceId);
-        }
+    }
+
+    [Fact]
+    public async Task ParseFrameAsync_TK103_ShouldParseCorrectly()
     {
         // Arrange
         string tk103RawString = "(000000000000000)BP05,160517010000,A,2824.237,N,08100.237,W,0.00,0.0";

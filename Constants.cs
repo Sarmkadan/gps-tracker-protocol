@@ -21,6 +21,7 @@ public static class ProtocolConstants
     public const int H02_MIN_FRAME_SIZE = 32;
     public const int H02_MAX_FRAME_SIZE = 512;
     public const string H02_START_MARKER = "$GPRMC";
+    public const string H02_HQ_START_MARKER = "*HQ";
     public const string H02_END_MARKER = "\r\n";
 
     // TK103 Protocol
