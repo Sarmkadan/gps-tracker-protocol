@@ -95,7 +95,11 @@ public class RealTimeGpsServer
                     await ProcessFrameAsync(frameData, remoteEndpoint?.Address?.ToString() ?? "Unknown").ConfigureAwait(false);
                 }
             }
-            catch (Exception ex)
+            catch (IOException ex)
+            {
+                _logger.LogError(ex, "Error processing TCP client");
+            }
+            catch (InvalidOperationException ex)
             {
                 _logger.LogError(ex, "Error processing TCP client");
             }
@@ -158,7 +162,11 @@ public class RealTimeGpsServer
             _logger.LogInformation("Location stored: Device={0} Lat={1:F4} Lng={2:F4} Speed={3:F1}",
                 stored.DeviceId, stored.Latitude, stored.Longitude, stored.Speed);
         }
-        catch (Exception ex)
+        catch (GpsTrackerProtocol.Domain.ParseException ex)
+        {
+            _logger.LogError(ex, "Error processing frame from {0}", sourceAddress);
+        }
+        catch (InvalidOperationException ex)
         {
             _logger.LogError(ex, "Error processing frame from {0}", sourceAddress);
         }

@@ -193,7 +193,11 @@ public class DataExporter
                     break;
             }
         }
-        catch (Exception ex)
+        catch (IOException ex)
+        {
+            Console.WriteLine("IO error: {0}", ex.Message);
+        }
+        catch (InvalidOperationException ex)
         {
             Console.WriteLine("Error: {0}", ex.Message);
         }
