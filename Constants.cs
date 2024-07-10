@@ -15,6 +15,7 @@ public static class ProtocolConstants
     public const int GT06_MIN_FRAME_SIZE = 15;
     public const int GT06_MAX_FRAME_SIZE = 256;
     public const byte GT06_START_MARKER = 0x78;
+    public const byte GT06_EXTENDED_START_MARKER = 0x79;
     public const byte GT06_END_MARKER = 0x0D;
 
     // H02 Protocol
