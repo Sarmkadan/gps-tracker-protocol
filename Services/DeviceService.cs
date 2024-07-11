@@ -24,6 +24,8 @@ public interface IDeviceService
     Task<bool> DeregisterDeviceAsync(string deviceId);
     Task UpdateDeviceHeartbeatAsync(string deviceId, string? ipAddress = null, int port = 0);
     Task<IEnumerable<Device>> GetOfflineDevicesAsync(TimeSpan timeout);
+    Task<DeviceStatusDto?> GetDeviceStatusAsync(string deviceId);
+    Task<IEnumerable<DeviceStatusDto>> GetAllDeviceStatusesAsync();
 }
 
 /// <summary>
@@ -156,4 +158,38 @@ public class DeviceService : IDeviceService
     {
         return await _repository.GetOfflineDevicesAsync(timeout).ConfigureAwait(false);
     }
+
+    /// <summary>
+    /// Gets the connection status snapshot for a single device.
+    /// Returns null when the device is not found.
+    /// </summary>
+    public async Task<DeviceStatusDto?> GetDeviceStatusAsync(string deviceId)
+    {
+        if (string.IsNullOrWhiteSpace(deviceId))
+            throw new ArgumentException("Device ID cannot be empty", nameof(deviceId));
+
+        var device = await _repository.GetByIdAsync(deviceId).ConfigureAwait(false);
+        return device is null ? null : ToStatusDto(device);
+    }
+
+    /// <summary>
+    /// Gets the connection status snapshot for every registered device.
+    /// Operators can use this to monitor fleet health at a glance.
+    /// </summary>
+    public async Task<IEnumerable<DeviceStatusDto>> GetAllDeviceStatusesAsync()
+    {
+        var devices = await _repository.GetAllAsync().ConfigureAwait(false);
+        return devices.Select(ToStatusDto).ToList();
+    }
+
+    private static DeviceStatusDto ToStatusDto(Device device) => new()
+    {
+        DeviceId = device.Id,
+        Imei = device.Imei,
+        DeviceName = device.DeviceName,
+        IsConnected = device.Status == DeviceStatus.Online,
+        LastSeen = device.LastSeen,
+        ConnectionCount = device.ConnectionCount,
+        Status = device.Status
+    };
 }
