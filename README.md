@@ -47,6 +47,7 @@ A comprehensive .NET library for parsing GPS tracker protocols (GT06, H02, TK103
 - **Dependency Injection**: Microsoft.Extensions integration for flexible composition
 - **.NET 10**: Latest C# language features and performance optimizations
 - **Geofence Alerting**: Rule-based alert management with cooldown suppression and acknowledgement workflow
+- **Route Replay**: Replay any completed journey at configurable speed with rebased timestamps
 
 ### Protocol Details
 
@@ -484,6 +485,32 @@ public interface IGeofenceAlertingService
 alerts list <device-id>                          List active alerts
 alerts add <device-id> <fence-id> <enter|exit>   Create a rule
 alerts ack <alert-id> [notes]                    Acknowledge an alert
+```
+
+
+### IRouteReplayService
+
+Replays a completed journey's waypoints with configurable speed and timestamp rebasing.
+
+```csharp
+public interface IRouteReplayService
+{
+    Task<RouteReplayResult> ReplayJourneyAsync(string journeyId, ReplayOptions? options = null);
+    Task<RouteReplaySummary> GetReplaySummaryAsync(string journeyId);
+}
+
+public class ReplayOptions
+{
+    public double SpeedMultiplier { get; set; } = 1.0;
+    public int StartIndex { get; set; } = 0;
+    public int EndIndex   { get; set; } = -1;
+    public DateTime? RebaseToUtc { get; set; }
+}
+```
+
+**CLI**
+```
+replay <journey-id> [speed-multiplier]   Replay route at N× speed (default 1×)
 ```
 
 ---
