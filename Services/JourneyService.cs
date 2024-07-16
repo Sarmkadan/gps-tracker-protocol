@@ -15,13 +15,61 @@ using GpsTrackerProtocol.Domain.Models;
 /// </summary>
 public interface IJourneyService
 {
+/// <summary>
+    /// Starts a new journey for a device.
+    /// </summary>
+    /// <param name="deviceId">The device ID.</param>
+    /// <returns>The newly created journey.</returns>
     Task<Journey> StartJourneyAsync(string deviceId);
+
+    /// <summary>
+    /// Gets the ongoing journey for a device.
+    /// </summary>
+    /// <param name="deviceId">The device ID.</param>
+    /// <returns>The ongoing journey if found, otherwise null.</returns>
     Task<Journey?> GetOngoingJourneyAsync(string deviceId);
+
+    /// <summary>
+    /// Adds a waypoint to an ongoing journey.
+    /// </summary>
+    /// <param name="journeyId">The journey ID.</param>
+    /// <param name="location">The location data to add.</param>
+    /// <returns>True if successful, otherwise false.</returns>
     Task<bool> AddWaypointAsync(string journeyId, LocationData location);
+
+    /// <summary>
+    /// Completes a journey and calculates summary metrics.
+    /// </summary>
+    /// <param name="journeyId">The journey ID.</param>
+    /// <returns>The completed journey.</returns>
     Task<Journey> CompleteJourneyAsync(string journeyId);
+
+    /// <summary>
+    /// Gets journey history for a device.
+    /// </summary>
+    /// <param name="deviceId">The device ID.</param>
+    /// <returns>A collection of journeys.</returns>
     Task<IEnumerable<Journey>> GetJourneyHistoryAsync(string deviceId);
+
+    /// <summary>
+    /// Gets a specific journey by ID.
+    /// </summary>
+    /// <param name="journeyId">The journey ID.</param>
+    /// <returns>The journey if found, otherwise null.</returns>
     Task<Journey?> GetJourneyAsync(string journeyId);
+
+    /// <summary>
+    /// Calculates total distance traveled by a device.
+    /// </summary>
+    /// <param name="deviceId">The device ID.</param>
+    /// <returns>The total distance in kilometers.</returns>
     Task<double> GetTotalDistanceAsync(string deviceId);
+
+    /// <summary>
+    /// Cleans up old journey records.
+    /// </summary>
+    /// <param name="olderThan">The threshold date.</param>
+    /// <returns>The number of journeys deleted.</returns>
     Task<int> CleanupOldJourneysAsync(DateTime olderThan);
 }
 
