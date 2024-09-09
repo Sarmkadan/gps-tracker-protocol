@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  gps-tracker:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+    container_name: gps-tracker-v2-example
+    ports:
+      - "5000:5000"     # TCP listener
+      - "5001:5001"    # UDP listener
+      - "8080:8080"    # Health check
+    environment:
+      - GPS_PROTOCOL_DEFAULT=GT06
+      - GPS_MAX_DEVICES=10000
+      - GPS_CACHE_EXPIRATION=60
+      - GPS_LOG_LEVEL=Information
+      - GPS_RATE_LIMIT=1000
+      - FLEET_DASHBOARD_ROUTE_OPTIMIZATION=true
+      - FLEET_DASHBOARD_FUEL_TRACKING=true
+      - FLEET_DASHBOARD_UPDATE_INTERVAL=30
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    restart: unless-stopped
+    depends_on:
+      - redis
+    networks:
+      - gps-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: gps-tracker-redis-example
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+    networks:
+      - gps-network
+
+volumes:
+  redis-data:
+
+networks:
+  gps-network:
+    driver: bridge
