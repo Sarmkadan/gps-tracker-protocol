@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -44,14 +45,14 @@ public class DeviceService : IDeviceService
     /// </summary>
     public async Task<Device> RegisterDeviceAsync(Device device)
     {
-        if (device == null)
+        if (device is null)
             throw new ArgumentNullException(nameof(device));
 
         if (!device.IsValid())
             throw new ValidationException("Device validation failed", nameof(device));
 
         var existing = await _repository.GetByImeiAsync(device.Imei);
-        if (existing != null)
+        if (existing is not null)
             throw new DeviceException($"Device with IMEI {device.Imei} already exists", device.Id);
 
         device.Id ??= Guid.NewGuid().ToString();
@@ -104,11 +105,11 @@ public class DeviceService : IDeviceService
     /// </summary>
     public async Task<bool> UpdateDeviceAsync(Device device)
     {
-        if (device == null)
+        if (device is null)
             throw new ArgumentNullException(nameof(device));
 
         var existing = await _repository.GetByIdAsync(device.Id);
-        if (existing == null)
+        if (existing is null)
             throw new DeviceException($"Device {device.Id} not found", device.Id);
 
         if (!device.IsValid())
@@ -127,7 +128,7 @@ public class DeviceService : IDeviceService
             throw new ArgumentException("Device ID cannot be empty", nameof(deviceId));
 
         var device = await _repository.GetByIdAsync(deviceId);
-        if (device == null)
+        if (device is null)
             throw new DeviceException($"Device {deviceId} not found", deviceId);
 
         device.IsActive = false;
@@ -141,7 +142,7 @@ public class DeviceService : IDeviceService
     public async Task UpdateDeviceHeartbeatAsync(string deviceId, string? ipAddress = null, int port = 0)
     {
         var device = await _repository.GetByIdAsync(deviceId);
-        if (device == null)
+        if (device is null)
             throw new DeviceException($"Device {deviceId} not found", deviceId);
 
         device.UpdateHeartbeat(ipAddress, port);

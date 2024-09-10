@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -90,7 +91,7 @@ public class AnalyticsService : IAnalyticsService
         var journeys = await _journeyService.GetJourneyHistoryAsync("");
         var journey = journeys.FirstOrDefault(j => j.Id == journeyId);
 
-        if (journey == null)
+        if (journey is null)
             throw new KeyNotFoundException($"Journey {journeyId} not found");
 
         var routeAnalytics = new RouteAnalytics

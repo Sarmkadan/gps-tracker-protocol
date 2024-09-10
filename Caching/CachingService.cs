@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -55,7 +56,7 @@ public class CachingService : ICachingService
         {
             if (_cache.TryGetValue(key, out var entry))
             {
-                if (entry.ExpiresAt == null || entry.ExpiresAt > DateTime.UtcNow)
+                if (entry.ExpiresAt is null || entry.ExpiresAt > DateTime.UtcNow)
                 {
                     value = (T)entry.Value;
                     _logger.LogDebug("Cache hit: {Key}", key);

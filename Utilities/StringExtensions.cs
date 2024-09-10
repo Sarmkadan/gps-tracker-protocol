@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -39,7 +40,7 @@ public static class StringExtensions
     public static string[] SplitNmea(this string sentence)
     {
         if (string.IsNullOrEmpty(sentence))
-            return Array.Empty<string>();
+            return new string[0];
 
         return sentence.Split(',').Select(s => s.Trim()).ToArray();
     }
@@ -89,7 +90,7 @@ public static class StringExtensions
     /// </summary>
     public static string Truncate(this string value, int maxLength, string suffix = "...")
     {
-        if (value == null || value.Length <= maxLength)
+        if (value is null || value.Length <= maxLength)
             return value;
 
         return value.Substring(0, Math.Max(0, maxLength - suffix.Length)) + suffix;
@@ -101,12 +102,12 @@ public static class StringExtensions
     public static byte[] HexToByteArray(this string hexString)
     {
         if (string.IsNullOrWhiteSpace(hexString))
-            return Array.Empty<byte>();
+            return new byte[0];
 
         hexString = hexString.Replace("-", "").Replace(" ", "");
 
         if (hexString.Length % 2 != 0)
-            return Array.Empty<byte>();
+            return new byte[0];
 
         try
         {
@@ -119,7 +120,7 @@ public static class StringExtensions
         }
         catch
         {
-            return Array.Empty<byte>();
+            return new byte[0];
         }
     }
 
