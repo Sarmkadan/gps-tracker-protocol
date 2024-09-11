@@ -50,7 +50,7 @@ public class CommandService : ICommandService
         if (!command.IsValid())
             throw new ValidationException("Command validation failed", nameof(command));
 
-        var device = await _deviceRepository.GetByIdAsync(command.DeviceId);
+        var device = await _deviceRepository.GetByIdAsync(command.DeviceId).ConfigureAwait(false);
         if (device is null)
             throw new DeviceException($"Device {command.DeviceId} not found", command.DeviceId);
 
@@ -61,7 +61,7 @@ public class CommandService : ICommandService
         command.CreatedAt = DateTime.UtcNow;
         command.Status = CommandStatus.Pending;
 
-        return await _repository.CreateAsync(command);
+        return await _repository.CreateAsync(command).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -72,7 +72,7 @@ public class CommandService : ICommandService
         if (string.IsNullOrWhiteSpace(commandId))
             throw new ArgumentException("Command ID cannot be empty", nameof(commandId));
 
-        return await _repository.GetByIdAsync(commandId);
+        return await _repository.GetByIdAsync(commandId).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -80,7 +80,7 @@ public class CommandService : ICommandService
     /// </summary>
     public async Task<IEnumerable<Command>> GetPendingCommandsAsync()
     {
-        return await _repository.GetPendingAsync();
+        return await _repository.GetPendingAsync().ConfigureAwait(false);
     }
 
     /// <summary>
@@ -91,7 +91,7 @@ public class CommandService : ICommandService
         if (string.IsNullOrWhiteSpace(deviceId))
             throw new ArgumentException("Device ID cannot be empty", nameof(deviceId));
 
-        var commands = await _repository.GetByDeviceIdAsync(deviceId);
+        var commands = await _repository.GetByDeviceIdAsync(deviceId).ConfigureAwait(false);
         return commands.OrderByDescending(c => c.CreatedAt).ToList();
     }
 
@@ -100,12 +100,12 @@ public class CommandService : ICommandService
     /// </summary>
     public async Task<bool> ExecuteCommandAsync(string commandId)
     {
-        var command = await _repository.GetByIdAsync(commandId);
+        var command = await _repository.GetByIdAsync(commandId).ConfigureAwait(false);
         if (command is null)
             throw new CommandException($"Command {commandId} not found", commandId);
 
         command.Execute();
-        await _repository.UpdateAsync(command);
+        await _repository.UpdateAsync(command).ConfigureAwait(false);
         return true;
     }
 
@@ -114,18 +114,18 @@ public class CommandService : ICommandService
     /// </summary>
     public async Task<bool> MarkCommandAsFailedAsync(string commandId)
     {
-        var command = await _repository.GetByIdAsync(commandId);
+        var command = await _repository.GetByIdAsync(commandId).ConfigureAwait(false);
         if (command is null)
             throw new CommandException($"Command {commandId} not found", commandId);
 
         if (!command.CanRetry())
         {
-            await _repository.UpdateAsync(command);
+            await _repository.UpdateAsync(command).ConfigureAwait(false);
             return false;
         }
 
         command.Status = CommandStatus.Pending;
-        await _repository.UpdateAsync(command);
+        await _repository.UpdateAsync(command).ConfigureAwait(false);
         return true;
     }
 
@@ -134,7 +134,7 @@ public class CommandService : ICommandService
     /// </summary>
     public async Task<int> RetryFailedCommandsAsync()
     {
-        var expiredCommands = await _repository.GetExpiredAsync(TimeSpan.FromSeconds(ConfigConstants.COMMAND_EXECUTION_TIMEOUT_SECONDS));
+        var expiredCommands = await _repository.GetExpiredAsync(TimeSpan.FromSeconds(ConfigConstants.COMMAND_EXECUTION_TIMEOUT_SECONDS)).ConfigureAwait(false);
         var retryCount = 0;
 
         foreach (var cmd in expiredCommands)
@@ -154,6 +154,6 @@ public class CommandService : ICommandService
         if (olderThan >= DateTime.UtcNow)
             throw new ArgumentException("Cleanup date must be in the past");
 
-        return await _repository.DeleteOlderThanAsync(olderThan);
+        return await _repository.DeleteOlderThanAsync(olderThan).ConfigureAwait(false);
     }
 }

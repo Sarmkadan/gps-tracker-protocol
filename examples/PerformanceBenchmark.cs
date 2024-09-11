@@ -53,7 +53,7 @@ public class PerformanceBenchmark
 
         for (int i = 0; i < frameCount; i++)
         {
-            await _parserService.ValidateFrameAsync(frame);
+            await _parserService.ValidateFrameAsync(frame).ConfigureAwait(false);
         }
 
         sw.Stop();
@@ -81,7 +81,7 @@ public class PerformanceBenchmark
             IsActive = true
         };
 
-        var registered = await _deviceService.RegisterDeviceAsync(device);
+        var registered = await _deviceService.RegisterDeviceAsync(device).ConfigureAwait(false);
 
         var sw = Stopwatch.StartNew();
         var initialMemory = GC.GetTotalMemory(false);
@@ -101,7 +101,7 @@ public class PerformanceBenchmark
                 Accuracy = 5.0
             };
 
-            await _locationService.StoreLocationAsync(location);
+            await _locationService.StoreLocationAsync(location).ConfigureAwait(false);
         }
 
         sw.Stop();
@@ -133,7 +133,7 @@ public class PerformanceBenchmark
             IsActive = true
         };
 
-        var registered = await _deviceService.RegisterDeviceAsync(device);
+        var registered = await _deviceService.RegisterDeviceAsync(device).ConfigureAwait(false);
 
         // Populate data
         for (int i = 0; i < locationCount; i++)
@@ -149,15 +149,15 @@ public class PerformanceBenchmark
                 Accuracy = 5.0
             };
 
-            await _locationService.StoreLocationAsync(location);
+            await _locationService.StoreLocationAsync(location).ConfigureAwait(false);
         }
 
         var sw = Stopwatch.StartNew();
 
         for (int i = 0; i < queryCount; i++)
         {
-            var latest = await _locationService.GetLatestLocationAsync(registered.Id);
-            var history = await _locationService.GetLocationHistoryAsync(registered.Id, 100);
+            var latest = await _locationService.GetLatestLocationAsync(registered.Id).ConfigureAwait(false);
+            var history = await _locationService.GetLocationHistoryAsync(registered.Id, 100).ConfigureAwait(false);
         }
 
         sw.Stop();
@@ -193,7 +193,7 @@ public class PerformanceBenchmark
                 IsActive = true
             };
 
-            var registered = await _deviceService.RegisterDeviceAsync(device);
+            var registered = await _deviceService.RegisterDeviceAsync(device).ConfigureAwait(false);
             deviceList.Add(registered);
         }
 
@@ -214,7 +214,7 @@ public class PerformanceBenchmark
                     Accuracy = 5.0
                 };
 
-                await _locationService.StoreLocationAsync(location);
+                await _locationService.StoreLocationAsync(location).ConfigureAwait(false);
                 locationCount++;
             }
         }
@@ -254,14 +254,14 @@ public class PerformanceBenchmark
             case "validation":
                 {
                     int count = args.Length > 1 && int.TryParse(args[1], out var c) ? c : 10000;
-                    await benchmark.BenchmarkFrameValidationAsync(count);
+                    await benchmark.BenchmarkFrameValidationAsync(count).ConfigureAwait(false);
                 }
                 break;
 
             case "storage":
                 {
                     int count = args.Length > 1 && int.TryParse(args[1], out var c) ? c : 10000;
-                    await benchmark.BenchmarkLocationStorageAsync(count);
+                    await benchmark.BenchmarkLocationStorageAsync(count).ConfigureAwait(false);
                 }
                 break;
 
@@ -269,7 +269,7 @@ public class PerformanceBenchmark
                 {
                     int locs = args.Length > 1 && int.TryParse(args[1], out var l) ? l : 10000;
                     int queries = args.Length > 2 && int.TryParse(args[2], out var q) ? q : 1000;
-                    await benchmark.BenchmarkLocationQueryAsync(locs, queries);
+                    await benchmark.BenchmarkLocationQueryAsync(locs, queries).ConfigureAwait(false);
                 }
                 break;
 
@@ -277,18 +277,18 @@ public class PerformanceBenchmark
                 {
                     int devices = args.Length > 1 && int.TryParse(args[1], out var d) ? d : 100;
                     int locs = args.Length > 2 && int.TryParse(args[2], out var l) ? l : 100;
-                    await benchmark.RunStressTestAsync(devices, locs);
+                    await benchmark.RunStressTestAsync(devices, locs).ConfigureAwait(false);
                 }
                 break;
 
             case "all":
-                await benchmark.BenchmarkFrameValidationAsync(10000);
+                await benchmark.BenchmarkFrameValidationAsync(10000).ConfigureAwait(false);
                 Console.WriteLine();
-                await benchmark.BenchmarkLocationStorageAsync(10000);
+                await benchmark.BenchmarkLocationStorageAsync(10000).ConfigureAwait(false);
                 Console.WriteLine();
-                await benchmark.BenchmarkLocationQueryAsync(5000, 500);
+                await benchmark.BenchmarkLocationQueryAsync(5000, 500).ConfigureAwait(false);
                 Console.WriteLine();
-                await benchmark.RunStressTestAsync(50, 100);
+                await benchmark.RunStressTestAsync(50, 100).ConfigureAwait(false);
                 break;
 
             default:

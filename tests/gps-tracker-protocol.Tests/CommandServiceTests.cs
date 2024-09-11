@@ -40,7 +40,7 @@ namespace gps_tracker_protocol.Tests
             _deviceRepository.GetByIdAsync(deviceId).Returns(new Device { Id = deviceId, IsActive = true });
 
             // Act
-            var command = await _sut.SendCommandAsync(deviceId, commandType, payload);
+            var command = await _sut.SendCommandAsync(deviceId, commandType, payload).ConfigureAwait(false);
 
             // Assert
             command.Should().NotBeNull();
@@ -49,7 +49,7 @@ namespace gps_tracker_protocol.Tests
             command.Payload.Should().Be(payload);
             command.SentTime.Should().NotBeNull();
             command.IsSent.Should().BeTrue();
-            await _commandRepository.Received(1).AddAsync(command);
+            await _commandRepository.Received(1).AddAsync(command).ConfigureAwait(false);
         }
 
         [Fact]
@@ -63,11 +63,11 @@ namespace gps_tracker_protocol.Tests
             _deviceRepository.GetByIdAsync(deviceId).Returns((Device)null);
 
             // Act
-            var command = await _sut.SendCommandAsync(deviceId, commandType, payload);
+            var command = await _sut.SendCommandAsync(deviceId, commandType, payload).ConfigureAwait(false);
 
             // Assert
             command.Should().BeNull();
-            await _commandRepository.DidNotReceive().AddAsync(Arg.Any<Command>());
+            await _commandRepository.DidNotReceive().AddAsync(Arg.Any<Command>()).ConfigureAwait(false);
         }
 
         [Fact]
@@ -85,7 +85,7 @@ namespace gps_tracker_protocol.Tests
 
 
             // Act
-            var result = await _sut.GetCommandsForDeviceAsync(deviceId);
+            var result = await _sut.GetCommandsForDeviceAsync(deviceId).ConfigureAwait(false);
 
             // Assert
             result.Should().HaveCount(2);
@@ -102,7 +102,7 @@ namespace gps_tracker_protocol.Tests
                               .Returns(new List<Command>());
 
             // Act
-            var result = await _sut.GetCommandsForDeviceAsync(deviceId);
+            var result = await _sut.GetCommandsForDeviceAsync(deviceId).ConfigureAwait(false);
 
             // Assert
             result.Should().BeEmpty();
@@ -117,12 +117,12 @@ namespace gps_tracker_protocol.Tests
             _commandRepository.GetByIdAsync(commandId).Returns(command);
 
             // Act
-            await _sut.AcknowledgeCommandAsync(commandId);
+            await _sut.AcknowledgeCommandAsync(commandId).ConfigureAwait(false);
 
             // Assert
             command.IsAcknowledged.Should().BeTrue();
             command.AcknowledgedTime.Should().NotBeNull();
-            await _commandRepository.Received(1).UpdateAsync(command);
+            await _commandRepository.Received(1).UpdateAsync(command).ConfigureAwait(false);
         }
 
         [Fact]
@@ -133,10 +133,10 @@ namespace gps_tracker_protocol.Tests
             _commandRepository.GetByIdAsync(commandId).Returns((Command)null);
 
             // Act
-            await _sut.AcknowledgeCommandAsync(commandId);
+            await _sut.AcknowledgeCommandAsync(commandId).ConfigureAwait(false);
 
             // Assert
-            await _commandRepository.DidNotReceive().UpdateAsync(Arg.Any<Command>());
+            await _commandRepository.DidNotReceive().UpdateAsync(Arg.Any<Command>()).ConfigureAwait(false);
         }
     }
 }

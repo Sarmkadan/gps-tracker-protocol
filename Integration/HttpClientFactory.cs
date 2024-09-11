@@ -88,13 +88,13 @@ public abstract class ExternalApiClient
         {
             try
             {
-                return await request();
+                return await request().ConfigureAwait(false);
             }
             catch (HttpRequestException ex) when (attempt < _maxRetries - 1)
             {
                 attempt++;
                 _logger.LogWarning(ex, "Request failed, attempt {Attempt}/{MaxRetries}", attempt, _maxRetries);
-                await Task.Delay(_retryDelay);
+                await Task.Delay(_retryDelay).ConfigureAwait(false);
             }
         }
 

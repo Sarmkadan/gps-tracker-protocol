@@ -37,7 +37,7 @@ public class DataExporter
     /// <summary>Exports locations to JSON format</summary>
     public async Task ExportToJsonAsync(string deviceId, string outputPath)
     {
-        var locations = await _locationService.GetLocationHistoryAsync(deviceId, 10000);
+        var locations = await _locationService.GetLocationHistoryAsync(deviceId, 10000).ConfigureAwait(false);
         var locList = locations.ToList();
 
         var json = new StringBuilder();
@@ -64,14 +64,14 @@ public class DataExporter
 
         json.AppendLine("]");
 
-        await File.WriteAllTextAsync(outputPath, json.ToString());
+        await File.WriteAllTextAsync(outputPath, json.ToString()).ConfigureAwait(false);
         _logger.LogInformation("Exported {0} locations to JSON: {1}", locList.Count, outputPath);
     }
 
     /// <summary>Exports locations to CSV format</summary>
     public async Task ExportToCsvAsync(string deviceId, string outputPath)
     {
-        var locations = await _locationService.GetLocationHistoryAsync(deviceId, 10000);
+        var locations = await _locationService.GetLocationHistoryAsync(deviceId, 10000).ConfigureAwait(false);
         var locList = locations.ToList();
 
         var csv = new StringBuilder();
@@ -84,15 +84,15 @@ public class DataExporter
                 $"{loc.SatelliteCount},{loc.Accuracy:F1},{loc.Timestamp:O}");
         }
 
-        await File.WriteAllTextAsync(outputPath, csv.ToString());
+        await File.WriteAllTextAsync(outputPath, csv.ToString()).ConfigureAwait(false);
         _logger.LogInformation("Exported {0} locations to CSV: {1}", locList.Count, outputPath);
     }
 
     /// <summary>Exports locations to GeoJSON format (suitable for mapping libraries)</summary>
     public async Task ExportToGeoJsonAsync(string deviceId, string outputPath)
     {
-        var device = await _deviceService.GetDeviceAsync(deviceId);
-        var locations = await _locationService.GetLocationHistoryAsync(deviceId, 10000);
+        var device = await _deviceService.GetDeviceAsync(deviceId).ConfigureAwait(false);
+        var locations = await _locationService.GetLocationHistoryAsync(deviceId, 10000).ConfigureAwait(false);
         var locList = locations.ToList();
 
         var geoJson = new StringBuilder();
@@ -126,14 +126,14 @@ public class DataExporter
         geoJson.AppendLine("  ]");
         geoJson.AppendLine("}");
 
-        await File.WriteAllTextAsync(outputPath, geoJson.ToString());
+        await File.WriteAllTextAsync(outputPath, geoJson.ToString()).ConfigureAwait(false);
         _logger.LogInformation("Exported {0} locations to GeoJSON: {1}", locList.Count, outputPath);
     }
 
     /// <summary>Exports all devices to JSON</summary>
     public async Task ExportDevicesToJsonAsync(string outputPath)
     {
-        var devices = await _deviceService.GetAllDevicesAsync();
+        var devices = await _deviceService.GetAllDevicesAsync().ConfigureAwait(false);
         var deviceList = devices.ToList();
 
         var json = JsonSerializer.Serialize(deviceList.Select(d => new
@@ -148,7 +148,7 @@ public class DataExporter
             LastUpdateAt = d.LastUpdateAt?.ToString("O")
         }), new JsonSerializerOptions { WriteIndented = true });
 
-        await File.WriteAllTextAsync(outputPath, json);
+        await File.WriteAllTextAsync(outputPath, json).ConfigureAwait(false);
         _logger.LogInformation("Exported {0} devices to JSON: {1}", deviceList.Count, outputPath);
     }
 
@@ -177,16 +177,16 @@ public class DataExporter
             switch (format)
             {
                 case "json":
-                    await exporter.ExportToJsonAsync(deviceId, output);
+                    await exporter.ExportToJsonAsync(deviceId, output).ConfigureAwait(false);
                     break;
                 case "csv":
-                    await exporter.ExportToCsvAsync(deviceId, output);
+                    await exporter.ExportToCsvAsync(deviceId, output).ConfigureAwait(false);
                     break;
                 case "geojson":
-                    await exporter.ExportToGeoJsonAsync(deviceId, output);
+                    await exporter.ExportToGeoJsonAsync(deviceId, output).ConfigureAwait(false);
                     break;
                 case "devices":
-                    await exporter.ExportDevicesToJsonAsync(output);
+                    await exporter.ExportDevicesToJsonAsync(output).ConfigureAwait(false);
                     break;
                 default:
                     Console.WriteLine("Unknown format: {0}", format);
