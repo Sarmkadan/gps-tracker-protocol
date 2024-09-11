@@ -101,8 +101,12 @@ public class ProtocolParserService : IProtocolParserService
             if (data.Length >= 30)
             {
                 location.Timestamp = ExtractTimestamp(data, 5);
-                location.Latitude = ExtractCoordinate(data, 11, true);
-                location.Longitude = ExtractCoordinate(data, 15, false);
+                // data[20] is assumed to be the "Course and Status" byte based on GT06 protocol variations,
+                // specifically containing hemisphere information (Bit 2 for Latitude, Bit 3 for Longitude).
+                // This byte is located between the 1-byte Speed field (data[19]) and the 2-byte Bearing field (data[21-22]).
+                byte statusByte = data[20];
+                location.Latitude = ExtractCoordinate(data, 11, true, statusByte);
+                location.Longitude = ExtractCoordinate(data, 15, false, statusByte);
                 location.Speed = ExtractSpeed(data, 19);
                 location.Bearing = ExtractBearing(data, 21);
                 location.SatelliteCount = data[23];
@@ -388,11 +392,27 @@ public class ProtocolParserService : IProtocolParserService
         return new DateTime(year, month, day, hour, minute, second, DateTimeKind.Utc);
     }
 
-    private double ExtractCoordinate(byte[] data, int offset, bool isLatitude)
+    private double ExtractCoordinate(byte[] data, int offset, bool isLatitude, byte statusByte)
     {
         var raw = (uint)((data[offset] << 24) | (data[offset + 1] << 16) | (data[offset + 2] << 8) | data[offset + 3]);
-        var degrees = raw / 30000000.0;
-        return isLatitude ? degrees : degrees;
+        var degrees = raw / 1800000.0; // Hotfix: Corrected GT06 coordinate conversion factor from 1/500s to decimal degrees.
+
+        if (isLatitude)
+        {
+            // Bit 2: Latitude Hemisphere (0: South, 1: North)
+            bool isNorth = (statusByte & 0b00000100) != 0;
+            if (!isNorth) // If not North, it's South
+                degrees = -degrees;
+        }
+        else // Longitude
+        {
+            // Bit 3: Longitude Hemisphere (0: East, 1: West)
+            bool isWest = (statusByte & 0b00001000) != 0;
+            if (isWest)
+                degrees = -degrees;
+        }
+
+        return degrees;
     }
 
     private double ExtractSpeed(byte[] data, int offset)
