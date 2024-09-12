@@ -40,10 +40,10 @@ public class WeatherApiClient : ExternalApiClient, IWeatherApiClient
             };
 
             var url = OpenMeteoUrl + BuildQueryString(parameters);
-            var response = await _httpClient.GetAsync(url);
+            var response = await _httpClient.GetAsync(url).ConfigureAwait(false);
             response.EnsureSuccessStatusCode();
 
-            var json = await response.Content.ReadAsStringAsync();
+            var json = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
             var weatherResponse = System.Text.Json.JsonSerializer.Deserialize<WeatherResponse>(json);
 
             if (weatherResponse?.Current is null)
