@@ -77,7 +77,12 @@ public class BatchDataImporter
                 if (_successCount % 1000 == 0)
                     _logger.LogInformation("Imported {0} locations...", _successCount);
             }
-            catch (Exception ex)
+            catch (FormatException ex)
+            {
+                _errorCount++;
+                _logger.LogWarning(ex, "Error importing line: {0}", line);
+            }
+            catch (InvalidOperationException ex)
             {
                 _errorCount++;
                 _logger.LogWarning(ex, "Error importing line: {0}", line);
@@ -133,7 +138,17 @@ public class BatchDataImporter
                         if (_successCount % 1000 == 0)
                             _logger.LogInformation("Imported {0} locations...", _successCount);
                     }
-                    catch (Exception ex)
+                    catch (FormatException ex)
+                    {
+                        _errorCount++;
+                        _logger.LogWarning(ex, "Error importing location object");
+                    }
+                    catch (InvalidOperationException ex)
+                    {
+                        _errorCount++;
+                        _logger.LogWarning(ex, "Error importing location object");
+                    }
+                    catch (KeyNotFoundException ex)
                     {
                         _errorCount++;
                         _logger.LogWarning(ex, "Error importing location object");
@@ -141,9 +156,14 @@ public class BatchDataImporter
                 }
             }
         }
-        catch (Exception ex)
+        catch (System.Text.Json.JsonException ex)
         {
             _logger.LogError(ex, "Error parsing JSON file");
+            return;
+        }
+        catch (IOException ex)
+        {
+            _logger.LogError(ex, "IO error reading JSON file");
             return;
         }
 
@@ -189,7 +209,11 @@ public class BatchDataImporter
 
                 _logger.LogInformation("Device registered: {0} ({1})", device.Imei, device.Protocol);
             }
-            catch (Exception ex)
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex, "Error importing device: {0}", line);
+            }
+            catch (InvalidOperationException ex)
             {
                 _logger.LogWarning(ex, "Error importing device: {0}", line);
             }
