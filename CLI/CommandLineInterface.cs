@@ -33,6 +33,7 @@ public class CommandLineInterface : ICommandLineInterface
     private readonly ICsvFormatter _csvFormatter;
     private readonly IGeofenceAlertingService _geofenceAlerting;
     private readonly IRouteReplayService _routeReplay;
+    private readonly IDeviceDiagnosticsService _diagnostics;
 
     public CommandLineInterface(
         ILogger<CommandLineInterface> logger,
@@ -43,7 +44,8 @@ public class CommandLineInterface : ICommandLineInterface
         IJsonFormatter jsonFormatter,
         ICsvFormatter csvFormatter,
         IGeofenceAlertingService geofenceAlerting,
-        IRouteReplayService routeReplay)
+        IRouteReplayService routeReplay,
+        IDeviceDiagnosticsService diagnostics)
     {
         _logger = logger;
         _parserService = parserService;
@@ -54,6 +56,7 @@ public class CommandLineInterface : ICommandLineInterface
         _csvFormatter = csvFormatter;
         _geofenceAlerting = geofenceAlerting;
         _routeReplay = routeReplay;
+        _diagnostics = diagnostics;
     }
 
     public async Task<int> ExecuteAsync(string[] args)
@@ -78,6 +81,7 @@ public class CommandLineInterface : ICommandLineInterface
                 "export" => await ExportCommandAsync(commandArgs),
                 "alerts" => await AlertsCommandAsync(commandArgs),
                 "replay" => await ReplayCommandAsync(commandArgs),
+                "diagnostics" => await DiagnosticsCommandAsync(commandArgs),
                 "help" => HandleHelpCommand(commandArgs),
                 _ => HandleUnknownCommand(command)
             };
@@ -320,7 +324,7 @@ public class CommandLineInterface : ICommandLineInterface
             Console.WriteLine($"  Real duration : {result.OriginalDuration:hh\\:mm\\:ss}");
             Console.WriteLine($"  Replay time   : {result.ReplayDuration:hh\\:mm\\:ss} ({multiplier}x speed)");
             Console.WriteLine();
-            Console.WriteLine($"{\"#\",-5} {\"Lat\",10} {\"Lon\",12} {\"Speed\",8} {\"Replay Time\",-25} {\"Km\",8}");
+            Console.WriteLine($"{"#",-5} {"Lat",10} {"Lon",12} {"Speed",8} {"Replay Time",-25} {"Km",8}");
             foreach (var f in result.Frames)
             {
                 Console.WriteLine($"{f.Index,-5} {f.Location.Latitude,10:F5} {f.Location.Longitude,12:F5} " +
@@ -333,6 +337,55 @@ public class CommandLineInterface : ICommandLineInterface
             Console.Error.WriteLine($"Replay failed: {ex.Message}");
             return 1;
         }
+    }
+
+
+    private async Task<int> DiagnosticsCommandAsync(string[] args)
+    {
+        if (args.Length == 0)
+        {
+            Console.WriteLine("Usage: diagnostics <device-id> [--selftest]");
+            return 1;
+        }
+
+        var deviceId = args[0];
+        var runSelfTest = args.Contains("--selftest");
+
+        if (runSelfTest)
+        {
+            var selfTest = await _diagnostics.RunSelfTestAsync(deviceId).ConfigureAwait(false);
+            if (selfTest is null)
+            {
+                Console.Error.WriteLine($"Device {deviceId} not found.");
+                return 1;
+            }
+            Console.WriteLine($"Self-test for {deviceId}: {(selfTest.AllOk ? "PASS" : "WARN")}");
+            foreach (var w in selfTest.Warnings)
+                Console.WriteLine($"  ⚠ {w}");
+            return selfTest.AllOk ? 0 : 2;
+        }
+
+        var report = await _diagnostics.GetDiagnosticsAsync(deviceId).ConfigureAwait(false);
+        if (report is null)
+        {
+            Console.Error.WriteLine($"Device {deviceId} not found.");
+            return 1;
+        }
+
+        Console.WriteLine($"Diagnostics for {report.DeviceName} ({report.DeviceId})");
+        Console.WriteLine($"  Status          : {report.Status} (online: {report.IsOnline})");
+        Console.WriteLine($"  Last seen       : {report.LastSeen:u} ({report.TimeSinceLastContact:hh\\:mm\\:ss} ago)");
+        Console.WriteLine($"  Packets recv'd  : {report.TotalPacketsReceived}");
+        Console.WriteLine($"  Battery         : {(report.BatteryLevel < 0 ? "unknown" : $"{report.BatteryLevel}%")}");
+        Console.WriteLine($"  Signal          : {report.SignalQuality} ({report.SignalStrength} dBm)");
+        Console.WriteLine($"  Location points : {report.TotalLocationPoints}");
+        Console.WriteLine($"  Total distance  : {report.TotalDistanceKm:F2} km");
+        Console.WriteLine($"  Journeys        : {report.TotalJourneys} total, {report.ActiveJourneys} active");
+
+        if (report.LastLocation is not null)
+            Console.WriteLine($"  Last position   : {report.LastLocation.Latitude:F6}, {report.LastLocation.Longitude:F6}");
+
+        return 0;
     }
 
     private int HandleHelpCommand(string[] args)
@@ -365,6 +418,7 @@ Commands:
   alerts add <device-id> <fence> <enter|exit>  Create an alert rule
   alerts ack <alert-id> [notes]             Acknowledge an alert
   replay <journey-id> [speed-multiplier]    Replay a journey's route
+  diagnostics <device-id> [--selftest]      Show device diagnostics
   help [command]                            Show help information
 
 Examples:
@@ -374,6 +428,7 @@ Examples:
   GpsTrackerProtocol export device-001 csv output.csv
   GpsTrackerProtocol alerts add device-001 zone-hq enter
   GpsTrackerProtocol replay journey-abc 10
+  GpsTrackerProtocol diagnostics device-001 --selftest
 ");
     }
 }

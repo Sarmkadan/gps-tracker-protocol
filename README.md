@@ -48,6 +48,7 @@ A comprehensive .NET library for parsing GPS tracker protocols (GT06, H02, TK103
 - **.NET 10**: Latest C# language features and performance optimizations
 - **Geofence Alerting**: Rule-based alert management with cooldown suppression and acknowledgement workflow
 - **Route Replay**: Replay any completed journey at configurable speed with rebased timestamps
+- **Device Diagnostics**: Comprehensive per-device health reports and fleet-wide health summaries
 
 ### Protocol Details
 
@@ -511,6 +512,30 @@ public class ReplayOptions
 **CLI**
 ```
 replay <journey-id> [speed-multiplier]   Replay route at N× speed (default 1×)
+```
+
+
+### IDeviceDiagnosticsService
+
+Produces comprehensive health snapshots for individual devices and fleet-wide summaries.
+
+```csharp
+public interface IDeviceDiagnosticsService
+{
+    Task<DeviceDiagnosticsReport?> GetDiagnosticsAsync(string deviceId);
+    Task<FleetHealthReport>        GetFleetHealthReportAsync();
+    Task<DeviceSelfTestResult?>    RunSelfTestAsync(string deviceId);
+}
+```
+
+`DeviceDiagnosticsReport` includes connectivity (`IsOnline`, `LastSeen`, `TotalPacketsReceived`),
+hardware telemetry (`BatteryLevel`, `SignalStrength`, `SignalQuality`), and activity metrics
+(`TotalLocationPoints`, `LastLocation`, `TotalDistanceKm`, `TotalJourneys`).
+
+**CLI**
+```
+diagnostics <device-id>              Print full diagnostics report
+diagnostics <device-id> --selftest   Run self-test and show pass/warn status
 ```
 
 ---
