@@ -46,6 +46,7 @@ A comprehensive .NET library for parsing GPS tracker protocols (GT06, H02, TK103
 - **Logging Pipeline**: Structured logging with multiple output levels
 - **Dependency Injection**: Microsoft.Extensions integration for flexible composition
 - **.NET 10**: Latest C# language features and performance optimizations
+- **Geofence Alerting**: Rule-based alert management with cooldown suppression and acknowledgement workflow
 
 ### Protocol Details
 
@@ -454,6 +455,35 @@ public interface IAnalyticsService
     Task<DrivingStatistics> AnalyzeDrivingPatterns(string deviceId);
     Task<AlertsReport> DetectAnomaliesAsync(string deviceId);
 }
+```
+
+### IGeofenceAlertingService
+
+Manages rule-based geofence alerts.  Automatically subscribes to the internal event bus on construction.
+
+```csharp
+public interface IGeofenceAlertingService
+{
+    GeofenceAlertRule CreateAlertRule(
+        string deviceId,
+        string geofenceId,
+        GeofenceAlertType alertType,         // Enter | Exit | DwellTime
+        TimeSpan? cooldown = null,           // Minimum gap between alerts (default 5 min)
+        string description = "");
+
+    void DeleteAlertRule(string ruleId);
+    IReadOnlyList<GeofenceAlertRule> GetRulesForDevice(string deviceId);
+    IReadOnlyList<GeofenceAlert> GetActiveAlerts(string deviceId);
+    IReadOnlyList<GeofenceAlert> GetAlertHistory(string deviceId, int limit = 50);
+    bool AcknowledgeAlert(string alertId, string notes = "");
+}
+```
+
+**CLI**
+```
+alerts list <device-id>                          List active alerts
+alerts add <device-id> <fence-id> <enter|exit>   Create a rule
+alerts ack <alert-id> [notes]                    Acknowledge an alert
 ```
 
 ---

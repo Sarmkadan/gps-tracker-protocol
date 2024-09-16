@@ -78,6 +78,7 @@ public static class DependencyInjection
 
         // Register services
         services.AddSingleton<IGeofenceService, GeofenceService>();
+        services.AddSingleton<IGeofenceAlertingService, GeofenceAlertingService>();
         services.AddSingleton<IAnalyticsService, AnalyticsService>();
 
         // Register background workers

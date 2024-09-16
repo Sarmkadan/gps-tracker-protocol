@@ -31,6 +31,7 @@ public class CommandLineInterface : ICommandLineInterface
     private readonly IJourneyService _journeyService;
     private readonly IJsonFormatter _jsonFormatter;
     private readonly ICsvFormatter _csvFormatter;
+    private readonly IGeofenceAlertingService _geofenceAlerting;
 
     public CommandLineInterface(
         ILogger<CommandLineInterface> logger,
@@ -39,7 +40,8 @@ public class CommandLineInterface : ICommandLineInterface
         ILocationDataService locationService,
         IJourneyService journeyService,
         IJsonFormatter jsonFormatter,
-        ICsvFormatter csvFormatter)
+        ICsvFormatter csvFormatter,
+        IGeofenceAlertingService geofenceAlerting)
     {
         _logger = logger;
         _parserService = parserService;
@@ -48,6 +50,7 @@ public class CommandLineInterface : ICommandLineInterface
         _journeyService = journeyService;
         _jsonFormatter = jsonFormatter;
         _csvFormatter = csvFormatter;
+        _geofenceAlerting = geofenceAlerting;
     }
 
     public async Task<int> ExecuteAsync(string[] args)
@@ -70,6 +73,7 @@ public class CommandLineInterface : ICommandLineInterface
                 "location" => await GetLocationCommandAsync(commandArgs),
                 "journey" => await GetJourneyCommandAsync(commandArgs),
                 "export" => await ExportCommandAsync(commandArgs),
+                "alerts" => await AlertsCommandAsync(commandArgs),
                 "help" => HandleHelpCommand(commandArgs),
                 _ => HandleUnknownCommand(command)
             };
@@ -228,6 +232,62 @@ public class CommandLineInterface : ICommandLineInterface
         return 0;
     }
 
+
+    private async Task<int> AlertsCommandAsync(string[] args)
+    {
+        if (args.Length == 0)
+        {
+            Console.WriteLine("Usage: alerts <sub-command> [options]");
+            Console.WriteLine("Sub-commands: list <device-id> | add <device-id> <geofence-id> <enter|exit> | ack <alert-id>");
+            return 1;
+        }
+
+        var sub = args[0].ToLower();
+
+        switch (sub)
+        {
+            case "list":
+            {
+                if (args.Length < 2) { Console.WriteLine("Usage: alerts list <device-id>"); return 1; }
+                var deviceId = args[1];
+                var active = _geofenceAlerting.GetActiveAlerts(deviceId);
+                if (!active.Any())
+                {
+                    Console.WriteLine($"No active alerts for device {deviceId}");
+                    return 0;
+                }
+                foreach (var a in active)
+                    Console.WriteLine($"  [{a.Id[..8]}] {a.AlertType} geofence={a.GeofenceId} at {a.FiredAt:u}");
+                return 0;
+            }
+
+            case "add":
+            {
+                if (args.Length < 4) { Console.WriteLine("Usage: alerts add <device-id> <geofence-id> <enter|exit>"); return 1; }
+                var deviceId   = args[1];
+                var geofenceId = args[2];
+                var direction  = args[3].ToLower();
+                var alertType  = direction == "exit" ? GeofenceAlertType.Exit : GeofenceAlertType.Enter;
+                var rule = _geofenceAlerting.CreateAlertRule(deviceId, geofenceId, alertType);
+                Console.WriteLine($"Alert rule created: {rule.Id[..8]} ({alertType} on {geofenceId} for {deviceId})");
+                return 0;
+            }
+
+            case "ack":
+            {
+                if (args.Length < 2) { Console.WriteLine("Usage: alerts ack <alert-id>"); return 1; }
+                var notes = args.Length > 2 ? string.Join(" ", args.Skip(2)) : "";
+                var ok = _geofenceAlerting.AcknowledgeAlert(args[1], notes);
+                Console.WriteLine(ok ? $"Alert {args[1]} acknowledged." : $"Alert {args[1]} not found.");
+                return ok ? 0 : 1;
+            }
+
+            default:
+                Console.Error.WriteLine($"Unknown alerts sub-command: {sub}");
+                return 1;
+        }
+    }
+
     private int HandleHelpCommand(string[] args)
     {
         PrintHelp();
@@ -249,18 +309,22 @@ GPS Tracker Protocol - Command Line Interface
 Usage: GpsTrackerProtocol <command> [options]
 
 Commands:
-  parse <protocol> <hex-data>   Parse a raw GPS frame
-  devices                        List all registered devices
-  location <device-id> [count]   Get location history
-  journey <device-id>            Get journey history
-  export <device-id> <format>    Export data (json, csv, geojson)
-  help [command]                 Show help information
+  parse <protocol> <hex-data>              Parse a raw GPS frame
+  devices                                   List all registered devices
+  location <device-id> [count]              Get location history
+  journey <device-id>                       Get journey history
+  export <device-id> <format>               Export data (json, csv, geojson)
+  alerts list <device-id>                   List active geofence alerts
+  alerts add <device-id> <fence> <enter|exit>  Create an alert rule
+  alerts ack <alert-id> [notes]             Acknowledge an alert
+  help [command]                            Show help information
 
 Examples:
   GpsTrackerProtocol parse GT06 78781F120119110B162334
   GpsTrackerProtocol devices
   GpsTrackerProtocol location device-001 50
   GpsTrackerProtocol export device-001 csv output.csv
+  GpsTrackerProtocol alerts add device-001 zone-hq enter
 ");
     }
 }
