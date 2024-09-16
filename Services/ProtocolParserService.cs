@@ -10,14 +10,31 @@ using GpsTrackerProtocol.Domain;
 using GpsTrackerProtocol.Domain.Models;
 
 /// <summary>
-/// Service for parsing raw GPS protocol frames into structured location data.
-/// </summary>
-public interface IProtocolParserService
-{
-    Task<LocationData> ParseFrameAsync(GpsFrame frame);
-    Task<ProtocolType> DetectProtocolAsync(byte[] rawData);
-    Task<bool> ValidateFrameAsync(GpsFrame frame);
-}
+    /// Service for parsing raw GPS protocol frames into structured location data.
+    /// </summary>
+    public interface IProtocolParserService
+    {
+        /// <summary>
+        /// Parses a GPS frame into location data based on protocol type.
+        /// </summary>
+        /// <param name="frame">The GPS frame to parse.</param>
+        /// <returns>The parsed location data.</returns>
+        Task<LocationData> ParseFrameAsync(GpsFrame frame);
+
+        /// <summary>
+        /// Detects protocol type from raw data.
+        /// </summary>
+        /// <param name="rawData">The raw byte data.</param>
+        /// <returns>The detected protocol type.</returns>
+        Task<ProtocolType> DetectProtocolAsync(byte[] rawData);
+
+        /// <summary>
+        /// Validates frame structure and checksum.
+        /// </summary>
+        /// <param name="frame">The GPS frame to validate.</param>
+        /// <returns>True if the frame is valid, false otherwise.</returns>
+        Task<bool> ValidateFrameAsync(GpsFrame frame);
+    }
 
 /// <summary>
 /// Implementation of protocol parser service.
