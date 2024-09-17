@@ -8,8 +8,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyName>GpsTrackerProtocol</AssemblyName>
     <RootNamespace>GpsTrackerProtocol</RootNamespace>
-    <PackageId>Zaiets.gps.tracker.protocol</PackageId>
-    <Version>2.0.0</Version>
+    <PackageId>gps-tracker-protocol</PackageId>
+    <Version>1.0.0</Version>
     <Authors>Vladyslav Zaiets</Authors>
     <Description>Parse GPS tracker protocols (GT06, H02, TK103) in .NET - raw TCP/UDP to structured location data</Description>
     <PackageTags>gps tracker protocol gt06 h02 tk103 location</PackageTags>
@@ -19,6 +19,7 @@
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <DefaultItemExcludes>$(DefaultItemExcludes);tests/**/*;examples/**/*</DefaultItemExcludes>
   </PropertyGroup>
 
   <ItemGroup>
