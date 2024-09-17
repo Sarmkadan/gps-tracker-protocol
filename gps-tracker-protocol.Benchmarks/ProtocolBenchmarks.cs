@@ -9,7 +9,8 @@ namespace GpsTrackerProtocol.Benchmarks;
 
 /// <summary>
 /// Benchmarks for GPS tracker protocol parsing operations.
-/// Measures throughput and memory allocation for critical protocol operations.
+/// Measures throughput of main operations and compares different configurations/approaches.
+/// Includes memory allocation benchmarks for performance analysis.
 /// </summary>
 [MemoryDiagnoser]
 [Orderer(BenchmarkDotNet.Order.SummaryOrderPolicy.FastestToSlowest)]
@@ -21,11 +22,13 @@ public class ProtocolBenchmarks
     private IProtocolParserService _parserService;
     private IDeviceService _deviceService;
     private ILocationDataService _locationService;
+    private IAnalyticsService _analyticsService;
 
     private GpsFrame _gt06Frame;
     private GpsFrame _h02Frame;
     private GpsFrame _tk103Frame;
     private Device _testDevice;
+    private List<GpsFrame> _frameBatch;
 
     [GlobalSetup]
     public void Setup()
@@ -38,6 +41,7 @@ public class ProtocolBenchmarks
         _parserService = _provider.GetRequiredService<IProtocolParserService>();
         _deviceService = _provider.GetRequiredService<IDeviceService>();
         _locationService = _provider.GetRequiredService<ILocationDataService>();
+        _analyticsService = _provider.GetRequiredService<IAnalyticsService>();
 
         // Setup test frames for all protocols
         _gt06Frame = new GpsFrame
@@ -69,6 +73,18 @@ public class ProtocolBenchmarks
             ReceivedAt = DateTime.UtcNow
         };
 
+        // Create a batch of frames for throughput testing
+        _frameBatch = new List<GpsFrame>();
+        for (int i = 0; i < 100; i++)
+        {
+            _frameBatch.Add(new GpsFrame
+            {
+                RawData = _gt06Frame.RawData,
+                Protocol = ProtocolType.GT06,
+                ReceivedAt = DateTime.UtcNow.AddSeconds(-i)
+            });
+        }
+
         // Register test device
         _testDevice = new Device
         {
@@ -89,6 +105,7 @@ public class ProtocolBenchmarks
     /// <summary>
     /// Benchmarks GT06 protocol frame parsing performance.
     /// GT06 is a binary protocol used by many GPS trackers.
+    /// Measures throughput and memory allocation for critical protocol operation.
     /// </summary>
     [BenchmarkCategory("Parsing")]
     [Benchmark(Baseline = true)]
@@ -189,5 +206,80 @@ public class ProtocolBenchmarks
         {
             await _parserService.ParseFrameAsync(_gt06Frame).ConfigureAwait(false);
         }
+    }
+
+    /// <summary>
+    /// Benchmarks batch parsing with List collection.
+    /// Compares performance between different collection approaches.
+    /// </summary>
+    [BenchmarkCategory("Throughput")]
+    [Benchmark]
+    public async Task Batch_Parse_100_Frames_List()
+    {
+        foreach (var frame in _frameBatch)
+        {
+            await _parserService.ParseFrameAsync(frame).ConfigureAwait(false);
+        }
+    }
+
+    /// <summary>
+    /// Benchmarks analytics service performance.
+    /// Measures throughput of generating analytics reports.
+    /// </summary>
+    [BenchmarkCategory("Analytics")]
+    [Benchmark]
+    public async Task Generate_Device_Analytics()
+    {
+        var dateRange = new DateRange
+        {
+            Start = DateTime.UtcNow.AddDays(-7),
+            End = DateTime.UtcNow
+        };
+        await _analyticsService.GetDeviceAnalyticsAsync(_testDevice.Id, dateRange).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Benchmarks analytics service fleet-wide performance.
+    /// Measures throughput of generating fleet analytics.
+    /// </summary>
+    [BenchmarkCategory("Analytics")]
+    [Benchmark]
+    public async Task Generate_Fleet_Analytics()
+    {
+        var dateRange = new DateRange
+        {
+            Start = DateTime.UtcNow.AddDays(-7),
+            End = DateTime.UtcNow
+        };
+        await _analyticsService.GetFleetAnalyticsAsync(dateRange).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Benchmarks device registration performance.
+    /// Measures throughput of device lifecycle operations.
+    /// </summary>
+    [BenchmarkCategory("Device")]
+    [Benchmark]
+    public async Task Register_Device()
+    {
+        var device = new Device
+        {
+            Imei = Guid.NewGuid().ToString(),
+            DeviceName = "Benchmark Device",
+            Protocol = ProtocolType.GT06,
+            IsActive = true
+        };
+        await _deviceService.RegisterDeviceAsync(device).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Benchmarks location history query performance.
+    /// Measures throughput of querying historical location data.
+    /// </summary>
+    [BenchmarkCategory("Query")]
+    [Benchmark]
+    public async Task Get_Location_History()
+    {
+        await _locationService.GetLocationHistoryAsync(_testDevice.Id, limit: 1000).ConfigureAwait(false);
     }
 }
