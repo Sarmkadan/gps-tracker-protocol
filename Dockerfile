@@ -1,32 +1,14 @@
-# =============================================================================
-# Author: Vladyslav Zaiets | https://sarmkadan.com
-# CTO & Software Architect
-# =============================================================================
-
-FROM mcr.microsoft.com/dotnet/sdk:10 AS builder
-
-WORKDIR /build
-
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+WORKDIR /src
+COPY ["GpsTrackerProtocol.csproj", "./"]
+RUN dotnet restore "GpsTrackerProtocol.csproj"
 COPY . .
+RUN dotnet build "GpsTrackerProtocol.csproj" -c Release -o /app/build
 
-RUN dotnet restore
-RUN dotnet build -c Release
-RUN dotnet publish -c Release -o /app
+FROM build AS publish
+RUN dotnet publish "GpsTrackerProtocol.csproj" -c Release -o /app/publish
 
-FROM mcr.microsoft.com/dotnet/runtime:10
-
-RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
-
+FROM mcr.microsoft.com/dotnet/runtime:10.0 AS final
 WORKDIR /app
-
-COPY --from=builder /app .
-
-EXPOSE 5000 5001 8080
-
-ENV ASPNETCORE_ENVIRONMENT=Production
-ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1
-
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8080/health || exit 1
-
-ENTRYPOINT ["./GpsTrackerProtocol"]
+COPY --from=publish /app/publish .
+ENTRYPOINT ["dotnet", "GpsTrackerProtocol.dll"]
