@@ -65,3 +65,5 @@ logs/
 *.tmp
 *.temp
 *.bak
+BenchmarkDotNet.Artifacts/
+.aider*
