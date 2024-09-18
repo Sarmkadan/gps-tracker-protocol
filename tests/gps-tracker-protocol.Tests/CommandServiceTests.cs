@@ -81,7 +81,7 @@ namespace gps_tracker_protocol.Tests
                 new Command { Id = "cmd2", DeviceId = deviceId, CommandType = "TYPE2" }
             };
             _commandRepository.FindManyAsync(Arg.Any<Func<Command, bool>>())
-                              .Returns(ci => Task.FromResult(commands.FindAll(c => ci.Arg<Func<Command, bool>>().Invoke(c))));
+                              .Returns(ci => commands.FindAll(c => ci.Arg<Func<Command, bool>>().Invoke(c)));
 
 
             // Act

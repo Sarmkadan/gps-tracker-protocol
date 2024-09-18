@@ -96,13 +96,73 @@ public interface IDeviceService
 /// </summary>
 public class DeviceService : IDeviceService
 {
-    private readonly IDeviceRepository _repository;
-    private readonly ILocationDataRepository _locationRepository;
+    private readonly IDeviceRepository _repository = null!;
+    private readonly ILocationDataRepository _locationRepository = null!;
+    private readonly IRepository<Device>? _legacyRepository;
 
     public DeviceService(IUnitOfWork unitOfWork)
     {
         _repository = unitOfWork.Devices;
         _locationRepository = unitOfWork.LocationData;
+    }
+
+    /// <summary>
+    /// Constructs the service directly from a generic device repository.
+    /// </summary>
+    public DeviceService(IRepository<Device> repository)
+    {
+        _legacyRepository = repository;
+    }
+
+    /// <summary>
+    /// Registers a device by ID using the generic repository, returning the existing
+    /// device if one is already registered under that ID.
+    /// </summary>
+    public async Task<Device> RegisterDeviceAsync(string deviceId)
+    {
+        if (_legacyRepository is null)
+            throw new InvalidOperationException("Service was not constructed with a generic repository.");
+
+        var existing = await _legacyRepository.GetByIdAsync(deviceId).ConfigureAwait(false);
+        if (existing is not null)
+            return existing;
+
+        var device = new Device
+        {
+            Id = deviceId,
+            IsActive = true,
+            RegistrationDate = DateTime.UtcNow
+        };
+
+        await _legacyRepository.AddAsync(device).ConfigureAwait(false);
+        return device;
+    }
+
+    /// <summary>
+    /// Gets a device by its ID using the generic repository.
+    /// </summary>
+    public async Task<Device?> GetDeviceByIdAsync(string deviceId)
+    {
+        if (_legacyRepository is null)
+            throw new InvalidOperationException("Service was not constructed with a generic repository.");
+
+        return await _legacyRepository.GetByIdAsync(deviceId).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Updates the active status of a device using the generic repository.
+    /// </summary>
+    public async Task UpdateDeviceStatusAsync(string deviceId, bool isActive)
+    {
+        if (_legacyRepository is null)
+            throw new InvalidOperationException("Service was not constructed with a generic repository.");
+
+        var device = await _legacyRepository.GetByIdAsync(deviceId).ConfigureAwait(false);
+        if (device is null)
+            return;
+
+        device.IsActive = isActive;
+        await _legacyRepository.UpdateAsync(device).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -154,6 +214,9 @@ public class DeviceService : IDeviceService
     /// </summary>
     public async Task<IEnumerable<Device>> GetAllDevicesAsync()
     {
+        if (_legacyRepository is not null)
+            return await _legacyRepository.GetAllAsync().ConfigureAwait(false);
+
         return await _repository.GetAllAsync().ConfigureAwait(false);
     }
 

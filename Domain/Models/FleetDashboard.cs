@@ -6,6 +6,8 @@
 
 namespace GpsTrackerProtocol.Domain.Models;
 
+using System.Diagnostics.CodeAnalysis;
+
 /// <summary>
 /// Fuel types supported for fleet vehicle classification and consumption modelling.
 /// </summary>
@@ -99,6 +101,40 @@ public record FleetVehicle
 /// </summary>
 public record FuelRecord
 {
+    /// <summary>Parameterless constructor used together with object-initializer syntax.</summary>
+    public FuelRecord()
+    {
+    }
+
+    /// <summary>
+    /// Convenience constructor for creating a fuel record from its core fields.
+    /// </summary>
+    [SetsRequiredMembers]
+    public FuelRecord(
+        string vehicleId,
+        string deviceId,
+        FuelEventType eventType,
+        double fuelAmountLiters,
+        DateTime timestamp,
+        double OdometerKm = 0,
+        double? costPerLiter = null,
+        string? journeyId = null,
+        double? latitude = null,
+        double? longitude = null)
+    {
+        Id = Guid.NewGuid().ToString();
+        VehicleId = vehicleId;
+        DeviceId = deviceId;
+        EventType = eventType;
+        FuelAmountLiters = fuelAmountLiters;
+        Timestamp = timestamp;
+        this.OdometerKm = OdometerKm;
+        CostPerLiter = costPerLiter;
+        JourneyId = journeyId;
+        Latitude = latitude;
+        Longitude = longitude;
+    }
+
     /// <summary>Unique identifier for this record.</summary>
     public required string Id { get; init; }
 

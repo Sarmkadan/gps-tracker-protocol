@@ -18,7 +18,7 @@
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <DefaultItemExcludes>$(DefaultItemExcludes);tests/**/*;examples/**/*</DefaultItemExcludes>
+    <DefaultItemExcludes>$(DefaultItemExcludes);tests/**/*;examples/**/*;gps-tracker-protocol.Benchmarks/**/*</DefaultItemExcludes>
   </PropertyGroup>
 
   <ItemGroup>

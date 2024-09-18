@@ -7,6 +7,7 @@
 namespace GpsTrackerProtocol.Services;
 
 using Microsoft.Extensions.Logging;
+using GpsTrackerProtocol.Data;
 using GpsTrackerProtocol.Domain.Models;
 using GpsTrackerProtocol.Utilities;
 
@@ -23,10 +24,12 @@ public interface IAnalyticsService
 
 public class AnalyticsService : IAnalyticsService
 {
-    private readonly ILocationDataService _locationService;
-    private readonly IJourneyService _journeyService;
-    private readonly IDeviceService _deviceService;
-    private readonly ILogger<AnalyticsService> _logger;
+    private readonly ILocationDataService _locationService = null!;
+    private readonly IJourneyService _journeyService = null!;
+    private readonly IDeviceService _deviceService = null!;
+    private readonly ILogger<AnalyticsService> _logger = null!;
+    private readonly IRepository<Journey>? _legacyJourneyRepository;
+    private readonly IRepository<LocationData>? _legacyLocationDataRepository;
 
     public AnalyticsService(
         ILocationDataService locationService,
@@ -38,6 +41,59 @@ public class AnalyticsService : IAnalyticsService
         _journeyService = journeyService;
         _deviceService = deviceService;
         _logger = logger;
+    }
+
+    /// <summary>
+    /// Constructs the service directly from generic journey and location data repositories.
+    /// </summary>
+    public AnalyticsService(IRepository<Journey> journeyRepository, IRepository<LocationData> locationDataRepository)
+    {
+        _legacyJourneyRepository = journeyRepository;
+        _legacyLocationDataRepository = locationDataRepository;
+    }
+
+    /// <summary>
+    /// Gets the total number of journeys using the generic journey repository.
+    /// </summary>
+    public async Task<int> GetTotalJourneysAsync()
+    {
+        if (_legacyJourneyRepository is null)
+            throw new InvalidOperationException("Service was not constructed with a generic repository.");
+
+        var journeys = await _legacyJourneyRepository.GetAllAsync().ConfigureAwait(false);
+        return journeys.Count();
+    }
+
+    /// <summary>
+    /// Gets the average journey duration using the generic journey repository.
+    /// </summary>
+    public async Task<TimeSpan> GetAverageJourneyDurationAsync()
+    {
+        if (_legacyJourneyRepository is null)
+            throw new InvalidOperationException("Service was not constructed with a generic repository.");
+
+        var journeys = (await _legacyJourneyRepository.GetAllAsync().ConfigureAwait(false)).ToList();
+        if (journeys.Count == 0)
+            return TimeSpan.Zero;
+
+        var totalTicks = journeys.Sum(j => (j.EndTime ?? DateTime.UtcNow).Subtract(j.StartTime).Ticks);
+        return TimeSpan.FromTicks(totalTicks / journeys.Count);
+    }
+
+    /// <summary>
+    /// Gets the device ID with the most journeys using the generic journey repository.
+    /// </summary>
+    public async Task<string?> GetMostActiveDeviceAsync()
+    {
+        if (_legacyJourneyRepository is null)
+            throw new InvalidOperationException("Service was not constructed with a generic repository.");
+
+        var journeys = await _legacyJourneyRepository.GetAllAsync().ConfigureAwait(false);
+        return journeys
+            .GroupBy(j => j.DeviceId)
+            .OrderByDescending(g => g.Count())
+            .Select(g => g.Key)
+            .FirstOrDefault();
     }
 
     public async Task<DeviceAnalytics> GetDeviceAnalyticsAsync(string deviceId)

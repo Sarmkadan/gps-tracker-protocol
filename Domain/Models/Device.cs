@@ -26,6 +26,9 @@ public class Device
     /// <summary>Total number of packets/heartbeats received from the device.</summary>
     public int ConnectionCount { get; set; } = 0;
 
+    /// <summary>UTC timestamp when this device was registered in the system.</summary>
+    public DateTime RegistrationDate { get; set; } = DateTime.UtcNow;
+
     /// <summary>
     /// Validates device configuration.
     /// </summary>

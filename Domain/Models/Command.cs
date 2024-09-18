@@ -20,6 +20,24 @@ public class Command
     public CommandStatus Status { get; set; } = CommandStatus.Pending;
     public int Priority { get; set; } = 0;
     public int RetryCount { get; set; } = 0;
+
+    /// <summary>Free-form command type label, distinct from the strongly-typed <see cref="Type"/> enum.</summary>
+    public string CommandType { get; set; } = string.Empty;
+
+    /// <summary>Raw payload sent to the device for this command.</summary>
+    public string Payload { get; set; } = string.Empty;
+
+    /// <summary>UTC timestamp when the command was transmitted to the device.</summary>
+    public DateTime? SentTime { get; set; }
+
+    /// <summary>Whether the command has been transmitted to the device.</summary>
+    public bool IsSent { get; set; }
+
+    /// <summary>Whether the device has acknowledged receipt of the command.</summary>
+    public bool IsAcknowledged { get; set; }
+
+    /// <summary>UTC timestamp when the device acknowledged the command.</summary>
+    public DateTime? AcknowledgedTime { get; set; }
     public int MaxRetries { get; set; } = 3;
 
     /// <summary>
@@ -32,13 +50,13 @@ public class Command
 
         return Type switch
         {
-            CommandType.SetGpsInterval => Parameters.ContainsKey("interval"),
-            CommandType.SetReportingServer => Parameters.ContainsKey("server_ip") && Parameters.ContainsKey("port"),
-            CommandType.RequestLocation => true,
-            CommandType.PowerOff => true,
-            CommandType.SetGeofence => Parameters.ContainsKey("latitude") && Parameters.ContainsKey("longitude") && Parameters.ContainsKey("radius"),
-            CommandType.ClearGeofence => true,
-            CommandType.ResetDevice => true,
+            GpsTrackerProtocol.Domain.CommandType.SetGpsInterval => Parameters.ContainsKey("interval"),
+            GpsTrackerProtocol.Domain.CommandType.SetReportingServer => Parameters.ContainsKey("server_ip") && Parameters.ContainsKey("port"),
+            GpsTrackerProtocol.Domain.CommandType.RequestLocation => true,
+            GpsTrackerProtocol.Domain.CommandType.PowerOff => true,
+            GpsTrackerProtocol.Domain.CommandType.SetGeofence => Parameters.ContainsKey("latitude") && Parameters.ContainsKey("longitude") && Parameters.ContainsKey("radius"),
+            GpsTrackerProtocol.Domain.CommandType.ClearGeofence => true,
+            GpsTrackerProtocol.Domain.CommandType.ResetDevice => true,
             _ => false
         };
     }
@@ -73,15 +91,15 @@ public class Command
     {
         return Type switch
         {
-            CommandType.SetGpsInterval =>
+            GpsTrackerProtocol.Domain.CommandType.SetGpsInterval =>
                 $"*HQ,{DeviceId},GPRS,{Parameters["interval"]}#",
-            CommandType.SetReportingServer =>
+            GpsTrackerProtocol.Domain.CommandType.SetReportingServer =>
                 $"*HQ,{DeviceId},SERVER,{Parameters["server_ip"]},{Parameters["port"]}#",
-            CommandType.RequestLocation =>
+            GpsTrackerProtocol.Domain.CommandType.RequestLocation =>
                 $"*HQ,{DeviceId},GPS#",
-            CommandType.PowerOff =>
+            GpsTrackerProtocol.Domain.CommandType.PowerOff =>
                 $"*HQ,{DeviceId},POWEROFF#",
-            CommandType.ResetDevice =>
+            GpsTrackerProtocol.Domain.CommandType.ResetDevice =>
                 $"*HQ,{DeviceId},RESET#",
             _ => string.Empty
         };
