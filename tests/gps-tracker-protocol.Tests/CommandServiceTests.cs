@@ -16,12 +16,18 @@ using System;
 
 namespace gps_tracker_protocol.Tests
 {
+    /// <summary>
+    /// Tests for the CommandService class.
+    /// </summary>
     public class CommandServiceTests
     {
         private readonly IRepository<Command> _commandRepository;
         private readonly IRepository<Device> _deviceRepository;
         private readonly CommandService _sut;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CommandServiceTests"/> class.
+        /// </summary>
         public CommandServiceTests()
         {
             _commandRepository = Substitute.For<IRepository<Command>>();
@@ -32,7 +38,12 @@ namespace gps_tracker_protocol.Tests
         [Fact]
         public async Task SendCommandAsync_ShouldAddCommandAndMarkAsSent()
         {
-            // Arrange
+            /// <summary>
+            /// Tests that SendCommandAsync adds a command and marks it as sent.
+            /// </summary>
+            /// <param name="deviceId">The ID of the device to send the command to.</param>
+            /// <param name="commandType">The type of the command.</param>
+            /// <param name="payload">The payload of the command.</param>
             var deviceId = "device1";
             var commandType = "TEST_COMMAND";
             var payload = "test_payload";
@@ -55,7 +66,12 @@ namespace gps_tracker_protocol.Tests
         [Fact]
         public async Task SendCommandAsync_ShouldReturnNull_WhenDeviceNotFound()
         {
-            // Arrange
+            /// <summary>
+            /// Tests that SendCommandAsync returns null when the device is not found.
+            /// </summary>
+            /// <param name="deviceId">The ID of the device to send the command to.</param>
+            /// <param name="commandType">The type of the command.</param>
+            /// <param name="payload">The payload of the command.</param>
             var deviceId = "nonexistentDevice";
             var commandType = "TEST_COMMAND";
             var payload = "test_payload";
@@ -73,7 +89,10 @@ namespace gps_tracker_protocol.Tests
         [Fact]
         public async Task GetCommandsForDeviceAsync_ShouldReturnCommands()
         {
-            // Arrange
+            /// <summary>
+            /// Tests that GetCommandsForDeviceAsync returns the commands for the device.
+            /// </summary>
+            /// <param name="deviceId">The ID of the device to get the commands for.</param>
             var deviceId = "device1";
             var commands = new List<Command>
             {
@@ -96,7 +115,10 @@ namespace gps_tracker_protocol.Tests
         [Fact]
         public async Task GetCommandsForDeviceAsync_ShouldReturnEmptyList_WhenNoCommandsForDevice()
         {
-            // Arrange
+            /// <summary>
+            /// Tests that GetCommandsForDeviceAsync returns an empty list when there are no commands for the device.
+            /// </summary>
+            /// <param name="deviceId">The ID of the device to get the commands for.</param>
             var deviceId = "device1";
             _commandRepository.FindManyAsync(Arg.Any<Func<Command, bool>>())
                               .Returns(new List<Command>());
@@ -111,7 +133,10 @@ namespace gps_tracker_protocol.Tests
         [Fact]
         public async Task AcknowledgeCommandAsync_ShouldMarkCommandAsAcknowledged()
         {
-            // Arrange
+            /// <summary>
+            /// Tests that AcknowledgeCommandAsync marks the command as acknowledged.
+            /// </summary>
+            /// <param name="commandId">The ID of the command to acknowledge.</param>
             var commandId = "cmd1";
             var command = new Command { Id = commandId, IsSent = true, IsAcknowledged = false };
             _commandRepository.GetByIdAsync(commandId).Returns(command);
@@ -128,7 +153,10 @@ namespace gps_tracker_protocol.Tests
         [Fact]
         public async Task AcknowledgeCommandAsync_ShouldDoNothing_WhenCommandNotFound()
         {
-            // Arrange
+            /// <summary>
+            /// Tests that AcknowledgeCommandAsync does nothing when the command is not found.
+            /// </summary>
+            /// <param name="commandId">The ID of the command to acknowledge.</param>
             var commandId = "nonexistentCmd";
             _commandRepository.GetByIdAsync(commandId).Returns((Command)null);
 
