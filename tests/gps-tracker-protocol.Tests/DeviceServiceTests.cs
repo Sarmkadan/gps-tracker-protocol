@@ -16,11 +16,17 @@ using System;
 
 namespace gps_tracker_protocol.Tests
 {
+    /// <summary>
+    /// Tests for the DeviceService class.
+    /// </summary>
     public class DeviceServiceTests
     {
         private readonly IRepository<Device> _deviceRepository;
         private readonly DeviceService _sut;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DeviceServiceTests"/> class.
+        /// </summary>
         public DeviceServiceTests()
         {
             _deviceRepository = Substitute.For<IRepository<Device>>();
@@ -30,6 +36,11 @@ namespace gps_tracker_protocol.Tests
         [Fact]
         public async Task RegisterDeviceAsync_ShouldAddDevice()
         {
+            /// <summary>
+            /// Tests that the RegisterDeviceAsync method adds a new device to the repository.
+            /// </summary>
+            /// <param name="deviceId">The ID of the device to register.</param>
+            /// <returns>A task that represents the asynchronous operation.</returns>
             // Arrange
             var deviceId = "newDevice";
             _deviceRepository.GetByIdAsync(deviceId).Returns((Device)null);
@@ -48,6 +59,11 @@ namespace gps_tracker_protocol.Tests
         [Fact]
         public async Task RegisterDeviceAsync_ShouldReturnExistingDevice_IfAlreadyRegistered()
         {
+            /// <summary>
+            /// Tests that the RegisterDeviceAsync method returns the existing device if it is already registered.
+            /// </summary>
+            /// <param name="deviceId">The ID of the device to register.</param>
+            /// <returns>A task that represents the asynchronous operation.</returns>
             // Arrange
             var deviceId = "existingDevice";
             var existingDevice = new Device { Id = deviceId, IsActive = true };
@@ -64,6 +80,11 @@ namespace gps_tracker_protocol.Tests
         [Fact]
         public async Task GetDeviceByIdAsync_ShouldReturnDevice()
         {
+            /// <summary>
+            /// Tests that the GetDeviceByIdAsync method returns the device with the specified ID.
+            /// </summary>
+            /// <param name="deviceId">The ID of the device to retrieve.</param>
+            /// <returns>A task that represents the asynchronous operation.</returns>
             // Arrange
             var deviceId = "device1";
             var expectedDevice = new Device { Id = deviceId, IsActive = true };
@@ -79,6 +100,11 @@ namespace gps_tracker_protocol.Tests
         [Fact]
         public async Task GetDeviceByIdAsync_ShouldReturnNull_WhenDeviceNotFound()
         {
+            /// <summary>
+            /// Tests that the GetDeviceByIdAsync method returns null when the device is not found.
+            /// </summary>
+            /// <param name="deviceId">The ID of the device to retrieve.</param>
+            /// <returns>A task that represents the asynchronous operation.</returns>
             // Arrange
             var deviceId = "nonexistentDevice";
             _deviceRepository.GetByIdAsync(deviceId).Returns((Device)null);
@@ -93,6 +119,12 @@ namespace gps_tracker_protocol.Tests
         [Fact]
         public async Task UpdateDeviceStatusAsync_ShouldUpdateDevice()
         {
+            /// <summary>
+            /// Tests that the UpdateDeviceStatusAsync method updates the device status.
+            /// </summary>
+            /// <param name="deviceId">The ID of the device to update.</param>
+            /// <param name="isActive">The new status of the device.</param>
+            /// <returns>A task that represents the asynchronous operation.</returns>
             // Arrange
             var deviceId = "device1";
             var device = new Device { Id = deviceId, IsActive = true };
@@ -109,6 +141,12 @@ namespace gps_tracker_protocol.Tests
         [Fact]
         public async Task UpdateDeviceStatusAsync_ShouldDoNothing_WhenDeviceNotFound()
         {
+            /// <summary>
+            /// Tests that the UpdateDeviceStatusAsync method does nothing when the device is not found.
+            /// </summary>
+            /// <param name="deviceId">The ID of the device to update.</param>
+            /// <param name="isActive">The new status of the device.</param>
+            /// <returns>A task that represents the asynchronous operation.</returns>
             // Arrange
             var deviceId = "nonexistentDevice";
             _deviceRepository.GetByIdAsync(deviceId).Returns((Device)null);
@@ -123,6 +161,10 @@ namespace gps_tracker_protocol.Tests
         [Fact]
         public async Task GetAllDevicesAsync_ShouldReturnAllDevices()
         {
+            /// <summary>
+            /// Tests that the GetAllDevicesAsync method returns all devices.
+            /// </summary>
+            /// <returns>A task that represents the asynchronous operation.</returns>
             // Arrange
             var devices = new List<Device>
             {
