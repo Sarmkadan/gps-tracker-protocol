@@ -15,8 +15,20 @@ using GpsTrackerProtocol.Services;
 
 namespace GpsTrackerProtocol.Tests;
 
+/// <summary>
+/// Tests for the DeviceDiagnosticsService class.
+/// </summary>
 public class DeviceDiagnosticsServiceTests
 {
+    /// <summary>
+    /// Builds a DeviceDiagnosticsService instance with a Device instance.
+    /// </summary>
+    /// <param name="battery">The battery level of the device.</param>
+    /// <param name="signal">The signal strength of the device.</param>
+    /// <param name="status">The status of the device.</param>
+    /// <param name="locationCount">The number of location points for the device.</param>
+    /// <param name="journeyCount">The number of journeys for the device.</param>
+    /// <returns>A tuple containing the DeviceDiagnosticsService instance and the Device instance.</returns>
     private static (DeviceDiagnosticsService Sut, Device Device) BuildSut(
         int battery       = 80,
         int signal        = -65,
@@ -73,6 +85,9 @@ public class DeviceDiagnosticsServiceTests
         return (sut, device);
     }
 
+    /// <summary>
+    /// Tests that GetDiagnosticsAsync returns the correct connectivity information.
+    /// </summary>
     [Fact]
     public async Task GetDiagnosticsAsync_ShouldReturnCorrectConnectivityInfo()
     {
@@ -86,6 +101,9 @@ public class DeviceDiagnosticsServiceTests
         report.SignalQuality.Should().Be("Excellent");
     }
 
+    /// <summary>
+    /// Tests that GetDiagnosticsAsync returns null when the device is not found.
+    /// </summary>
     [Fact]
     public async Task GetDiagnosticsAsync_ShouldReturnNull_WhenDeviceNotFound()
     {
@@ -103,6 +121,9 @@ public class DeviceDiagnosticsServiceTests
         result.Should().BeNull();
     }
 
+    /// <summary>
+    /// Tests that RunSelfTestAsync passes for a healthy device.
+    /// </summary>
     [Fact]
     public async Task RunSelfTestAsync_ShouldPassForHealthyDevice()
     {
@@ -118,6 +139,9 @@ public class DeviceDiagnosticsServiceTests
         result.AllOk.Should().BeTrue();
     }
 
+    /// <summary>
+    /// Tests that RunSelfTestAsync warns about a low battery.
+    /// </summary>
     [Fact]
     public async Task RunSelfTestAsync_ShouldWarnAboutLowBattery()
     {
@@ -130,6 +154,9 @@ public class DeviceDiagnosticsServiceTests
         result.Warnings.Should().Contain(w => w.Contains("Battery low"));
     }
 
+    /// <summary>
+    /// Tests that RunSelfTestAsync warns about a weak signal.
+    /// </summary>
     [Fact]
     public async Task RunSelfTestAsync_ShouldWarnAboutWeakSignal()
     {
@@ -142,6 +169,9 @@ public class DeviceDiagnosticsServiceTests
         result.Warnings.Should().Contain(w => w.Contains("Weak signal"));
     }
 
+    /// <summary>
+    /// Tests that GetDiagnosticsAsync includes the correct location count.
+    /// </summary>
     [Fact]
     public async Task GetDiagnosticsAsync_ShouldIncludeCorrectLocationCount()
     {
@@ -152,6 +182,9 @@ public class DeviceDiagnosticsServiceTests
         report!.TotalLocationPoints.Should().Be(7);
     }
 
+    /// <summary>
+    /// Tests that GetDiagnosticsAsync classifies the signal correctly.
+    /// </summary>
     [Fact]
     public async Task GetDiagnosticsAsync_ShouldClassifySignalCorrectly()
     {
