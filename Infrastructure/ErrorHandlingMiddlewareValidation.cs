@@ -3,21 +3,19 @@
 namespace GpsTrackerProtocol.Infrastructure;
 
 /// <summary>
-/// Validation helpers for error handling middleware components.
+/// Provides validation extension methods for <see cref="ErrorResponse"/> objects used in error handling middleware.
 /// </summary>
 public static class ErrorHandlingMiddlewareValidation
 {
     /// <summary>
-    /// Validates an ErrorResponse object and returns a list of human-readable validation problems.
+    /// Validates an <see cref="ErrorResponse"/> object and returns a list of human-readable validation problems.
     /// </summary>
-    /// <param name="value">The ErrorResponse to validate</param>
-    /// <returns>List of validation problems; empty if valid</returns>
-    public static IReadOnlyList<string> Validate(this ErrorResponse value)
+    /// <param name="value">The <see cref="ErrorResponse"/> to validate.</param>
+    /// <returns>List of validation problems; empty if valid.</returns>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="value"/> is <see langword="null"/>.</exception>
+    public static IReadOnlyList<string> Validate(this ErrorResponse? value)
     {
-        if (value == null)
-        {
-            return new[] { "ErrorResponse cannot be null" };
-        }
+        ArgumentNullException.ThrowIfNull(value);
 
         var problems = new List<string>();
 
@@ -40,8 +38,7 @@ public static class ErrorHandlingMiddlewareValidation
         {
             problems.Add("Timestamp must be a valid DateTime, cannot be default");
         }
-
-        if (value.Timestamp.Kind != DateTimeKind.Utc)
+        else if (value.Timestamp.Kind != DateTimeKind.Utc)
         {
             problems.Add("Timestamp must be in UTC kind");
         }
@@ -50,24 +47,21 @@ public static class ErrorHandlingMiddlewareValidation
     }
 
     /// <summary>
-    /// Checks if an ErrorResponse object is valid.
+    /// Checks if an <see cref="ErrorResponse"/> object is valid.
     /// </summary>
-    /// <param name="value">The ErrorResponse to check</param>
-    /// <returns>True if valid; false otherwise</returns>
-    public static bool IsValid(this ErrorResponse value)
-    {
-        return value != null && Validate(value).Count == 0;
-    }
+    /// <param name="value">The <see cref="ErrorResponse"/> to check.</param>
+    /// <returns><see langword="true"/> if valid; otherwise, <see langword="false"/>.</returns>
+    public static bool IsValid(this ErrorResponse? value) => value is not null && Validate(value).Count == 0;
 
     /// <summary>
-    /// Ensures that an ErrorResponse object is valid, throwing ArgumentException if not.
+    /// Ensures that an <see cref="ErrorResponse"/> object is valid, throwing <see cref="ArgumentException"/> if not.
     /// </summary>
-    /// <param name="value">The ErrorResponse to validate</param>
-    /// <exception cref="ArgumentException">Thrown if validation fails</exception>
-    public static void EnsureValid(this ErrorResponse value)
+    /// <param name="value">The <see cref="ErrorResponse"/> to validate.</param>
+    /// <exception cref="ArgumentException">Thrown if validation fails.</exception>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="value"/> is <see langword="null"/>.</exception>
+    public static void EnsureValid(this ErrorResponse? value)
     {
         var problems = Validate(value);
-
         if (problems.Count > 0)
         {
             throw new ArgumentException(
