@@ -14,15 +14,29 @@ using Xunit;
 
 namespace GpsTrackerProtocol.Tests;
 
+/// <summary>
+/// Unit tests for <see cref="ProtocolParserService"/> which provides protocol detection, validation, and frame parsing
+/// functionality for various GPS tracker protocols (GT06, TK103, H02).
+/// </summary>
+
 public class ProtocolParserServiceTests
 {
+	/// <summary>
+	/// System under test - the ProtocolParserService instance used for all test cases.
+	/// </summary>
     private readonly ProtocolParserService _sut;
 
+	/// <summary>
+	/// Initializes a new instance of the <see cref="ProtocolParserServiceTests"/> class.
+	/// </summary>
     public ProtocolParserServiceTests()
     {
         _sut = new ProtocolParserService();
     }
 
+	/// <summary>
+	/// Tests that <see cref="ProtocolParserService.DetectProtocolAsync"/> correctly identifies GT06 protocol when raw data starts with GT06 marker.
+	/// </summary>
     [Fact]
     public async Task DetectProtocolAsync_ShouldReturnGT06_WhenRawDataStartsWithGT06Marker()
     {
@@ -36,6 +50,9 @@ public class ProtocolParserServiceTests
         result.Should().Be(ProtocolType.GT06);
     }
 
+	/// <summary>
+	/// Tests that <see cref="ProtocolParserService.DetectProtocolAsync"/> correctly identifies TK103 protocol when raw data starts with TK103 marker.
+	/// </summary>
     [Fact]
     public async Task DetectProtocolAsync_ShouldReturnTK103_WhenRawDataStartsWithTK103Marker()
     {
@@ -49,6 +66,9 @@ public class ProtocolParserServiceTests
         result.Should().Be(ProtocolType.TK103);
     }
 
+	/// <summary>
+	/// Tests that <see cref="ProtocolParserService.DetectProtocolAsync"/> correctly identifies H02 protocol when raw data contains GPRMC NMEA sentence.
+	/// </summary>
     [Fact]
     public async Task DetectProtocolAsync_ShouldReturnH02_WhenRawDataStartsWithH02Marker()
     {
@@ -62,6 +82,9 @@ public class ProtocolParserServiceTests
         result.Should().Be(ProtocolType.H02);
     }
 
+	/// <summary>
+	/// Tests that <see cref="ProtocolParserService.DetectProtocolAsync"/> returns Unknown protocol when raw data does not match any known protocol markers.
+	/// </summary>
     [Fact]
     public async Task DetectProtocolAsync_ShouldReturnUnknown_WhenRawDataDoesNotMatchAnyKnownProtocol()
     {
@@ -75,6 +98,9 @@ public class ProtocolParserServiceTests
         result.Should().Be(ProtocolType.Unknown);
     }
 
+	/// <summary>
+	/// Tests that <see cref="ProtocolParserService.DetectProtocolAsync"/> throws ArgumentException when provided with empty raw data array.
+	/// </summary>
     [Fact]
     public async Task DetectProtocolAsync_ShouldThrowArgumentException_WhenRawDataIsEmpty()
     {
@@ -89,6 +115,9 @@ public class ProtocolParserServiceTests
             .WithMessage("Raw data is empty");
     }
 
+	/// <summary>
+	/// Tests that <see cref="ProtocolParserService.ValidateFrameAsync"/> returns true for a valid GT06 frame with correct checksum.
+	/// </summary>
     [Fact]
     public async Task ValidateFrameAsync_GT06_ShouldReturnTrue_ForValidFrame()
     {
@@ -113,6 +142,9 @@ public class ProtocolParserServiceTests
         result.Should().BeTrue();
     }
 
+	/// <summary>
+	/// Tests that <see cref="ProtocolParserService.ValidateFrameAsync"/> returns false for a GT06 frame with invalid checksum.
+	/// </summary>
     [Fact]
     public async Task ValidateFrameAsync_GT06_ShouldReturnFalse_ForInvalidChecksum()
     {
@@ -131,6 +163,9 @@ public class ProtocolParserServiceTests
         result.Should().BeFalse();
     }
 
+	/// <summary>
+	/// Tests that <see cref="ProtocolParserService.ValidateFrameAsync"/> returns false for a GT06 frame that is too short to be valid.
+	/// </summary>
     [Fact]
     public async Task ValidateFrameAsync_GT06_ShouldReturnFalse_ForTooShortFrame()
     {
@@ -149,6 +184,9 @@ public class ProtocolParserServiceTests
         result.Should().BeFalse();
     }
 
+	/// <summary>
+	/// Tests that <see cref="ProtocolParserService.ValidateFrameAsync"/> always returns true for H02 protocol frames.
+	/// </summary>
     [Fact]
     public async Task ValidateFrameAsync_H02_ShouldReturnTrue_Always()
     {
@@ -166,6 +204,9 @@ public class ProtocolParserServiceTests
         result.Should().BeTrue();
     }
 
+	/// <summary>
+	/// Tests that <see cref="ProtocolParserService.ValidateFrameAsync"/> always returns true for TK103 protocol frames.
+	/// </summary>
     [Fact]
     public async Task ValidateFrameAsync_TK103_ShouldReturnTrue_Always()
     {
@@ -183,6 +224,9 @@ public class ProtocolParserServiceTests
         result.Should().BeTrue();
     }
 
+	/// <summary>
+	/// Tests that <see cref="ProtocolParserService.ParseFrameAsync"/> correctly parses a GT06 protocol frame and extracts location data.
+	/// </summary>
     [Fact]
     public async Task ParseFrameAsync_GT06_ShouldParseCorrectly()
     {
@@ -263,6 +307,9 @@ public class ProtocolParserServiceTests
         result.DeviceId.Should().Be(expectedDeviceId);
     }
 
+	/// <summary>
+	/// Tests that <see cref="ProtocolParserService.ParseFrameAsync"/> correctly parses GT06 frame with Southern and Western hemisphere coordinates (negative latitude and longitude).
+	/// </summary>
     [Fact]
     public async Task ParseFrameAsync_GT06_SouthWestCoordinates_ShouldParseCorrectly()
     {
@@ -336,6 +383,9 @@ public class ProtocolParserServiceTests
         result.DeviceId.Should().Be(expectedDeviceId);
     }
 
+	/// <summary>
+	/// Tests that <see cref="ProtocolParserService.ParseFrameAsync"/> correctly parses H02 protocol frame in standard GPRMC format.
+	/// </summary>
     [Fact]
     public async Task ParseFrameAsync_H02_HqFormat_ShouldParseCorrectly()
     {
@@ -372,6 +422,9 @@ public class ProtocolParserServiceTests
         result.DeviceId.Should().Be(expectedDeviceId);
     }
 
+	/// <summary>
+	/// Tests that <see cref="ProtocolParserService.ParseFrameAsync"/> correctly parses H02 protocol frame in *HQ format with Eastern hemisphere coordinates (positive longitude).
+	/// </summary>
     [Fact]
     public async Task ParseFrameAsync_H02_HqFormat_EasternHemisphere_ShouldProducePositiveLongitude()
     {
@@ -406,6 +459,9 @@ public class ProtocolParserServiceTests
         result.DeviceId.Should().Be(expectedDeviceId);
     }
 
+	/// <summary>
+	/// Tests that <see cref="ProtocolParserService.ParseFrameAsync"/> correctly parses TK103 protocol frame and extracts location data.
+	/// </summary>
     [Fact]
     public async Task ParseFrameAsync_TK103_ShouldParseCorrectly()
     {
