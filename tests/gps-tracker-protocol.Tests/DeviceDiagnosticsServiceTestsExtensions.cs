@@ -26,14 +26,18 @@ public static class DeviceDiagnosticsServiceTestsExtensions
     /// <param name="expectedSignalQuality">Expected signal quality classification</param>
     /// <param name="expectedPackets">Expected total packets received count</param>
     /// <returns>Tuple containing the test assertion and expected values</returns>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="deviceId"/> is null or empty.</exception>
     public static async Task<(DeviceDiagnosticsService Sut, DeviceDiagnosticsReport Report)>
-        CreateDiagnosticsTestAsync(
-            this DeviceDiagnosticsServiceTests _,
-            string deviceId,
-            bool isOnline,
-            string expectedSignalQuality,
-            int expectedPackets)
+    CreateDiagnosticsTestAsync(
+        this DeviceDiagnosticsServiceTests _,
+        string deviceId,
+        bool isOnline,
+        string expectedSignalQuality,
+        int expectedPackets)
     {
+        ArgumentNullException.ThrowIfNull(deviceId);
+        ArgumentException.ThrowIfNullOrEmpty(deviceId);
+
         // Arrange
         var deviceRepo = Substitute.For<IDeviceRepository>();
         deviceRepo.GetByIdAsync(deviceId).Returns(new Device
@@ -78,16 +82,20 @@ public static class DeviceDiagnosticsServiceTestsExtensions
     /// <param name="expectedBatteryOk">Expected battery result</param>
     /// <param name="expectedSignalOk">Expected signal result</param>
     /// <returns>Tuple containing the test assertion and expected values</returns>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="deviceId"/> is null or empty.</exception>
     public static async Task<(DeviceDiagnosticsService Sut, DeviceSelfTestResult Result)>
-        CreateSelfTestAsync(
-            this DeviceDiagnosticsServiceTests _,
-            string deviceId,
-            int batteryLevel,
-            int signalStrength,
-            bool expectedConnectivityOk,
-            bool expectedBatteryOk,
-            bool expectedSignalOk)
+    CreateSelfTestAsync(
+        this DeviceDiagnosticsServiceTests _,
+        string deviceId,
+        int batteryLevel,
+        int signalStrength,
+        bool expectedConnectivityOk,
+        bool expectedBatteryOk,
+        bool expectedSignalOk)
     {
+        ArgumentNullException.ThrowIfNull(deviceId);
+        ArgumentException.ThrowIfNullOrEmpty(deviceId);
+
         // Arrange
         var deviceRepo = Substitute.For<IDeviceRepository>();
         deviceRepo.GetByIdAsync(deviceId).Returns(new Device
@@ -144,12 +152,16 @@ public static class DeviceDiagnosticsServiceTestsExtensions
     /// <param name="deviceId">The device identifier</param>
     /// <param name="signalStrength">Signal strength in dBm (marginal range: -90 to -100)</param>
     /// <param name="expectedQuality">Expected signal quality classification</param>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="deviceId"/> is null or empty.</exception>
     public static async Task ValidateMarginalSignalQualityAsync(
         this DeviceDiagnosticsServiceTests _,
         string deviceId,
         int signalStrength,
         string expectedQuality)
     {
+        ArgumentNullException.ThrowIfNull(deviceId);
+        ArgumentException.ThrowIfNullOrEmpty(deviceId);
+
         // Arrange
         var (sut, _) = BuildSut(deviceId, signal: signalStrength);
 
@@ -170,6 +182,7 @@ public static class DeviceDiagnosticsServiceTestsExtensions
     /// <param name="signalStrength">Signal strength in dBm</param>
     /// <param name="status">Device status</param>
     /// <returns>Configured service instance</returns>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="deviceId"/> is null or empty.</exception>
     public static DeviceDiagnosticsService CreateDiagnosticsService(
         this DeviceDiagnosticsServiceTests _,
         string deviceId = "test-device",
@@ -177,6 +190,9 @@ public static class DeviceDiagnosticsServiceTestsExtensions
         int signalStrength = -65,
         DeviceStatus status = DeviceStatus.Online)
     {
+        ArgumentNullException.ThrowIfNull(deviceId);
+        ArgumentException.ThrowIfNullOrEmpty(deviceId);
+
         var device = new Device
         {
             Id = deviceId,
@@ -222,6 +238,9 @@ public static class DeviceDiagnosticsServiceTestsExtensions
         int locationCount = 5,
         int journeyCount = 2)
     {
+        ArgumentNullException.ThrowIfNull(deviceId);
+        ArgumentException.ThrowIfNullOrEmpty(deviceId);
+
         var device = new Device
         {
             Id = deviceId,
