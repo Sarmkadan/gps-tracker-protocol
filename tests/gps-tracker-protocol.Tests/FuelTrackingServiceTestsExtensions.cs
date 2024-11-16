@@ -9,61 +9,84 @@ using GpsTrackerProtocol.Domain;
 
 namespace GpsTrackerProtocol.Tests
 {
+    /// <summary>
+    /// Extension methods for <see cref="FuelTrackingServiceTests"/> that provide convenient test setup and assertions.
+    /// </summary>
     public static class FuelTrackingServiceTestsExtensions
     {
         /// <summary>
-        /// Creates a new FuelTrackingServiceTests instance with default configuration.
+        /// Creates a new <see cref="FuelTrackingServiceTests"/> instance with default configuration.
         /// </summary>
-        public static FuelTrackingServiceTests CreateDefault(this FuelTrackingServiceTests _) => new FuelTrackingServiceTests();
+        /// <param name="_">The test instance (unused, required for extension method syntax).</param>
+        /// <returns>A new <see cref="FuelTrackingServiceTests"/> instance.</returns>
+        public static FuelTrackingServiceTests CreateDefault(this FuelTrackingServiceTests _) => new();
 
         /// <summary>
-        /// Creates a new FuelTrackingServiceTests instance with a custom test data setup.
+        /// Creates a new <see cref="FuelTrackingServiceTests"/> instance seeded with the specified fuel records.
         /// </summary>
+        /// <param name="_">The test instance (unused, required for extension method syntax).</param>
         /// <param name="records">Initial set of fuel records to seed the test service with.</param>
-        public static FuelTrackingServiceTests WithRecords(this FuelTrackingServiceTests _, IEnumerable<FuelRecord> records)
+        /// <returns>A new <see cref="FuelTrackingServiceTests"/> instance containing the specified records.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="records"/> is null.</exception>
+        public static async Task<FuelTrackingServiceTests> WithRecordsAsync(this FuelTrackingServiceTests _, IEnumerable<FuelRecord> records)
         {
+            ArgumentNullException.ThrowIfNull(records);
+
             var instance = new FuelTrackingServiceTests();
-            // Use reflection to set up the internal service state with initial records
-            var serviceField = typeof(FuelTrackingServiceTests).GetField(
-                "_fuelTrackingService",
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            var service = instance.GetService();
 
-            if (serviceField != null)
+            foreach (var record in records)
             {
-                var service = serviceField.GetValue(instance);
-                var addMethod = service?.GetType().GetMethod("AddRecordsAsync");
-
-                if (addMethod != null)
-                {
-                    addMethod.Invoke(service, new object[] { records });
-                }
+                await service.RecordFuelEventAsync(record);
             }
 
             return instance;
         }
 
         /// <summary>
-        /// Creates a new FuelTrackingServiceTests instance with a specific date range filter.
+        /// Creates a new <see cref="FuelTrackingServiceTests"/> instance with records for the specified vehicle and date range.
         /// </summary>
-        /// <param name="startDate">Start date for filtering records.</param>
-        /// <param name="endDate">End date for filtering records.</param>
-        public static FuelTrackingServiceTests WithDateRange(this FuelTrackingServiceTests _, DateTime startDate, DateTime endDate)
+        /// <param name="_">The test instance (unused, required for extension method syntax).</param>
+        /// <param name="vehicleId">The vehicle ID to create records for.</param>
+        /// <param name="startDate">Start date for the records.</param>
+        /// <param name="endDate">End date for the records.</param>
+        /// <param name="recordCount">Number of records to create.</param>
+        /// <returns>A new <see cref="FuelTrackingServiceTests"/> instance containing generated records.</returns>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="vehicleId"/> is null or whitespace.</exception>
+        public static async Task<FuelTrackingServiceTests> WithVehicleRecordsAsync(
+            this FuelTrackingServiceTests _,
+            string vehicleId,
+            DateTime startDate,
+            DateTime endDate,
+            int recordCount = 5)
         {
-            var instance = new FuelTrackingServiceTests();
-            // Use reflection to set up the internal service state with date range
-            var serviceField = typeof(FuelTrackingServiceTests).GetField(
-                "_fuelTrackingService",
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            ArgumentException.ThrowIfNullOrEmpty(vehicleId);
 
-            if (serviceField != null)
+            if (endDate <= startDate)
             {
-                var service = serviceField.GetValue(instance);
-                var filterMethod = service?.GetType().GetMethod("SetDateRangeAsync");
+                throw new ArgumentException("End date must be after start date", nameof(endDate));
+            }
 
-                if (filterMethod != null)
-                {
-                    filterMethod.Invoke(service, new object[] { startDate, endDate });
-                }
+            var instance = new FuelTrackingServiceTests();
+            var service = instance.GetService();
+
+            var random = new Random();
+            var dateRange = endDate - startDate;
+
+            for (int i = 0; i < recordCount; i++)
+            {
+                var recordDate = startDate.AddMinutes(random.Next(0, (int)dateRange.TotalMinutes));
+                var fuelAmount = 10.0 + random.NextDouble() * 40.0; // 10-50 liters
+                var eventType = random.Next(0, 2) == 0 ? FuelEventType.Refuel : FuelEventType.Consumption;
+
+                await service.RecordFuelEventAsync(new FuelRecord(
+                    vehicleId,
+                    "testDevice",
+                    eventType,
+                    fuelAmount,
+                    recordDate,
+                    OdometerKm: 1000 + i * 100
+                ));
             }
 
             return instance;
@@ -74,25 +97,16 @@ namespace GpsTrackerProtocol.Tests
         /// </summary>
         /// <param name="test">The test instance.</param>
         /// <param name="recordId">The record ID to check for.</param>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="recordId"/> is null or whitespace.</exception>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="test"/> is null.</exception>
         public static async Task AssertRecordExistsAsync(this FuelTrackingServiceTests test, string recordId)
         {
-            // Use reflection to access the private _service field
-            var serviceField = typeof(FuelTrackingServiceTests).GetField(
-                "_service",
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            ArgumentNullException.ThrowIfNull(test);
+            ArgumentException.ThrowIfNullOrEmpty(recordId);
 
-            if (serviceField == null)
-            {
-                throw new Exception("Could not find _service field in FuelTrackingServiceTests");
-            }
-
-            var service = serviceField.GetValue(test) as FuelTrackingService;
-            if (service == null)
-            {
-                throw new Exception("Could not cast _service to FuelTrackingService");
-            }
-
+            var service = test.GetService();
             var records = await service.GetRecordsAsync("testVehicle", null);
+
             if (!records.Any(r => r.Id == recordId))
             {
                 throw new Exception($"Expected record with ID {recordId} to exist but it was not found.");
@@ -104,29 +118,48 @@ namespace GpsTrackerProtocol.Tests
         /// </summary>
         /// <param name="test">The test instance.</param>
         /// <param name="recordId">The record ID to check for absence.</param>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="recordId"/> is null or whitespace.</exception>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="test"/> is null.</exception>
         public static async Task AssertRecordDoesNotExistAsync(this FuelTrackingServiceTests test, string recordId)
         {
-            // Use reflection to access the private _service field
+            ArgumentNullException.ThrowIfNull(test);
+            ArgumentException.ThrowIfNullOrEmpty(recordId);
+
+            var service = test.GetService();
+            var records = await service.GetRecordsAsync("testVehicle", null);
+
+            if (records.Any(r => r.Id == recordId))
+            {
+                throw new Exception($"Expected record with ID {recordId} to not exist but it was found.");
+            }
+        }
+
+        /// <summary>
+        /// Gets the <see cref="FuelTrackingService"/> instance from the test.
+        /// </summary>
+        /// <param name="test">The test instance.</param>
+        /// <returns>The <see cref="FuelTrackingService"/> instance.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="test"/> is null.</exception>
+        private static FuelTrackingService GetService(this FuelTrackingServiceTests test)
+        {
+            ArgumentNullException.ThrowIfNull(test);
+
             var serviceField = typeof(FuelTrackingServiceTests).GetField(
                 "_service",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
 
             if (serviceField == null)
             {
-                throw new Exception("Could not find _service field in FuelTrackingServiceTests");
+                throw new InvalidOperationException("Could not find _service field in FuelTrackingServiceTests");
             }
 
             var service = serviceField.GetValue(test) as FuelTrackingService;
             if (service == null)
             {
-                throw new Exception("Could not cast _service to FuelTrackingService");
+                throw new InvalidOperationException("Could not cast _service to FuelTrackingService");
             }
 
-            var records = await service.GetRecordsAsync("testVehicle", null);
-            if (records.Any(r => r.Id == recordId))
-            {
-                throw new Exception($"Expected record with ID {recordId} to not exist but it was found.");
-            }
+            return service;
         }
     }
 }
