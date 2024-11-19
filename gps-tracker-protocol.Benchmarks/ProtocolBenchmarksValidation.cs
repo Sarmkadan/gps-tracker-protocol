@@ -13,19 +13,26 @@ namespace GpsTrackerProtocol.Benchmarks;
 public static class ProtocolBenchmarksValidation
 {
     /// <summary>
-    /// Validates a ProtocolBenchmarks instance and returns any validation errors.
+    /// Ensures that the <see cref="ProtocolBenchmarks"/> instance is not null.
+    /// </summary>
+    /// <param name="value">The ProtocolBenchmarks instance to validate</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="value"/> is null</exception>
+    private static void GuardNotNull(ProtocolBenchmarks value)
+    {
+        ArgumentNullException.ThrowIfNull(value);
+    }
+
+    /// <summary>
+    /// Validates a <see cref="ProtocolBenchmarks"/> instance and returns any validation errors.
     /// </summary>
     /// <param name="value">The ProtocolBenchmarks instance to validate</param>
     /// <returns>List of validation error messages, empty if valid</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="value"/> is null</exception>
     public static IReadOnlyList<string> Validate(this ProtocolBenchmarks value)
     {
-        var errors = new List<string>();
+        GuardNotNull(value);
 
-        if (value == null)
-        {
-            errors.Add("ProtocolBenchmarks instance cannot be null");
-            return errors.AsReadOnly();
-        }
+        var errors = new List<string>();
 
         // Validate private fields that are used in benchmarks
         var providerField = typeof(ProtocolBenchmarks).GetField(
@@ -151,93 +158,103 @@ public static class ProtocolBenchmarksValidation
     }
 
     /// <summary>
-    /// Validates a GPS frame instance.
+    /// Validates a <see cref="GpsFrame"/> instance.
     /// </summary>
+    /// <param name="frame">The GPS frame to validate</param>
+    /// <param name="fieldName">Name of the field being validated</param>
+    /// <param name="errors">List to accumulate validation errors</param>
     private static void ValidateGpsFrame(GpsFrame frame, string fieldName, List<string> errors)
     {
-        if (frame == null)
+        if (frame is not { } validFrame)
         {
             errors.Add($"{fieldName} is null");
             return;
         }
 
-        if (frame.RawData == null || frame.RawData.Length == 0)
+        if (validFrame.RawData is not { Length: > 0 })
         {
             errors.Add($"{fieldName}.RawData is null or empty");
         }
 
-        if (frame.Protocol == ProtocolType.Unknown)
+        if (validFrame.Protocol == ProtocolType.Unknown)
         {
             errors.Add($"{fieldName}.Protocol is ProtocolType.Unknown");
         }
 
-        if (frame.ReceivedAt == default)
+        if (validFrame.ReceivedAt == default)
         {
             errors.Add($"{fieldName}.ReceivedAt has default DateTime value");
         }
-        else if (frame.ReceivedAt > DateTime.UtcNow.AddMinutes(1))
+        else if (validFrame.ReceivedAt > DateTime.UtcNow.AddMinutes(1))
         {
-            errors.Add($"{fieldName}.ReceivedAt is in the future ({(DateTime.UtcNow - frame.ReceivedAt).TotalMinutes} minutes ahead)");
+            errors.Add($"{fieldName}.ReceivedAt is in the future ({DateTime.UtcNow - validFrame.ReceivedAt:g} ahead)");
         }
-        else if (frame.ReceivedAt < DateTime.UtcNow.AddYears(-1))
+        else if (validFrame.ReceivedAt < DateTime.UtcNow.AddYears(-1))
         {
             errors.Add($"{fieldName}.ReceivedAt is more than 1 year in the past");
         }
     }
 
     /// <summary>
-    /// Validates a Device instance.
+    /// Validates a <see cref="Device"/> instance.
     /// </summary>
+    /// <param name="device">The device to validate</param>
+    /// <param name="fieldName">Name of the field being validated</param>
+    /// <param name="errors">List to accumulate validation errors</param>
     private static void ValidateDevice(Device device, string fieldName, List<string> errors)
     {
-        if (device == null)
+        if (device is not { } validDevice)
         {
             errors.Add($"{fieldName} is null");
             return;
         }
 
-        if (string.IsNullOrWhiteSpace(device.Imei))
+        if (string.IsNullOrWhiteSpace(validDevice.Imei))
         {
             errors.Add($"{fieldName}.Imei is null or whitespace");
         }
-        else if (device.Imei.Length < 10 || device.Imei.Length > 20)
+        else if (validDevice.Imei.Length is < 10 or > 20)
         {
-            errors.Add($"{fieldName}.Imei has invalid length {device.Imei.Length}, expected 10-20 characters");
+            errors.Add($"{fieldName}.Imei has invalid length {validDevice.Imei.Length}, expected 10-20 characters");
         }
 
-        if (string.IsNullOrWhiteSpace(device.DeviceName))
+        if (string.IsNullOrWhiteSpace(validDevice.DeviceName))
         {
             errors.Add($"{fieldName}.DeviceName is null or whitespace");
         }
 
-        if (device.Protocol == ProtocolType.Unknown)
+        if (validDevice.Protocol == ProtocolType.Unknown)
         {
             errors.Add($"{fieldName}.Protocol is ProtocolType.Unknown");
         }
 
-        if (!device.IsActive)
+        if (!validDevice.IsActive)
         {
             errors.Add($"{fieldName}.IsActive is false, expected true for benchmark device");
         }
     }
 
     /// <summary>
-    /// Checks if a ProtocolBenchmarks instance is valid.
+    /// Checks if a <see cref="ProtocolBenchmarks"/> instance is valid.
     /// </summary>
     /// <param name="value">The ProtocolBenchmarks instance to check</param>
     /// <returns>True if valid, false otherwise</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="value"/> is null</exception>
     public static bool IsValid(this ProtocolBenchmarks value)
     {
+        GuardNotNull(value);
         return value.Validate().Count == 0;
     }
 
     /// <summary>
-    /// Ensures that a ProtocolBenchmarks instance is valid, throwing an exception if not.
+    /// Ensures that a <see cref="ProtocolBenchmarks"/> instance is valid, throwing an exception if not.
     /// </summary>
     /// <param name="value">The ProtocolBenchmarks instance to validate</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="value"/> is null</exception>
     /// <exception cref="ArgumentException">Thrown when validation fails with detailed error messages</exception>
     public static void EnsureValid(this ProtocolBenchmarks value)
     {
+        GuardNotNull(value);
         var errors = value.Validate();
 
         if (errors.Count > 0)
