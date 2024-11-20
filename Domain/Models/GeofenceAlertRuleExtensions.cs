@@ -23,19 +23,17 @@ public static class GeofenceAlertRuleExtensions
     /// <returns>
     /// True if the rule can fire (either no previous alert or cooldown has elapsed); otherwise, false.
     /// </returns>
+    /// <exception cref="ArgumentNullException"><paramref name="rule"/> is <see langword="null"/>.</exception>
     public static bool CanFireAlert(this GeofenceAlertRule rule, DateTime? lastFiredAt)
     {
-        if (rule == null)
-        {
-            throw new ArgumentNullException(nameof(rule));
-        }
+        ArgumentNullException.ThrowIfNull(rule);
 
         if (!rule.IsEnabled)
         {
             return false;
         }
 
-        if (lastFiredAt == null)
+        if (lastFiredAt is null)
         {
             return true;
         }
@@ -49,12 +47,10 @@ public static class GeofenceAlertRuleExtensions
     /// </summary>
     /// <param name="rule">The geofence alert rule to check.</param>
     /// <returns>True if the rule is active and should be monitored; otherwise, false.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="rule"/> is <see langword="null"/>.</exception>
     public static bool IsActiveRule(this GeofenceAlertRule rule)
     {
-        if (rule == null)
-        {
-            throw new ArgumentNullException(nameof(rule));
-        }
+        ArgumentNullException.ThrowIfNull(rule);
 
         return rule.IsEnabled && rule.AlertType != GeofenceAlertType.DwellTime;
     }
@@ -64,18 +60,18 @@ public static class GeofenceAlertRuleExtensions
     /// </summary>
     /// <param name="rule">The geofence alert rule.</param>
     /// <returns>A formatted string representing the rule.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="rule"/> is <see langword="null"/>.</exception>
     public static string GetDisplaySummary(this GeofenceAlertRule rule)
     {
-        if (rule == null)
-        {
-            throw new ArgumentNullException(nameof(rule));
-        }
+        ArgumentNullException.ThrowIfNull(rule);
 
         var status = rule.IsEnabled ? "Active" : "Disabled";
         var alertType = rule.AlertType.ToString();
         var cooldownMinutes = rule.Cooldown.TotalMinutes;
 
-        return $"Rule {rule.Id[..8]}: {status} | {alertType} | Device: {rule.DeviceId} | Fence: {rule.GeofenceId} | Cooldown: {cooldownMinutes}m";
+        return rule.Id is null
+            ? $"Rule: {status} | {alertType} | Device: {rule.DeviceId} | Fence: {rule.GeofenceId} | Cooldown: {cooldownMinutes}m"
+            : $"Rule {rule.Id[..8]}: {status} | {alertType} | Device: {rule.DeviceId} | Fence: {rule.GeofenceId} | Cooldown: {cooldownMinutes}m";
     }
 
     /// <summary>
@@ -85,12 +81,10 @@ public static class GeofenceAlertRuleExtensions
     /// <param name="deviceId">The device identifier to match.</param>
     /// <param name="geofenceId">The geofence identifier to match.</param>
     /// <returns>True if the rule matches both device and geofence; otherwise, false.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="rule"/> is <see langword="null"/>.</exception>
     public static bool MatchesDeviceAndGeofence(this GeofenceAlertRule rule, string deviceId, string geofenceId)
     {
-        if (rule == null)
-        {
-            throw new ArgumentNullException(nameof(rule));
-        }
+        ArgumentNullException.ThrowIfNull(rule);
 
         if (string.IsNullOrEmpty(deviceId) || string.IsNullOrEmpty(geofenceId))
         {
