@@ -9,7 +9,7 @@ using System.Text.Json;
 namespace GpsTrackerProtocol.Domain;
 
 /// <summary>
-/// Provides System.Text.Json serialization and deserialization extensions for GpsTrackerException and derived types.
+/// Provides System.Text.Json serialization and deserialization extensions for <see cref="GpsTrackerException"/> and derived types.
 /// </summary>
 public static class GpsTrackerExceptionJsonExtensions
 {
@@ -21,17 +21,15 @@ public static class GpsTrackerExceptionJsonExtensions
     };
 
     /// <summary>
-    /// Serializes a GpsTrackerException to JSON string.
+    /// Serializes a <see cref="GpsTrackerException"/> to JSON string.
     /// </summary>
     /// <param name="value">The exception to serialize.</param>
     /// <param name="indented">Whether to format the JSON with indentation.</param>
     /// <returns>JSON string representation of the exception.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="value"/> is <see langword="null"/>.</exception>
     public static string ToJson(this GpsTrackerException value, bool indented = false)
     {
-        if (value == null)
-        {
-            throw new ArgumentNullException(nameof(value));
-        }
+        ArgumentNullException.ThrowIfNull(value);
 
         var options = indented
             ? new JsonSerializerOptions(_jsonOptions) { WriteIndented = true }
@@ -41,10 +39,11 @@ public static class GpsTrackerExceptionJsonExtensions
     }
 
     /// <summary>
-    /// Deserializes a GpsTrackerException from JSON string.
+    /// Deserializes a <see cref="GpsTrackerException"/> from JSON string.
     /// </summary>
     /// <param name="json">JSON string to deserialize.</param>
-    /// <returns>The deserialized exception, or null if JSON is null or empty.</returns>
+    /// <returns>The deserialized exception, or <see langword="null"/> if JSON is <see langword="null"/> or empty.</returns>
+    /// <exception cref="JsonException">Thrown when JSON deserialization fails for all attempted exception types.</exception>
     public static GpsTrackerException? FromJson(string json)
     {
         if (string.IsNullOrWhiteSpace(json))
@@ -57,14 +56,7 @@ public static class GpsTrackerExceptionJsonExtensions
             // First try to deserialize as base GpsTrackerException
             var result = JsonSerializer.Deserialize<GpsTrackerException>(json, _jsonOptions);
 
-            if (result != null)
-            {
-                return result;
-            }
-
-            // If deserialization returns null, try to deserialize as a derived type
-            // We'll need to handle this by checking the $type discriminator or try each derived type
-            return TryDeserializeDerivedType(json);
+            return result ?? TryDeserializeDerivedType(json);
         }
         catch (JsonException)
         {
@@ -74,13 +66,16 @@ public static class GpsTrackerExceptionJsonExtensions
     }
 
     /// <summary>
-    /// Attempts to deserialize a GpsTrackerException from JSON string.
+    /// Attempts to deserialize a <see cref="GpsTrackerException"/> from JSON string.
     /// </summary>
     /// <param name="json">JSON string to deserialize.</param>
-    /// <param name="value">The deserialized exception, or null if deserialization fails.</param>
-    /// <returns>True if deserialization succeeded; otherwise, false.</returns>
+    /// <param name="value">The deserialized exception, or <see langword="null"/> if deserialization fails.</param>
+    /// <returns><see langword="true"/> if deserialization succeeded; otherwise, <see langword="false"/>.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="json"/> is <see langword="null"/>.</exception>
     public static bool TryFromJson(string json, out GpsTrackerException? value)
     {
+        ArgumentNullException.ThrowIfNull(json);
+
         try
         {
             value = FromJson(json);
@@ -91,71 +86,28 @@ public static class GpsTrackerExceptionJsonExtensions
             value = null;
             return false;
         }
-        catch (ArgumentNullException)
-        {
-            value = null;
-            return false;
-        }
     }
 
     private static GpsTrackerException? TryDeserializeDerivedType(string json)
     {
         try
         {
-            // Try to deserialize as ParseException
-            var parseException = JsonSerializer.Deserialize<ParseException>(json, _jsonOptions);
-            if (parseException != null)
+            return json switch
             {
-                return parseException;
-            }
-
-            // Try to deserialize as ChecksumException
-            var checksumException = JsonSerializer.Deserialize<ChecksumException>(json, _jsonOptions);
-            if (checksumException != null)
-            {
-                return checksumException;
-            }
-
-            // Try to deserialize as DeviceException
-            var deviceException = JsonSerializer.Deserialize<DeviceException>(json, _jsonOptions);
-            if (deviceException != null)
-            {
-                return deviceException;
-            }
-
-            // Try to deserialize as CommandException
-            var commandException = JsonSerializer.Deserialize<CommandException>(json, _jsonOptions);
-            if (commandException != null)
-            {
-                return commandException;
-            }
-
-            // Try to deserialize as ValidationException
-            var validationException = JsonSerializer.Deserialize<ValidationException>(json, _jsonOptions);
-            if (validationException != null)
-            {
-                return validationException;
-            }
-
-            // Try to deserialize as RepositoryException
-            var repositoryException = JsonSerializer.Deserialize<RepositoryException>(json, _jsonOptions);
-            if (repositoryException != null)
-            {
-                return repositoryException;
-            }
-
-            // Try to deserialize as TimeoutException
-            var timeoutException = JsonSerializer.Deserialize<TimeoutException>(json, _jsonOptions);
-            if (timeoutException != null)
-            {
-                return timeoutException;
-            }
+                _ when JsonSerializer.Deserialize<ParseException>(json, _jsonOptions) is { } parseException => parseException,
+                _ when JsonSerializer.Deserialize<ChecksumException>(json, _jsonOptions) is { } checksumException => checksumException,
+                _ when JsonSerializer.Deserialize<DeviceException>(json, _jsonOptions) is { } deviceException => deviceException,
+                _ when JsonSerializer.Deserialize<CommandException>(json, _jsonOptions) is { } commandException => commandException,
+                _ when JsonSerializer.Deserialize<ValidationException>(json, _jsonOptions) is { } validationException => validationException,
+                _ when JsonSerializer.Deserialize<RepositoryException>(json, _jsonOptions) is { } repositoryException => repositoryException,
+                _ when JsonSerializer.Deserialize<TimeoutException>(json, _jsonOptions) is { } timeoutException => timeoutException,
+                _ => null
+            };
         }
         catch (JsonException)
         {
             // Silently fail - all attempts failed
+            return null;
         }
-
-        return null;
     }
 }
