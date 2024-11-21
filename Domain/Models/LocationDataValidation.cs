@@ -16,12 +16,10 @@ public static class LocationDataValidation
     /// </summary>
     /// <param name="value">The location data to validate.</param>
     /// <returns>An empty list if valid, otherwise a list of validation error messages.</returns>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="value"/> is <see langword="null"/>.</exception>
     public static IReadOnlyList<string> Validate(this LocationData value)
     {
-        if (value is null)
-        {
-            return ["LocationData cannot be null"];
-        }
+        ArgumentNullException.ThrowIfNull(value);
 
         var errors = new List<string>();
 
@@ -137,18 +135,20 @@ public static class LocationDataValidation
     /// </summary>
     /// <param name="value">The location data to check.</param>
     /// <returns>True if valid, false otherwise.</returns>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="value"/> is <see langword="null"/>.</exception>
     public static bool IsValid(this LocationData value)
-    {
-        return value.Validate().Count == 0;
-    }
+        => value is not null && value.Validate().Count == 0;
 
     /// <summary>
     /// Ensures a LocationData instance is valid, throwing an exception if not.
     /// </summary>
     /// <param name="value">The location data to validate.</param>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="value"/> is <see langword="null"/>.</exception>
     /// <exception cref="ArgumentException">Thrown if the location data is invalid.</exception>
     public static void EnsureValid(this LocationData value)
     {
+        ArgumentNullException.ThrowIfNull(value);
+
         var errors = value.Validate();
         if (errors.Count > 0)
         {
