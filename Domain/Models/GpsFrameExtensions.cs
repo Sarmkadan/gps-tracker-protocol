@@ -5,6 +5,7 @@
 // CTO & Software Architect
 // =====================================================================
 
+using System;
 using System.Globalization;
 
 namespace GpsTrackerProtocol.Domain.Models;
@@ -17,36 +18,35 @@ public static class GpsFrameExtensions
     /// <summary>
     /// Parses the timestamp from the GPS frame based on protocol type.
     /// </summary>
-    /// <param name="frame">The GPS frame to parse timestamp from</param>
-    /// <returns>DateTime representing the parsed timestamp, or null if parsing fails</returns>
+    /// <param name="frame">The GPS frame to parse timestamp from.</param>
+    /// <returns>DateTime representing the parsed timestamp, or null if parsing fails or frame is null.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="frame"/> is null.</exception>
     public static DateTime? ParseTimestamp(this GpsFrame frame)
     {
+        ArgumentNullException.ThrowIfNull(frame);
+
         if (frame.RawData.Length < 10)
             return null;
 
-        try
+        return frame.Protocol switch
         {
-            return frame.Protocol switch
-            {
-                ProtocolType.GT06 => ParseGt06Timestamp(frame),
-                ProtocolType.H02 => ParseH02Timestamp(frame),
-                ProtocolType.TK103 => ParseTk103Timestamp(frame),
-                _ => null
-            };
-        }
-        catch
-        {
-            return null;
-        }
+            ProtocolType.GT06 => ParseGt06Timestamp(frame),
+            ProtocolType.H02 => ParseH02Timestamp(frame),
+            ProtocolType.TK103 => ParseTk103Timestamp(frame),
+            _ => null
+        };
     }
 
     /// <summary>
     /// Gets the device identifier from the GPS frame based on protocol type.
     /// </summary>
-    /// <param name="frame">The GPS frame to extract device ID from</param>
-    /// <returns>Device identifier string, or null if not found</returns>
+    /// <param name="frame">The GPS frame to extract device ID from.</param>
+    /// <returns>Device identifier string, or null if not found or frame is null.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="frame"/> is null.</exception>
     public static string? GetDeviceId(this GpsFrame frame)
     {
+        ArgumentNullException.ThrowIfNull(frame);
+
         return frame.Protocol switch
         {
             ProtocolType.GT06 => frame.ExtractString(2, 10),
@@ -59,37 +59,36 @@ public static class GpsFrameExtensions
     /// <summary>
     /// Calculates the signal strength percentage from the GPS frame.
     /// </summary>
-    /// <param name="frame">The GPS frame to calculate signal strength from</param>
-    /// <returns>Signal strength percentage (0-100), or null if not available</returns>
+    /// <param name="frame">The GPS frame to calculate signal strength from.</param>
+    /// <returns>Signal strength percentage (0-100), or null if not available or frame is null.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="frame"/> is null.</exception>
     public static int? GetSignalStrength(this GpsFrame frame)
     {
+        ArgumentNullException.ThrowIfNull(frame);
+
         if (frame.RawData.Length < 20)
             return null;
 
-        try
+        return frame.Protocol switch
         {
-            return frame.Protocol switch
-            {
-                ProtocolType.GT06 => ParseGt06SignalStrength(frame),
-                ProtocolType.H02 => ParseH02SignalStrength(frame),
-                ProtocolType.TK103 => ParseTk103SignalStrength(frame),
-                _ => null
-            };
-        }
-        catch
-        {
-            return null;
-        }
+            ProtocolType.GT06 => ParseGt06SignalStrength(frame),
+            ProtocolType.H02 => ParseH02SignalStrength(frame),
+            ProtocolType.TK103 => ParseTk103SignalStrength(frame),
+            _ => null
+        };
     }
 
     /// <summary>
     /// Creates a human-readable summary of the GPS frame data.
     /// </summary>
-    /// <param name="frame">The GPS frame to summarize</param>
-    /// <param name="includeRawData">Whether to include raw data in the summary</param>
-    /// <returns>Formatted summary string</returns>
+    /// <param name="frame">The GPS frame to summarize.</param>
+    /// <param name="includeRawData">Whether to include raw data in the summary.</param>
+    /// <returns>Formatted summary string.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="frame"/> is null.</exception>
     public static string ToDiagnosticString(this GpsFrame frame, bool includeRawData = false)
     {
+        ArgumentNullException.ThrowIfNull(frame);
+
         var sb = new System.Text.StringBuilder();
         sb.AppendLine("=== GPS Frame Diagnostic Report ===");
         sb.AppendLine($"Frame ID: {frame.FrameId}");
@@ -105,7 +104,7 @@ public static class GpsFrameExtensions
             sb.AppendLine("Headers:");
             foreach (var header in frame.Headers)
             {
-                sb.AppendLine($"  {header.Key}: {header.Value}");
+                sb.AppendLine($" {header.Key}: {header.Value}");
             }
         }
 
@@ -136,6 +135,8 @@ public static class GpsFrameExtensions
     {
         // GT06 timestamp format: YYMMDDHHmmSS
         // Starts at byte offset 7, 6 bytes total
+        ArgumentNullException.ThrowIfNull(frame);
+
         if (frame.RawData.Length < 13)
             return null;
 
@@ -153,6 +154,8 @@ public static class GpsFrameExtensions
     {
         // H02 timestamp format: YYYYMMDDHHmmSS
         // Starts at byte offset 16, 6 bytes total
+        ArgumentNullException.ThrowIfNull(frame);
+
         if (frame.RawData.Length < 22)
             return null;
 
@@ -170,6 +173,8 @@ public static class GpsFrameExtensions
     {
         // TK103 timestamp format: YYYY-MM-DD HH:mm:SS
         // Starts at byte offset 5, 19 bytes total
+        ArgumentNullException.ThrowIfNull(frame);
+
         if (frame.RawData.Length < 24)
             return null;
 
@@ -188,6 +193,8 @@ public static class GpsFrameExtensions
     private static int ParseGt06SignalStrength(GpsFrame frame)
     {
         // GT06 signal strength at byte offset 23 (0-31 scale, convert to 0-100%)
+        ArgumentNullException.ThrowIfNull(frame);
+
         if (frame.RawData.Length < 24)
             return 0;
 
@@ -198,6 +205,8 @@ public static class GpsFrameExtensions
     private static int ParseH02SignalStrength(GpsFrame frame)
     {
         // H02 signal strength at byte offset 30 (0-99 scale)
+        ArgumentNullException.ThrowIfNull(frame);
+
         if (frame.RawData.Length < 31)
             return 0;
 
@@ -207,6 +216,8 @@ public static class GpsFrameExtensions
     private static int ParseTk103SignalStrength(GpsFrame frame)
     {
         // TK103 signal strength at byte offset 25 (0-31 scale, convert to 0-100%)
+        ArgumentNullException.ThrowIfNull(frame);
+
         if (frame.RawData.Length < 26)
             return 0;
 
