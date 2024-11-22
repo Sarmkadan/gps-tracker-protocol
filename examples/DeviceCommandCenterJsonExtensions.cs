@@ -11,7 +11,7 @@ using System.Text.Json.Serialization;
 namespace GpsTrackerProtocol.Examples;
 
 /// <summary>
-/// Provides System.Text.Json serialization extensions for DeviceCommandCenter
+/// Provides System.Text.Json serialization extensions for <see cref="DeviceCommandCenter"/>.
 /// </summary>
 public static class DeviceCommandCenterJsonExtensions
 {
@@ -23,31 +23,28 @@ public static class DeviceCommandCenterJsonExtensions
     };
 
     /// <summary>
-    /// Serializes a DeviceCommandCenter instance to JSON string
+    /// Serializes a <see cref="DeviceCommandCenter"/> instance to JSON string.
     /// </summary>
-    /// <param name="value">The DeviceCommandCenter instance to serialize</param>
-    /// <param name="indented">Whether to format the JSON with indentation</param>
-    /// <returns>JSON string representation</returns>
+    /// <param name="value">The <see cref="DeviceCommandCenter"/> instance to serialize.</param>
+    /// <param name="indented">Whether to format the JSON with indentation.</param>
+    /// <returns>JSON string representation.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="value"/> is <see langword="null"/>.</exception>
     public static string ToJson(this DeviceCommandCenter value, bool indented = false)
     {
-        if (value is null)
-        {
-            throw new ArgumentNullException(nameof(value));
-        }
+        ArgumentNullException.ThrowIfNull(value);
 
-        var options = indented ? new JsonSerializerOptions(_jsonOptions)
-        {
-            WriteIndented = true
-        } : _jsonOptions;
+        var options = indented
+            ? new JsonSerializerOptions(_jsonOptions) { WriteIndented = true }
+            : _jsonOptions;
 
         return JsonSerializer.Serialize(value, options);
     }
 
     /// <summary>
-    /// Deserializes a JSON string to DeviceCommandCenter instance
+    /// Deserializes a JSON string to <see cref="DeviceCommandCenter"/> instance.
     /// </summary>
-    /// <param name="json">JSON string to deserialize</param>
-    /// <returns>Deserialized DeviceCommandCenter instance or null if JSON is invalid</returns>
+    /// <param name="json">JSON string to deserialize.</param>
+    /// <returns>Deserialized <see cref="DeviceCommandCenter"/> instance or <see langword="null"/> if JSON is invalid or whitespace.</returns>
     public static DeviceCommandCenter? FromJson(string json)
     {
         if (string.IsNullOrWhiteSpace(json))
@@ -66,11 +63,11 @@ public static class DeviceCommandCenterJsonExtensions
     }
 
     /// <summary>
-    /// Attempts to deserialize a JSON string to DeviceCommandCenter instance
+    /// Attempts to deserialize a JSON string to <see cref="DeviceCommandCenter"/> instance.
     /// </summary>
-    /// <param name="json">JSON string to deserialize</param>
-    /// <param name="value">Output parameter for the deserialized instance</param>
-    /// <returns>True if deserialization succeeded, false otherwise</returns>
+    /// <param name="json">JSON string to deserialize.</param>
+    /// <param name="value">Output parameter for the deserialized instance.</param>
+    /// <returns><see langword="true"/> if deserialization succeeded; otherwise, <see langword="false"/>.</returns>
     public static bool TryFromJson(string json, out DeviceCommandCenter? value)
     {
         value = null;
