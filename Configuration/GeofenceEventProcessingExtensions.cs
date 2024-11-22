@@ -24,9 +24,12 @@ public static class GeofenceEventProcessingExtensions
     /// <c>IEventPublisher</c>, and <c>INotificationService</c>.
     /// </remarks>
     /// <param name="services">The service collection to configure.</param>
+    /// <exception cref="ArgumentNullException"><paramref name="services"/> is <see langword="null"/>.</exception>
     /// <returns>The same <paramref name="services"/> instance for chaining.</returns>
     public static IServiceCollection AddGeofenceEventProcessing(this IServiceCollection services)
     {
+        ArgumentNullException.ThrowIfNull(services);
+
         services.AddSingleton<IGeofenceEventProcessor, GeofenceEventProcessor>();
         return services;
     }
