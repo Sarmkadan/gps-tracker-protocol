@@ -2,7 +2,7 @@
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
-// =============================================================================
+// =====================================================================
 
 using System.Text.Json;
 
@@ -26,10 +26,10 @@ public static class ByteExtensionsJsonExtensions
     /// <param name="value">The byte array to serialize.</param>
     /// <param name="indented">Whether to format the JSON with indentation.</param>
     /// <returns>JSON string representation.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="value"/> is null.</exception>
     public static string ToJson(this byte[] value, bool indented = false)
     {
-        if (value is null)
-            return "[]";
+        ArgumentNullException.ThrowIfNull(value);
 
         var options = indented
             ? new JsonSerializerOptions(_jsonOptions) { WriteIndented = true }
@@ -43,8 +43,11 @@ public static class ByteExtensionsJsonExtensions
     /// </summary>
     /// <param name="json">JSON string to deserialize.</param>
     /// <returns>Deserialized byte array, or null if deserialization fails.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="json"/> is null.</exception>
     public static byte[]? FromJson(string json)
     {
+        ArgumentNullException.ThrowIfNull(json);
+
         if (string.IsNullOrWhiteSpace(json))
             return null;
 
@@ -64,9 +67,12 @@ public static class ByteExtensionsJsonExtensions
     /// <param name="json">JSON string to deserialize.</param>
     /// <param name="value">Output parameter containing deserialized byte array.</param>
     /// <returns>True if deserialization succeeds; otherwise, false.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="json"/> is null.</exception>
     public static bool TryFromJson(string json, out byte[]? value)
     {
         value = null;
+
+        ArgumentNullException.ThrowIfNull(json);
 
         if (string.IsNullOrWhiteSpace(json))
             return false;
