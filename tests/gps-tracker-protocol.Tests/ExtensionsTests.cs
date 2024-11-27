@@ -18,9 +18,9 @@ public class ExtensionsTests
 {
     // ── ByteExtensions ────────────────────────────────────────────────────────
 
-        /// <summary>
-        /// Tests that <see cref="ByteExtensions.ToHexString(byte[])"/> converts a byte array to an uppercase hexadecimal string without dashes.
-        /// </summary>
+    /// <summary>
+    /// Tests that <see cref="ByteExtensions.ToHexString(byte[])"/> converts a byte array to an uppercase hexadecimal string without dashes.
+    /// </summary>
     [Fact]
     public void ToHexString_ByteArray_ReturnsUppercaseHexWithoutDashes()
     {
@@ -32,6 +32,9 @@ public class ExtensionsTests
         data.ToHexString().Should().Be("78780D");
     }
 
+    /// <summary>
+    /// Tests that <see cref="ByteExtensions.ToHexString(byte[], bool)"/> with an empty array returns an empty string.
+    /// </summary>
     [Fact]
     public void ToHexString_EmptyArray_ReturnsEmptyString()
         /// <summary>
@@ -41,6 +44,9 @@ public class ExtensionsTests
         new byte[0].ToHexString().Should().Be(string.Empty);
     }
 
+    /// <summary>
+    /// Tests that <see cref="ByteExtensions.ToHexString(byte[], bool)"/> with <c>addSpaces=true</c> returns a dash‑separated hexadecimal string.
+    /// </summary>
     [Fact]
     public void ToHexString_WithSpaces_ReturnsDashSeparatedHex()
         /// <summary>
@@ -52,9 +58,9 @@ public class ExtensionsTests
         data.ToHexString(addSpaces: true).Should().Be("01-02");
     }
 
-        /// <summary>
-        /// Tests that <see cref="ByteExtensions.ToUInt16BigEndian(byte[], int)"/> throws ArgumentException when offset is invalid.
-        /// </summary>
+    /// <summary>
+    /// Tests that <see cref="ByteExtensions.ToUInt16BigEndian(byte[], int)"/> returns the correct big‑endian value when the offset is valid.
+    /// </summary>
     [Fact]
     public void ToUInt16BigEndian_ValidOffset_ReturnsBigEndianValue()
     {
@@ -67,6 +73,9 @@ public class ExtensionsTests
         data.ToUInt16BigEndian(0).Should().Be(258);
     }
 
+    /// <summary>
+    /// Tests that <see cref="ByteExtensions.ToUInt16BigEndian(byte[], int)"/> throws <see cref="ArgumentException"/> when the offset is invalid.
+    /// </summary>
     [Fact]
     public void ToUInt16BigEndian_InvalidOffset_ThrowsArgumentException()
     {
@@ -79,10 +88,10 @@ public class ExtensionsTests
 
         act.Should().Throw<ArgumentException>();
     }
-        /// <summary>
-        /// Tests that <see cref="ByteExtensions.StartsWithMarker(byte[], byte, byte)"/> returns true when byte array starts with specified marker bytes.
-        /// </summary>
 
+    /// <summary>
+    /// Tests that <see cref="ByteExtensions.CalculateXorChecksum(byte[], int, int)"/> returns the expected XOR result for a known byte sequence.
+    /// </summary>
     [Fact]
     public void CalculateXorChecksum_KnownBytes_ReturnsExpectedXorResult()
     {
@@ -95,6 +104,9 @@ public class ExtensionsTests
         data.CalculateXorChecksum(0, 3).Should().Be(0x00);
     }
 
+    /// <summary>
+    /// Tests that <see cref="ByteExtensions.CalculateXorChecksum(byte[], int, int)"/> returns the same byte when the range consists of a single byte.
+    /// </summary>
     [Fact]
     public void CalculateXorChecksum_SingleByte_ReturnsSameByte()
         /// <summary>
@@ -106,9 +118,9 @@ public class ExtensionsTests
         data.CalculateXorChecksum(0, 1).Should().Be(0xAB);
     }
 
-        /// <summary>
-        /// Tests that <see cref="ByteExtensions.IndexOfSequence(byte[], byte[])"/> returns -1 when the byte sequence is not found in the array.
-        /// </summary>
+    /// <summary>
+    /// Tests that <see cref="ByteExtensions.StartsWithMarker(byte[], byte, byte)"/> returns <c>true</c> when the byte array starts with the specified marker bytes.
+    /// </summary>
     [Fact]
     public void StartsWithMarker_MatchingPrefix_ReturnsTrue()
     {
@@ -120,6 +132,9 @@ public class ExtensionsTests
         /// </summary>
     }
 
+    /// <summary>
+    /// Tests that <see cref="ByteExtensions.StartsWithMarker(byte[], byte, byte)"/> returns <c>false</c> when the first byte does not match the expected marker.
+    /// </summary>
     [Fact]
     public void StartsWithMarker_NonMatchingFirstByte_ReturnsFalse()
     {
@@ -134,20 +149,20 @@ public class ExtensionsTests
         /// </summary>
     }
 
+    /// <summary>
+    /// Tests that <see cref="ByteExtensions.IndexOfSequence(byte[], byte[])"/> returns the start index when the sequence is present.
+    /// </summary>
     [Fact]
-        /// <summary>
-        /// Tests that <see cref="StringExtensions.IsValidImei(string)"/> validates IMEI strings (15 digits).
-        /// </summary>
     public void IndexOfSequence_SequencePresent_ReturnsStartIndex()
     {
         var data = new byte[] { 0x01, 0x02, 0x03, 0x04 };
 
         data.IndexOfSequence(new byte[] { 0x02, 0x03 }).Should().Be(1);
     }
-        /// <summary>
-        /// Tests that <see cref="StringExtensions.IsValidImei(string)"/> returns false for strings shorter than 15 digits.
-        /// </summary>
 
+    /// <summary>
+    /// Tests that <see cref="ByteExtensions.IndexOfSequence(byte[], byte[])"/> returns <c>-1</c> when the sequence is absent.
+    /// </summary>
     [Fact]
     public void IndexOfSequence_SequenceAbsent_ReturnsMinusOne()
     {
@@ -159,6 +174,9 @@ public class ExtensionsTests
         data.IndexOfSequence(new byte[] { 0x04, 0x05 }).Should().Be(-1);
     }
 
+    /// <summary>
+    /// Tests that <see cref="ByteExtensions.CopyRange(byte[], int, int)"/> returns the correct subset for a valid range.
+    /// </summary>
     [Fact]
     public void CopyRange_ValidRange_ReturnsCorrectSubset()
     {
@@ -170,22 +188,22 @@ public class ExtensionsTests
         data.CopyRange(1, 2).Should().Equal(new byte[] { 0x20, 0x30 });
     }
 
+    /// <summary>
+    /// Tests that <see cref="ByteExtensions.ToAsciiString(byte[], int, int)"/> correctly decodes a valid ASCII byte range.
+    /// </summary>
     [Fact]
-        /// <summary>
-        /// Tests that <see cref="StringExtensions.IsValidDeviceId(string)"/> returns false when device ID contains invalid characters like @ symbol.
-        /// </summary>
     public void ToAsciiString_ValidBytes_ReturnsDecodedString()
     {
         var data = System.Text.Encoding.ASCII.GetBytes("GT06");
 
         data.ToAsciiString(0, 4).Should().Be("GT06");
     }
-        /// <summary>
-        /// Tests that <see cref="StringExtensions.SanitizeDeviceId(string)"/> removes invalid characters from device ID strings.
-        /// </summary>
 
     // ── StringExtensions ──────────────────────────────────────────────────────
 
+    /// <summary>
+    /// Tests that <see cref="StringExtensions.IsValidImei(string)"/> returns <c>true</c> for a 15‑digit IMEI.
+    /// </summary>
     [Fact]
     public void IsValidImei_FifteenDigits_ReturnsTrue()
     {
@@ -195,6 +213,9 @@ public class ExtensionsTests
         "123456789012345".IsValidImei().Should().BeTrue();
     }
 
+    /// <summary>
+    /// Tests that <see cref="StringExtensions.IsValidImei(string)"/> returns <c>false</c> for a string shorter than 15 digits.
+    /// </summary>
     [Fact]
     public void IsValidImei_TooShortString_ReturnsFalse()
     {
@@ -204,6 +225,9 @@ public class ExtensionsTests
         "12345".IsValidImei().Should().BeFalse();
     }
 
+    /// <summary>
+    /// Tests that <see cref="StringExtensions.IsValidImei(string)"/> returns <c>false</c> when the IMEI contains non‑digit characters.
+    /// </summary>
     [Fact]
     public void IsValidImei_ContainsNonDigit_ReturnsFalse()
     {
@@ -213,6 +237,9 @@ public class ExtensionsTests
         "12345678901234A".IsValidImei().Should().BeFalse();
     }
 
+    /// <summary>
+    /// Tests that <see cref="StringExtensions.IsValidDeviceId(string)"/> returns <c>true</c> for an alphanumeric ID containing dashes and underscores.
+    /// </summary>
     [Fact]
     public void IsValidDeviceId_AlphanumericWithDashUnderscore_ReturnsTrue()
     {
@@ -222,6 +249,9 @@ public class ExtensionsTests
         "device-001_test".IsValidDeviceId().Should().BeTrue();
     }
 
+    /// <summary>
+    /// Tests that <see cref="StringExtensions.IsValidDeviceId(string)"/> returns <c>false</c> when the ID contains an '@' symbol.
+    /// </summary>
     [Fact]
     public void IsValidDeviceId_ContainsAtSymbol_ReturnsFalse()
     {
@@ -231,6 +261,9 @@ public class ExtensionsTests
         "device@001".IsValidDeviceId().Should().BeFalse();
     }
 
+    /// <summary>
+    /// Tests that <see cref="StringExtensions.SanitizeDeviceId(string)"/> removes invalid characters from a device ID.
+    /// </summary>
     [Fact]
     public void SanitizeDeviceId_InvalidChars_StripsThemOut()
     {
@@ -240,6 +273,9 @@ public class ExtensionsTests
         "device@123!".SanitizeDeviceId().Should().Be("device123");
     }
 
+    /// <summary>
+    /// Tests that <see cref="StringExtensions.SanitizeDeviceId(string)"/> returns "unknown" when the input string is empty.
+    /// </summary>
     [Fact]
     public void SanitizeDeviceId_EmptyString_ReturnsUnknown()
     {
@@ -249,6 +285,9 @@ public class ExtensionsTests
         string.Empty.SanitizeDeviceId().Should().Be("unknown");
     }
 
+    /// <summary>
+    /// Tests that <see cref="StringExtensions.SanitizeDeviceId(string)"/> returns "unknown" when all characters are invalid.
+    /// </summary>
     [Fact]
     public void SanitizeDeviceId_AllInvalidChars_ReturnsUnknown()
     {
@@ -258,6 +297,9 @@ public class ExtensionsTests
         "@@@!!!".SanitizeDeviceId().Should().Be("unknown");
     }
 
+    /// <summary>
+    /// Tests that <see cref="StringExtensions.GetNmeaChecksum(string)"/> extracts the checksum part from a NMEA sentence that includes a checksum.
+    /// </summary>
     [Fact]
     public void GetNmeaChecksum_SentenceWithChecksum_ReturnsChecksumPart()
     {
@@ -267,6 +309,9 @@ public class ExtensionsTests
         "$GPRMC,123456,A*4A".GetNmeaChecksum().Should().Be("4A");
     }
 
+    /// <summary>
+    /// Tests that <see cref="StringExtensions.RemoveNmeaChecksum(string)"/> removes the star and checksum from a NMEA sentence.
+    /// </summary>
     [Fact]
     public void RemoveNmeaChecksum_SentenceWithChecksum_RemovesStarAndBeyond()
     {
@@ -276,6 +321,9 @@ public class ExtensionsTests
         "$GPRMC,123456*4A".RemoveNmeaChecksum().Should().Be("$GPRMC,123456");
     }
 
+    /// <summary>
+    /// Tests that <see cref="StringExtensions.SplitNmea(string)"/> splits a comma‑separated NMEA sentence and trims each field.
+    /// </summary>
     [Fact]
     public void SplitNmea_CommaSeparatedSentence_ReturnsTrimmedFields()
     {
@@ -287,56 +335,55 @@ public class ExtensionsTests
         fields.Should().Equal("$GPRMC", "123456", "A");
     }
 
+    /// <summary>
+    /// Tests that <see cref="StringExtensions.HexToByteArray(string)"/> correctly parses a valid hexadecimal string without delimiters.
+    /// </summary>
     [Fact]
-        /// <summary>
-        /// Tests that <see cref="DateTimeExtensions.ToUnixTimestamp(DateTime)"/> converts Unix epoch to zero.
-        /// </summary>
     public void HexToByteArray_ValidHexString_ReturnsExpectedBytes()
     {
         "7878".HexToByteArray().Should().Equal(new byte[] { 0x78, 0x78 });
     }
 
+    /// <summary>
+    /// Tests that <see cref="StringExtensions.HexToByteArray(string)"/> strips dash delimiters before parsing.
+    /// </summary>
     [Fact]
-        /// <summary>
-        /// Tests that <see cref="DateTimeExtensions.FromUnixTimestamp(long)"/> converts zero Unix timestamp back to Unix epoch.
-        /// </summary>
     public void HexToByteArray_HexWithDashes_StripsDelimitersBeforeParsing()
     {
         "78-78".HexToByteArray().Should().Equal(new byte[] { 0x78, 0x78 });
     }
 
+    /// <summary>
+    /// Tests that <see cref="StringExtensions.HexToByteArray(string)"/> returns an empty array when the hex string has an odd length.
+    /// </summary>
     [Fact]
-        /// <summary>
-        /// Tests that <see cref="DateTimeExtensions.RoundDown(DateTime, TimeSpan)"/> rounds down to the nearest time boundary.
-        /// </summary>
     public void HexToByteArray_OddLengthHex_ReturnsEmpty()
     {
         "ABC".HexToByteArray().Should().BeEmpty();
     }
 
+    /// <summary>
+    /// Tests that <see cref="StringExtensions.Truncate(string, int)"/> appends the suffix when the string is longer than the maximum length.
+    /// </summary>
     [Fact]
-        /// <summary>
-        /// Tests that <see cref="DateTimeExtensions.RoundUp(DateTime, TimeSpan)"/> rounds up to the nearest time boundary.
-        /// </summary>
     public void Truncate_StringLongerThanMax_AppendsSuffix()
     {
         "HelloWorld".Truncate(7).Should().Be("Hell...");
     }
 
+    /// <summary>
+    /// Tests that <see cref="StringExtensions.Truncate(string, int)"/> returns the original string when it is shorter than the maximum length.
+    /// </summary>
     [Fact]
-        /// <summary>
-        /// Tests that <see cref="DateTimeExtensions.IsSameDay(DateTime, DateTime)"/> returns true when both dates are the same.
-        /// </summary>
     public void Truncate_StringShorterThanMax_ReturnsOriginal()
     {
         "Hi".Truncate(10).Should().Be("Hi");
     }
 
     // ── DateTimeExtensions ────────────────────────────────────────────────────
-        /// <summary>
-        /// Tests that <see cref="DateTimeExtensions.IsSameDay(DateTime, DateTime)"/> returns false when dates are different.
-        /// </summary>
-
+    /// <summary>
+    /// Tests that <see cref="DateTimeExtensions.ToUnixTimestamp(DateTime)"/> returns zero for the Unix epoch.
+    /// </summary>
     [Fact]
     public void ToUnixTimestamp_Epoch_ReturnsZero()
     {
@@ -348,6 +395,9 @@ public class ExtensionsTests
         epoch.ToUnixTimestamp().Should().Be(0);
     }
 
+    /// <summary>
+    /// Tests that <see cref="DateTimeExtensions.FromUnixTimestamp(long)"/> converts zero back to the Unix epoch.
+    /// </summary>
     [Fact]
     public void FromUnixTimestamp_Zero_ReturnsUnixEpoch()
     {
@@ -356,6 +406,9 @@ public class ExtensionsTests
         DateTimeExtensions.FromUnixTimestamp(0).Should().Be(expected);
     }
 
+    /// <summary>
+    /// Tests that <see cref="DateTimeExtensions.RoundDown(DateTime, TimeSpan)"/> floors a DateTime to the nearest 5‑minute boundary.
+    /// </summary>
     [Fact]
     public void RoundDown_ToFiveMinutes_FloorsToBoundary()
     {
@@ -365,6 +418,9 @@ public class ExtensionsTests
           .Should().Be(new DateTime(2024, 6, 15, 12, 35, 0, DateTimeKind.Utc));
     }
 
+    /// <summary>
+    /// Tests that <see cref="DateTimeExtensions.RoundUp(DateTime, TimeSpan)"/> ceils a DateTime to the nearest 5‑minute boundary.
+    /// </summary>
     [Fact]
     public void RoundUp_ToFiveMinutes_CeilsToBoundary()
     {
@@ -374,6 +430,9 @@ public class ExtensionsTests
           .Should().Be(new DateTime(2024, 6, 15, 12, 35, 0, DateTimeKind.Utc));
     }
 
+    /// <summary>
+    /// Tests that <see cref="DateTimeExtensions.IsSameDay(DateTime, DateTime)"/> returns <c>true</c> for two times on the same date.
+    /// </summary>
     [Fact]
     public void IsSameDay_TwoTimesOnSameDate_ReturnsTrue()
     {
@@ -383,6 +442,9 @@ public class ExtensionsTests
         morning.IsSameDay(evening).Should().BeTrue();
     }
 
+    /// <summary>
+    /// Tests that <see cref="DateTimeExtensions.IsSameDay(DateTime, DateTime)"/> returns <c>false</c> for times on different dates.
+    /// </summary>
     [Fact]
     public void IsSameDay_TwoTimesOnDifferentDates_ReturnsFalse()
     {
@@ -392,6 +454,9 @@ public class ExtensionsTests
         day1.IsSameDay(day2).Should().BeFalse();
     }
 
+    /// <summary>
+    /// Tests that <see cref="DateTimeExtensions.GetStartOfDay(DateTime)"/> returns midnight for any given time.
+    /// </summary>
     [Fact]
     public void GetStartOfDay_AnyTime_ReturnsMidnight()
     {
@@ -400,6 +465,9 @@ public class ExtensionsTests
         dt.GetStartOfDay().Should().Be(new DateTime(2024, 6, 15, 0, 0, 0));
     }
 
+    /// <summary>
+    /// Tests that <see cref="DateTimeExtensions.GetStartOfMonth(DateTime)"/> returns the first day of the month at midnight.
+    /// </summary>
     [Fact]
     public void GetStartOfMonth_MidMonth_ReturnsFirstDayMidnight()
     {
@@ -408,6 +476,9 @@ public class ExtensionsTests
         dt.GetStartOfMonth().Should().Be(new DateTime(2024, 6, 1));
     }
 
+    /// <summary>
+    /// Tests that <see cref="DateTimeExtensions.ToRelativeTime(DateTime)"/> returns a human‑readable string for a time five minutes ago.
+    /// </summary>
     [Fact]
     public void ToRelativeTime_FiveMinutesAgo_ReturnsMinutesAgoString()
     {
@@ -416,6 +487,9 @@ public class ExtensionsTests
         fiveMinutesAgo.ToRelativeTime().Should().Be("5 minutes ago");
     }
 
+    /// <summary>
+    /// Tests that <see cref="DateTimeExtensions.ToRelativeTime(DateTime)"/> returns "just now" for a time less than a minute ago.
+    /// </summary>
     [Fact]
     public void ToRelativeTime_ThirtySecondsAgo_ReturnsJustNow()
     {
