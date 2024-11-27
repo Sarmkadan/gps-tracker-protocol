@@ -14,8 +14,18 @@ using GpsTrackerProtocol.Services;
 
 namespace GpsTrackerProtocol.Tests;
 
+/// <summary>
+/// Tests for the RouteReplayService class.
+/// </summary>
 public class RouteReplayServiceTests
 {
+    /// <summary>
+    /// Builds a Journey object with the specified id, waypoint count, and status.
+    /// </summary>
+    /// <param name="id">The id of the journey.</param>
+    /// <param name="waypointCount">The number of waypoints in the journey.</param>
+    /// <param name="status">The status of the journey (default is 1).</param>
+    /// <returns>A Journey object with the specified properties.</returns>
     private static Journey BuildJourney(string id, int waypointCount, int status = 1)
     {
         var baseTime = new DateTime(2024, 6, 1, 10, 0, 0, DateTimeKind.Utc);
@@ -46,6 +56,11 @@ public class RouteReplayServiceTests
         return journey;
     }
 
+    /// <summary>
+    /// Builds a RouteReplayService object with the specified journey.
+    /// </summary>
+    /// <param name="journey">The journey to use in the service.</param>
+    /// <returns>A RouteReplayService object with the specified journey.</returns>
     private static RouteReplayService BuildSut(Journey journey)
     {
         var repo = Substitute.For<IJourneyRepository>();
@@ -57,6 +72,10 @@ public class RouteReplayServiceTests
         return new RouteReplayService(uow, Substitute.For<ILogger<RouteReplayService>>());
     }
 
+    /// <summary>
+    /// Tests that the ReplayJourneyAsync method returns the correct frame count.
+    /// </summary>
+    /// <returns>A Task that represents the asynchronous operation.</returns>
     [Fact]
     public async Task ReplayJourneyAsync_ShouldReturnCorrectFrameCount()
     {
@@ -69,6 +88,10 @@ public class RouteReplayServiceTests
         result.JourneyId.Should().Be("j-1");
     }
 
+    /// <summary>
+    /// Tests that the ReplayJourneyAsync method compresses timestamps with the speed multiplier.
+    /// </summary>
+    /// <returns>A Task that represents the asynchronous operation.</returns>
     [Fact]
     public async Task ReplayJourneyAsync_ShouldCompressTimestampsWithSpeedMultiplier()
     {
@@ -82,6 +105,10 @@ public class RouteReplayServiceTests
         result.OriginalDuration.Should().BeCloseTo(TimeSpan.FromMinutes(10), TimeSpan.FromSeconds(1));
     }
 
+    /// <summary>
+    /// Tests that the ReplayJourneyAsync method throws an exception when the journey is ongoing.
+    /// </summary>
+    /// <returns>A Task that represents the asynchronous operation.</returns>
     [Fact]
     public async Task ReplayJourneyAsync_ShouldThrow_WhenJourneyIsOngoing()
     {
@@ -93,6 +120,10 @@ public class RouteReplayServiceTests
                  .WithMessage("*ongoing*");
     }
 
+    /// <summary>
+    /// Tests that the ReplayJourneyAsync method throws an exception when the journey has fewer than two waypoints.
+    /// </summary>
+    /// <returns>A Task that represents the asynchronous operation.</returns>
     [Fact]
     public async Task ReplayJourneyAsync_ShouldThrow_WhenJourneyHasFewerThanTwoWaypoints()
     {
@@ -104,6 +135,10 @@ public class RouteReplayServiceTests
                  .WithMessage("*fewer than 2*");
     }
 
+    /// <summary>
+    /// Tests that the ReplayJourneyAsync method slices waypoints when the start and end index are set.
+    /// </summary>
+    /// <returns>A Task that represents the asynchronous operation.</returns>
     [Fact]
     public async Task ReplayJourneyAsync_ShouldSliceWaypoints_WhenStartAndEndIndexSet()
     {
@@ -115,6 +150,10 @@ public class RouteReplayServiceTests
         result.Frames.Should().HaveCount(3);
     }
 
+    /// <summary>
+    /// Tests that the ReplayJourneyAsync method rebases timestamps when the rebase to UTC option is set.
+    /// </summary>
+    /// <returns>A Task that represents the asynchronous operation.</returns>
     [Fact]
     public async Task ReplayJourneyAsync_ShouldRebaseTimestamps_WhenRebaseToUtcSet()
     {
@@ -128,6 +167,10 @@ public class RouteReplayServiceTests
         result.Frames[1].ReplayTimestamp.Should().BeAfter(rebaseAt);
     }
 
+    /// <summary>
+    /// Tests that the GetReplaySummaryAsync method returns the correct waypoint count.
+    /// </summary>
+    /// <returns>A Task that represents the asynchronous operation.</returns>
     [Fact]
     public async Task GetReplaySummaryAsync_ShouldReturnCorrectWaypointCount()
     {
