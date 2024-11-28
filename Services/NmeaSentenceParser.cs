@@ -5,6 +5,7 @@
 // CTO & Software Architect
 // =====================================================================
 
+using System.Globalization;
 using GpsTrackerProtocol.Domain.Models;
 using GpsTrackerProtocol.Domain;
 
@@ -105,7 +106,7 @@ public class NmeaSentenceParser
             throw new ArgumentException("Value cannot be null or empty", nameof(value));
 
         // Parse ddmm.mmmm format
-        if (!double.TryParse(value, out var coordinateValue))
+        if (!double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var coordinateValue))
             throw new ParseException($"Invalid coordinate format: {value}");
 
         var degrees = Math.Floor(coordinateValue / 100.0);
@@ -156,15 +157,15 @@ public class NmeaSentenceParser
         // Parse time and date
         if (timePart.Length >= 6)
         {
-            var hours = int.Parse(timePart.Substring(0, 2));
-            var minutes = int.Parse(timePart.Substring(2, 2));
-            var seconds = int.Parse(timePart.Substring(4, Math.Min(2, timePart.Length - 4)));
+            var hours = int.Parse(timePart.AsSpan(0, 2), NumberStyles.Integer, CultureInfo.InvariantCulture);
+            var minutes = int.Parse(timePart.AsSpan(2, 2), NumberStyles.Integer, CultureInfo.InvariantCulture);
+            var seconds = int.Parse(timePart.AsSpan(4, Math.Min(2, timePart.Length - 4)), NumberStyles.Integer, CultureInfo.InvariantCulture);
 
             if (datePart.Length >= 6)
             {
-                var day = int.Parse(datePart.Substring(0, 2));
-                var month = int.Parse(datePart.Substring(2, 2));
-                var year = int.Parse(datePart.Substring(4, 2));
+                var day = int.Parse(datePart.AsSpan(0, 2), NumberStyles.Integer, CultureInfo.InvariantCulture);
+                var month = int.Parse(datePart.AsSpan(2, 2), NumberStyles.Integer, CultureInfo.InvariantCulture);
+                var year = int.Parse(datePart.AsSpan(4, 2), NumberStyles.Integer, CultureInfo.InvariantCulture);
 
                 // Convert 2-digit year to 4-digit (assuming 20xx)
                 var fullYear = 2000 + year;
@@ -174,13 +175,13 @@ public class NmeaSentenceParser
         }
 
         // Parse speed (knots to km/h)
-        if (double.TryParse(speedKnots, out var speedKnotsValue))
+        if (double.TryParse(speedKnots, NumberStyles.Float, CultureInfo.InvariantCulture, out var speedKnotsValue))
         {
             locationData.Speed = speedKnotsValue * 1.852; // 1 knot = 1.852 km/h
         }
 
         // Parse bearing
-        if (double.TryParse(bearing, out var bearingValue))
+        if (double.TryParse(bearing, NumberStyles.Float, CultureInfo.InvariantCulture, out var bearingValue))
         {
             locationData.Bearing = bearingValue;
         }
@@ -225,30 +226,30 @@ public class NmeaSentenceParser
         // Parse time
         if (timePart.Length >= 6)
         {
-            var hours = int.Parse(timePart.Substring(0, 2));
-            var minutes = int.Parse(timePart.Substring(2, 2));
-            var seconds = int.Parse(timePart.Substring(4, Math.Min(2, timePart.Length - 4)));
+            var hours = int.Parse(timePart.AsSpan(0, 2), NumberStyles.Integer, CultureInfo.InvariantCulture);
+            var minutes = int.Parse(timePart.AsSpan(2, 2), NumberStyles.Integer, CultureInfo.InvariantCulture);
+            var seconds = int.Parse(timePart.AsSpan(4, Math.Min(2, timePart.Length - 4)), NumberStyles.Integer, CultureInfo.InvariantCulture);
             locationData.Timestamp = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, DateTime.UtcNow.Day, hours, minutes, seconds, DateTimeKind.Utc);
         }
 
         // Parse fix quality
-        if (int.TryParse(fixQuality, out var quality) && quality == 0)
+        if (int.TryParse(fixQuality, NumberStyles.Integer, CultureInfo.InvariantCulture, out var quality) && quality == 0)
             throw new ParseException("Invalid fix quality (no fix)", ProtocolType.Unknown);
 
         // Parse satellite count
-        if (int.TryParse(satelliteCount, out var satCount))
+        if (int.TryParse(satelliteCount, NumberStyles.Integer, CultureInfo.InvariantCulture, out var satCount))
         {
             locationData.SatelliteCount = satCount;
         }
 
         // Parse HDOP (Horizontal Dilution of Precision)
-        if (double.TryParse(hdop, out var hdopValue))
+        if (double.TryParse(hdop, NumberStyles.Float, CultureInfo.InvariantCulture, out var hdopValue))
         {
             locationData.Accuracy = hdopValue;
         }
 
         // Parse altitude
-        if (double.TryParse(altitude, out var altValue))
+        if (double.TryParse(altitude, NumberStyles.Float, CultureInfo.InvariantCulture, out var altValue))
         {
             locationData.Altitude = altValue;
         }
@@ -293,9 +294,9 @@ public class NmeaSentenceParser
         // Parse time
         if (timePart.Length >= 6)
         {
-            var hours = int.Parse(timePart.Substring(0, 2));
-            var minutes = int.Parse(timePart.Substring(2, 2));
-            var seconds = int.Parse(timePart.Substring(4, Math.Min(2, timePart.Length - 4)));
+            var hours = int.Parse(timePart.AsSpan(0, 2), NumberStyles.Integer, CultureInfo.InvariantCulture);
+            var minutes = int.Parse(timePart.AsSpan(2, 2), NumberStyles.Integer, CultureInfo.InvariantCulture);
+            var seconds = int.Parse(timePart.AsSpan(4, Math.Min(2, timePart.Length - 4)), NumberStyles.Integer, CultureInfo.InvariantCulture);
             locationData.Timestamp = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, DateTime.UtcNow.Day, hours, minutes, seconds, DateTimeKind.Utc);
         }
 

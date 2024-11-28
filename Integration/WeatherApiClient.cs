@@ -7,6 +7,7 @@
 namespace GpsTrackerProtocol.Integration;
 
 using Microsoft.Extensions.Logging;
+using System.Globalization;
 using System.Text.Json.Serialization;
 
 /// <summary>
@@ -33,8 +34,8 @@ public class WeatherApiClient : ExternalApiClient, IWeatherApiClient
         {
             var parameters = new Dictionary<string, string>
             {
-                { "latitude", latitude.ToString("F2") },
-                { "longitude", longitude.ToString("F2") },
+                { "latitude", latitude.ToString("F2", CultureInfo.InvariantCulture) },
+                { "longitude", longitude.ToString("F2", CultureInfo.InvariantCulture) },
                 { "current", "temperature,weather_code,wind_speed" },
                 { "temperature_unit", "celsius" }
             };

@@ -6,6 +6,7 @@
 
 namespace GpsTrackerProtocol.Formatting;
 
+using System.Globalization;
 using System.Text;
 using GpsTrackerProtocol.Domain.Models;
 
@@ -94,14 +95,14 @@ public class CsvFormatter : ICsvFormatter
         return EscapeCsvField(new[]
         {
             location.DeviceId,
-            location.Timestamp.ToString("yyyy-MM-dd HH:mm:ss"),
-            location.Latitude.ToString("F8"),
-            location.Longitude.ToString("F8"),
-            location.Speed.ToString("F2"),
-            location.Bearing.ToString("F2"),
-            location.Altitude.ToString("F2"),
-            location.Accuracy.ToString("F2"),
-            location.SatelliteCount.ToString(),
+            location.Timestamp.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture),
+            location.Latitude.ToString("F8", CultureInfo.InvariantCulture),
+            location.Longitude.ToString("F8", CultureInfo.InvariantCulture),
+            location.Speed.ToString("F2", CultureInfo.InvariantCulture),
+            location.Bearing.ToString("F2", CultureInfo.InvariantCulture),
+            location.Altitude.ToString("F2", CultureInfo.InvariantCulture),
+            location.Accuracy.ToString("F2", CultureInfo.InvariantCulture),
+            location.SatelliteCount.ToString(CultureInfo.InvariantCulture),
             location.Protocol.ToString()
         });
     }
@@ -110,14 +111,14 @@ public class CsvFormatter : ICsvFormatter
     {
         return EscapeCsvField(new[]
         {
-            index.ToString(),
-            waypoint.Timestamp.ToString("yyyy-MM-dd HH:mm:ss"),
-            waypoint.Latitude.ToString("F8"),
-            waypoint.Longitude.ToString("F8"),
-            waypoint.Speed.ToString("F2"),
-            waypoint.Bearing.ToString("F2"),
-            waypoint.Altitude.ToString("F2"),
-            distanceFromPrevious.ToString("F4")
+            index.ToString(CultureInfo.InvariantCulture),
+            waypoint.Timestamp.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture),
+            waypoint.Latitude.ToString("F8", CultureInfo.InvariantCulture),
+            waypoint.Longitude.ToString("F8", CultureInfo.InvariantCulture),
+            waypoint.Speed.ToString("F2", CultureInfo.InvariantCulture),
+            waypoint.Bearing.ToString("F2", CultureInfo.InvariantCulture),
+            waypoint.Altitude.ToString("F2", CultureInfo.InvariantCulture),
+            distanceFromPrevious.ToString("F4", CultureInfo.InvariantCulture)
         });
     }
 
@@ -131,7 +132,7 @@ public class CsvFormatter : ICsvFormatter
             device.Protocol.ToString(),
             device.IsActive.ToString(),
             device.Status.ToString(),
-            device.LastSeen.ToString("yyyy-MM-dd HH:mm:ss")
+            device.LastSeen.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)
         });
     }
 

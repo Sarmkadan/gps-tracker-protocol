@@ -4,6 +4,8 @@
 // CTO & Software Architect
 // =============================================================================
 
+using System.Globalization;
+
 namespace GpsTrackerProtocol.Domain.Models;
 
 /// <summary>
@@ -68,7 +70,7 @@ public class ResponseMessage
     private void ParseError(string[] parts)
     {
         IsSuccess = false;
-        if (parts.Length > 1 && int.TryParse(parts[1], out var code))
+        if (parts.Length > 1 && int.TryParse(parts[1], NumberStyles.Integer, CultureInfo.InvariantCulture, out var code))
         {
             ErrorCode = code;
             ErrorMessage = GetErrorMessage(code);
@@ -81,11 +83,11 @@ public class ResponseMessage
         {
             if (parts.Length >= 6)
             {
-                ParsedData["latitude"] = double.Parse(parts[1]);
-                ParsedData["longitude"] = double.Parse(parts[2]);
-                ParsedData["speed"] = double.Parse(parts[3]);
-                ParsedData["bearing"] = double.Parse(parts[4]);
-                ParsedData["altitude"] = double.Parse(parts[5]);
+                ParsedData["latitude"] = double.Parse(parts[1], NumberStyles.Float, CultureInfo.InvariantCulture);
+                ParsedData["longitude"] = double.Parse(parts[2], NumberStyles.Float, CultureInfo.InvariantCulture);
+                ParsedData["speed"] = double.Parse(parts[3], NumberStyles.Float, CultureInfo.InvariantCulture);
+                ParsedData["bearing"] = double.Parse(parts[4], NumberStyles.Float, CultureInfo.InvariantCulture);
+                ParsedData["altitude"] = double.Parse(parts[5], NumberStyles.Float, CultureInfo.InvariantCulture);
                 IsSuccess = true;
             }
         }
@@ -102,9 +104,9 @@ public class ResponseMessage
         {
             if (parts.Length >= 4)
             {
-                ParsedData["battery"] = int.Parse(parts[1]);
-                ParsedData["signal"] = int.Parse(parts[2]);
-                ParsedData["satellites"] = int.Parse(parts[3]);
+                ParsedData["battery"] = int.Parse(parts[1], NumberStyles.Integer, CultureInfo.InvariantCulture);
+                ParsedData["signal"] = int.Parse(parts[2], NumberStyles.Integer, CultureInfo.InvariantCulture);
+                ParsedData["satellites"] = int.Parse(parts[3], NumberStyles.Integer, CultureInfo.InvariantCulture);
                 IsSuccess = true;
             }
         }
