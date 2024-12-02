@@ -38,7 +38,6 @@ public class Example
         Console.WriteLine($"Coordinate valid: {isValid}");
     }
 }
-```
 
 ## FuelTrackingServiceTestsExtensions
 
@@ -93,6 +92,60 @@ public class FuelTrackingExample
 
         // Assert that a non‑existent record does not exist
         await test.AssertRecordDoesNotExistAsync("nonexistent-id");
+    }
+}
+
+## BatchDataImporterValidation
+
+The `BatchDataImporterValidation` class provides a set of static methods for validating data before import operations. It includes methods for validating file paths, CSV location data, and device import parameters. These methods can be used to ensure that data is correct and consistent before importing it into the system.
+
+Example usage:
+
+```csharp
+using System;
+
+public class BatchDataImporterExample
+{
+    public void Demo()
+    {
+        string filePath = "/path/to/import/file.csv";
+        if (BatchDataImporterValidation.IsValid(filePath))
+        {
+            Console.WriteLine("File path is valid");
+        }
+        else
+        {
+            var errors = BatchDataImporterValidation.Validate(filePath);
+            Console.WriteLine("File path is not valid: " + string.Join(", ", errors));
+        }
+
+        string deviceId = "device123";
+        double latitude = 37.7749;
+        double longitude = -122.4194;
+        double speed = 50.0;
+        DateTime timestamp = DateTime.UtcNow;
+        if (BatchDataImporterValidation.IsValid(deviceId, latitude, longitude, speed, timestamp))
+        {
+            Console.WriteLine("Location data is valid");
+        }
+        else
+        {
+            var errors = BatchDataImporterValidation.Validate(deviceId, latitude, longitude, speed, timestamp);
+            Console.WriteLine("Location data is not valid: " + string.Join(", ", errors));
+        }
+
+        string imei = "imei1234567890";
+        string deviceName = "Device Name";
+        string protocol = "Protocol Name";
+        if (BatchDataImporterValidation.IsValid(imei, deviceName, protocol))
+        {
+            Console.WriteLine("Device import parameters are valid");
+        }
+        else
+        {
+            var errors = BatchDataImporterValidation.Validate(imei, deviceName, protocol);
+            Console.WriteLine("Device import parameters are not valid: " + string.Join(", ", errors));
+        }
     }
 }
 ```
