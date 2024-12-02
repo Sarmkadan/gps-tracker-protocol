@@ -39,3 +39,60 @@ public class Example
     }
 }
 ```
+
+## FuelTrackingServiceTestsExtensions
+
+`FuelTrackingServiceTestsExtensions` provides fluent helper methods for configuring `FuelTrackingServiceTests` instances and asserting the state of fuel records. It includes methods to create a default test instance, seed it with a collection of `FuelRecord`s, generate records for a specific vehicle over a date range, and verify the existence or non‑existence of a particular record.
+
+Example usage:
+
+```csharp
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using GpsTrackerProtocol.Tests;
+using GpsTrackerProtocol.Domain.Models;
+
+public class FuelTrackingExample
+{
+    public static async Task DemoAsync()
+    {
+        // Start with a default test instance
+        var test = new FuelTrackingServiceTests().CreateDefault();
+
+        // Seed the test service with specific fuel records
+        var records = new[]
+        {
+            new FuelRecord(
+                vehicleId: "vehicle1",
+                deviceId: "deviceA",
+                eventType: FuelEventType.Refuel,
+                amount: 30.5,
+                timestamp: DateTime.UtcNow.AddHours(-2),
+                OdometerKm: 1200),
+
+            new FuelRecord(
+                vehicleId: "vehicle1",
+                deviceId: "deviceA",
+                eventType: FuelEventType.Consumption,
+                amount: 5.0,
+                timestamp: DateTime.UtcNow.AddHours(-1),
+                OdometerKm: 1250)
+        };
+        test = await test.WithRecordsAsync(records);
+
+        // Or generate a range of records for a vehicle between two dates
+        test = await test.WithVehicleRecordsAsync(
+            vehicleId: "vehicle2",
+            startDate: DateTime.UtcNow.AddDays(-1),
+            endDate: DateTime.UtcNow,
+            recordCount: 3);
+
+        // Assert that a known record exists
+        await test.AssertRecordExistsAsync(records[0].Id);
+
+        // Assert that a non‑existent record does not exist
+        await test.AssertRecordDoesNotExistAsync("nonexistent-id");
+    }
+}
+```
