@@ -148,4 +148,29 @@ public class BatchDataImporterExample
         }
     }
 }
+
+## ILoggingPipeline
+
+The `ILoggingPipeline` interface provides a structured logging mechanism for tracking frame processing, parsing, and storage. It allows for the creation of a logging context and the logging of various events throughout the processing pipeline.
+
+Example usage:
+
+```csharp
+using GpsTrackerProtocol.Infrastructure;
+using GpsTrackerProtocol.Domain.Models;
+
+public class LoggingExample
+{
+    public void Demo(ILoggingPipeline pipeline, GpsFrame frame)
+    {
+        var context = pipeline.CreateContext(frame.Id, frame.DeviceId);
+        pipeline.LogFrameReceived(context, frame);
+        pipeline.LogParsingStarted(context, frame.Protocol);
+        var location = new LocationData { Latitude = 37.7749, Longitude = -122.4194, Speed = 50.0 };
+        pipeline.LogParsingCompleted(context, location);
+        pipeline.LogStorageStarted(context);
+        pipeline.LogStorageCompleted(context, "stored-id");
+    }
+}
+```
 ```
