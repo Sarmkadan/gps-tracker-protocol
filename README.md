@@ -290,6 +290,92 @@ public class DeviceServiceTestsDemo
 
 <!-- (rest of README.md remains the same) -->
 
+## DeviceDiagnosticsServiceTests
+
+The `DeviceDiagnosticsServiceTests` class provides unit tests for the `DeviceDiagnosticsService` class, covering device diagnostics retrieval, self-test execution, and connectivity analysis. It uses mock repositories with NSubstitute to test various scenarios including healthy devices, low battery conditions, weak signal situations, and missing devices.
+
+Example usage in a diagnostics dashboard or monitoring service:
+
+```csharp
+using System;
+using System.Threading.Tasks;
+using GpsTrackerProtocol.Services;
+using GpsTrackerProtocol.Domain.Models;
+using GpsTrackerProtocol.Data;
+using Microsoft.Extensions.Logging;
+using NSubstitute;
+
+public class DeviceDiagnosticsDashboard
+{
+private readonly IDeviceDiagnosticsService _diagnosticsService;
+
+public DeviceDiagnosticsDashboard(IDeviceDiagnosticsService diagnosticsService)
+{
+_diagnosticsService = diagnosticsService;
+}
+
+public async Task MonitorDeviceHealthAsync(string deviceId)
+{
+// Get comprehensive diagnostics for a specific device
+var report = await _diagnosticsService.GetDiagnosticsAsync(deviceId);
+
+if (report is null)
+{
+Console.WriteLine($"Device {deviceId} not found.");
+return;
+}
+
+Console.WriteLine($"Device: {report.DeviceName} ({report.Imei})");
+Console.WriteLine($"Status: {(report.IsOnline ? "Online" : "Offline")} - Last seen: {report.LastSeen:HH:mm:ss}");
+Console.WriteLine($"Battery: {report.BatteryLevel}% - Signal: {report.SignalStrength} dBm ({report.SignalQuality})");
+Console.WriteLine($"Location points: {report.TotalLocationPoints} - Journeys: {report.TotalJourneys}");
+Console.WriteLine($"Total distance: {report.TotalDistanceKm:F1} km");
+
+// Run a self-test and cache the result
+var selfTest = await _diagnosticsService.RunSelfTestAsync(deviceId);
+
+if (selfTest is not null)
+{
+Console.WriteLine($"\nSelf-test results:");
+Console.WriteLine($"  Connectivity: {(selfTest.ConnectivityOk ? "OK" : "FAIL")}");
+Console.WriteLine($"  Battery: {(selfTest.BatteryOk ? "OK" : "FAIL")}");
+Console.WriteLine($"  Signal: {(selfTest.SignalOk ? "OK" : "FAIL")}");
+Console.WriteLine($"  Location data: {(selfTest.LocationDataOk ? "OK" : "FAIL")}");
+
+if (selfTest.Warnings.Any())
+{
+Console.WriteLine("  Warnings:");
+foreach (var warning in selfTest.Warnings)
+Console.WriteLine($"    - {warning}");
+}
+}
+}
+
+public async Task GenerateFleetHealthReportAsync()
+{
+// Get fleet-wide health metrics
+var fleetReport = await _diagnosticsService.GetFleetHealthReportAsync();
+
+Console.WriteLine($"\n=== Fleet Health Report ===");
+Console.WriteLine($"Total devices: {fleetReport.TotalDevices}");
+Console.WriteLine($"Online: {fleetReport.OnlineDevices} | Offline: {fleetReport.OfflineDevices}");
+Console.WriteLine($"Low battery: {fleetReport.LowBatteryDevices} | Weak signal: {fleetReport.WeakSignalDevices}");
+Console.WriteLine($"Generated at: {fleetReport.GeneratedAt:yyyy-MM-dd HH:mm:ss}");
+}
+}
+
+// Example usage:
+var unitOfWork = Substitute.For<IUnitOfWork>();
+var logger = Substitute.For<ILogger<DeviceDiagnosticsService>>();
+var diagnosticsService = new DeviceDiagnosticsService(unitOfWork, logger);
+
+var dashboard = new DeviceDiagnosticsDashboard(diagnosticsService);
+await dashboard.MonitorDeviceHealthAsync("device-123");
+await dashboard.GenerateFleetHealthReportAsync();
+```
+
+<!-- (rest of README.md remains the same) -->
+
 ## AnalyticsServiceTests
 
 The `AnalyticsServiceTests` class provides unit tests for the `AnalyticsService` functionality, covering journey analytics including total journey counts, average journey durations, and device activity tracking. It uses mock repositories with NSubstitute to test various scenarios including journeys with different durations, empty repositories, and device activity calculations.
