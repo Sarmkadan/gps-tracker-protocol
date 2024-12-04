@@ -2,41 +2,39 @@
 
 <!-- (rest of README.md remains the same) -->
 
-## IRateLimiter
+## IDomainEvent
 
-The `IRateLimiter` interface defines a contract for rate limiting, which is used to prevent device spam and protect system resources. It provides methods to check if a request is allowed and to get the remaining tokens for a device.
+The `IDomainEvent` interface represents a domain event in the system. It provides metadata such as the event ID, timestamp, and aggregate ID, which can be used to track and manage events in the system.
 
 Example usage:
 
 ```csharp
-using GpsTrackerProtocol.Infrastructure;
+using GpsTrackerProtocol.Events;
 
-public class RateLimiterExample
+public class EventPublisherExample
 {
-  public void Demo()
-  {
-    // Create a rate limiter instance
-    var rateLimiter = new RateLimitingService(new RateLimitConfig());
-
-    // Check if a request is allowed for a device
-    var deviceId = "device123";
-    if (rateLimiter.AllowRequest(deviceId))
+    public async Task PublishEventAsync()
     {
-      Console.WriteLine("Request allowed");
-    }
-    else
-    {
-      Console.WriteLine("Request denied");
-    }
+        // Create a new event
+        var locationUpdatedEvent = new LocationUpdatedEvent
+        {
+            EventId = Guid.NewGuid().ToString(),
+            Timestamp = DateTime.UtcNow,
+            AggregateId = "device123",
+            DeviceId = "device123",
+            Location = new LocationData
+            {
+                Latitude = 37.7749,
+                Longitude = -122.4194
+            }
+        };
 
-    // Get the remaining tokens for a device
-    var remainingTokens = rateLimiter.GetRemainingTokens(deviceId);
-    Console.WriteLine($"Remaining tokens: {remainingTokens}");
-  }
+        // Publish the event
+        var eventPublisher = new EventPublisher();
+        await eventPublisher.PublishAsync(locationUpdatedEvent);
+    }
 }
 ```
-
-The `IRateLimiter` interface is implemented by the `RateLimitingService` class, which uses a token bucket algorithm to manage rate limiting.
 
 <!-- (rest of README.md remains the same) -->
 
