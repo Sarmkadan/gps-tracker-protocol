@@ -612,4 +612,91 @@ public class AnalyticsServiceTestsDemo
 }
 ```
 
+## DomainAndServiceTests
+
+The `DomainAndServiceTests` class provides comprehensive unit tests for core domain models (`LocationData`, `Device`, `GpsFrame`) and the `GeofenceService`, covering validation rules, geometric calculations, and geofence containment checks. Tests validate edge cases such as invalid coordinates, malformed device identifiers, checksum validation, and service behavior with missing or invalid inputs.
+
+Example usage in a test project:
+
+```csharp
+using Xunit;
+using FluentAssertions;
+using GpsTrackerProtocol.Domain;
+using GpsTrackerProtocol.Domain.Models;
+using GpsTrackerProtocol.Services;
+
+public class DomainValidationTests
+{
+    [Fact]
+    public void ValidateLocationData_WithValidCoordinatesAndDeviceId_ReturnsTrue()
+    {
+        // Arrange
+        var location = new LocationData
+        {
+            DeviceId = "device-001",
+            Latitude = 51.5074,
+            Longitude = -0.1278,
+            Speed = 60,
+            Bearing = 270,
+            SatelliteCount = 9
+        };
+
+        // Act
+        var isValid = location.IsValid();
+
+        // Assert
+        isValid.Should().BeTrue();
+    }
+
+    [Fact]
+    public void ValidateDevice_WithValidImei_ReturnsTrue()
+    {
+        // Arrange
+        var device = new Device
+        {
+            Id = "device-001",
+            Imei = "123456789012345"
+        };
+
+        // Act
+        var isValid = device.IsValid();
+
+        // Assert
+        isValid.Should().BeTrue();
+    }
+
+    [Fact]
+    public void ValidateGpsFrame_WithValidGT06Frame_ReturnsTrue()
+    {
+        // Arrange
+        var frame = new GpsFrame
+        {
+            Protocol = ProtocolType.GT06,
+            RawData = new byte[20],
+            IsValidChecksum = true
+        };
+
+        // Act
+        var isValid = frame.IsValid();
+
+        // Assert
+        isValid.Should().BeTrue();
+    }
+
+    [Fact]
+    public void GeofenceService_CheckPointInsideGeofence_ReturnsTrue()
+    {
+        // Arrange
+        var service = new GeofenceService();
+        service.AddGeofence("london-zone", 51.5074, -0.1278, 1.0);
+
+        // Act
+        var isInside = service.IsInsideGeofence("london-zone", 51.5074, -0.1278);
+
+        // Assert
+        isInside.Should().BeTrue();
+    }
+}
+```
+
 <!-- (rest of README.md remains the same) -->
