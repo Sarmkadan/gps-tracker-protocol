@@ -243,6 +243,161 @@ Console.WriteLine($"Event {geofenceEvent.EventId} for device {geofenceEvent.Devi
 
 <!-- (rest of README.md remains the same) -->
 
+## GeofenceAlertingServiceTests
+
+The `GeofenceAlertingServiceTests` class provides unit tests for the `GeofenceAlertingService` functionality, covering alert rule creation, geofence event processing, alert acknowledgment, and rule deletion. It uses mock event publishers with NSubstitute to test various scenarios including alert triggering, cooldown periods, and alert suppression.
+
+Example usage in a test project:
+
+```csharp
+using Xunit;
+using NSubstitute;
+using FluentAssertions;
+using GpsTrackerProtocol.Services;
+using GpsTrackerProtocol.Domain.Models;
+using GpsTrackerProtocol.Events;
+using Microsoft.Extensions.Logging;
+
+public class GeofenceAlertingServiceTestsDemo
+{
+    private readonly IEventPublisher _publisher;
+    private readonly GeofenceAlertingService _alertingService;
+
+    public GeofenceAlertingServiceTestsDemo()
+    {
+        _publisher = Substitute.For<IEventPublisher>();
+        _publisher
+            .Subscribe(Arg.Any<Func<GeofenceEnteredEvent, Task>>())
+            .Returns(Substitute.For<IDisposable>());
+        _publisher
+            .Subscribe(Arg.Any<Func<GeofenceExitedEvent, Task>>())
+            .Returns(Substitute.For<IDisposable>());
+
+        _alertingService = new GeofenceAlertingService(
+            _publisher,
+            Substitute.For<ILogger<GeofenceAlertingService>>());
+    }
+
+    [Fact]
+    public void CreateAlertRule_ShouldAddRuleForDevice()
+    {
+        // Arrange & Act
+        var rule = _alertingService.CreateAlertRule("device-1", "zone-hq", GeofenceAlertType.Enter);
+
+        // Assert
+        Assert.NotNull(rule);
+        Assert.Equal("device-1", rule.DeviceId);
+        Assert.Equal("zone-hq", rule.GeofenceId);
+        Assert.Equal(GeofenceAlertType.Enter, rule.AlertType);
+        Assert.True(rule.IsEnabled);
+        
+        var rules = _alertingService.GetRulesForDevice("device-1");
+        Assert.Single(rules);
+    }
+
+    [Fact]
+    public void ProcessGeofenceEntered_ShouldFireAlertWhenMatchingRuleExists()
+    {
+        // Arrange
+        _alertingService.CreateAlertRule("device-2", "zone-a", GeofenceAlertType.Enter, cooldown: TimeSpan.Zero);
+
+        var @event = new GeofenceEnteredEvent
+        {
+            DeviceId = "device-2",
+            GeofenceId = "zone-a",
+            Latitude = 51.5,
+            Longitude = -0.1,
+            Speed = 30
+        };
+
+        // Act
+        _alertingService.ProcessGeofenceEntered(@event);
+
+        // Assert
+        var alerts = _alertingService.GetActiveAlerts("device-2");
+        Assert.Single(alerts);
+        Assert.Equal(GeofenceAlertType.Enter, alerts[0].AlertType);
+        Assert.Equal(GeofenceAlertStatus.Active, alerts[0].Status);
+    }
+
+    [Fact]
+    public void ProcessGeofenceEntered_ShouldSuppressAlertWithinCooldown()
+    {
+        // Arrange
+        _alertingService.CreateAlertRule("device-3", "zone-b", GeofenceAlertType.Enter, 
+            cooldown: TimeSpan.FromHours(1));
+
+        var @event = new GeofenceEnteredEvent
+        {
+            DeviceId = "device-3",
+            GeofenceId = "zone-b",
+            Latitude = 51.5,
+            Longitude = -0.1
+        };
+
+        // Act
+        _alertingService.ProcessGeofenceEntered(@event);
+        _alertingService.ProcessGeofenceEntered(@event);
+
+        // Assert
+        var history = _alertingService.GetAlertHistory("device-3");
+        Assert.Equal(2, history.Count);
+        Assert.Single(history.Where(a => a.Status == GeofenceAlertStatus.Active));
+        Assert.Single(history.Where(a => a.Status == GeofenceAlertStatus.Suppressed));
+    }
+
+    [Fact]
+    public void AcknowledgeAlert_ShouldMarkAlertAsAcknowledged()
+    {
+        // Arrange
+        _alertingService.CreateAlertRule("device-4", "zone-c", GeofenceAlertType.Exit, cooldown: TimeSpan.Zero);
+        _alertingService.ProcessGeofenceExited(new GeofenceExitedEvent
+        {
+            DeviceId = "device-4",
+            GeofenceId = "zone-c"
+        });
+
+        var alert = _alertingService.GetActiveAlerts("device-4").First();
+
+        // Act
+        var result = _alertingService.AcknowledgeAlert(alert.Id, "reviewed by operator");
+
+        // Assert
+        Assert.True(result);
+        Assert.Empty(_alertingService.GetActiveAlerts("device-4"));
+    }
+
+    [Fact]
+    public void DeleteAlertRule_ShouldRemoveRule()
+    {
+        // Arrange
+        var rule = _alertingService.CreateAlertRule("device-5", "zone-d", GeofenceAlertType.Enter);
+
+        // Act
+        _alertingService.DeleteAlertRule(rule.Id);
+
+        // Assert
+        Assert.Empty(_alertingService.GetRulesForDevice("device-5"));
+    }
+
+    [Fact]
+    public void ProcessGeofenceEntered_ShouldNotFireAlert_WhenNoMatchingRule()
+    {
+        // Arrange & Act
+        _alertingService.ProcessGeofenceEntered(new GeofenceEnteredEvent
+        {
+            DeviceId = "device-no-rule",
+            GeofenceId = "zone-x"
+        });
+
+        // Assert
+        Assert.Empty(_alertingService.GetActiveAlerts("device-no-rule"));
+    }
+}
+```
+
+<!-- (rest of README.md remains the same) -->
+
 ## DeviceServiceTests
 
 `DeviceServiceTests` provides a comprehensive test suite for the `DeviceService` class, verifying device registration, lookup, status updates, and bulk retrieval. The tests confirm correct handling of new devices, already‑registered devices, missing devices, and status changes.
