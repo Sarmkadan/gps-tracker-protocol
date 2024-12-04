@@ -240,3 +240,52 @@ var geofenceEvent = new GeofenceEnteredEvent
 
 Console.WriteLine($"Event {geofenceEvent.EventId} for device {geofenceEvent.DeviceId} entered geofence {geofenceEvent.GeofenceId} at {geofenceEvent.Timestamp}.");
 ```
+
+<!-- (rest of README.md remains the same) -->
+
+## DeviceServiceTests
+
+`DeviceServiceTests` provides a comprehensive test suite for the `DeviceService` class, verifying device registration, lookup, status updates, and bulk retrieval. The tests confirm correct handling of new devices, already‑registered devices, missing devices, and status changes.
+
+```csharp
+using System;
+using System.Threading.Tasks;
+using GpsTrackerProtocol.Services;
+using GpsTrackerProtocol.Domain.Models;
+using GpsTrackerProtocol.Data;
+using NSubstitute;
+
+public class DeviceServiceTestsDemo
+{
+    public async Task RunAllTestsAsync()
+    {
+        // Arrange shared dependencies
+        var deviceRepository = Substitute.For<IRepository<Device>>();
+        var deviceService = new DeviceService(deviceRepository);
+        var tests = new DeviceServiceTests();
+
+        // Register a new device (adds it)
+        await tests.RegisterDeviceAsync_ShouldAddDevice();
+
+        // Register an existing device (returns the existing instance)
+        await tests.RegisterDeviceAsync_ShouldReturnExistingDevice_IfAlreadyRegistered();
+
+        // Retrieve an existing device by its identifier
+        await tests.GetDeviceByIdAsync_ShouldReturnDevice();
+
+        // Attempt to retrieve a non‑existent device (expects null)
+        await tests.GetDeviceByIdAsync_ShouldReturnNull_WhenDeviceNotFound();
+
+        // Update the status of a known device
+        await tests.UpdateDeviceStatusAsync_ShouldUpdateDevice();
+
+        // Attempt to update a device that does not exist (no action)
+        await tests.UpdateDeviceStatusAsync_ShouldDoNothing_WhenDeviceNotFound();
+
+        // Retrieve all devices from the repository
+        await tests.GetAllDevicesAsync_ShouldReturnAllDevices();
+    }
+}
+```
+
+<!-- (rest of README.md remains the same) -->
