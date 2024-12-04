@@ -289,3 +289,86 @@ public class DeviceServiceTestsDemo
 ```
 
 <!-- (rest of README.md remains the same) -->
+
+## AnalyticsServiceTests
+
+The `AnalyticsServiceTests` class provides unit tests for the `AnalyticsService` functionality, covering journey analytics including total journey counts, average journey durations, and device activity tracking. It uses mock repositories with NSubstitute to test various scenarios including journeys with different durations, empty repositories, and device activity calculations.
+
+Example usage in a test project:
+
+```csharp
+using Xunit;
+using NSubstitute;
+using FluentAssertions;
+using GpsTrackerProtocol.Services;
+using GpsTrackerProtocol.Domain.Models;
+using GpsTrackerProtocol.Data;
+using System.Threading.Tasks;
+using System;
+
+public class AnalyticsServiceTestsDemo
+{
+    private readonly IRepository<Journey> _journeyRepository = Substitute.For<IRepository<Journey>>();
+    private readonly IRepository<LocationData> _locationDataRepository = Substitute.For<IRepository<LocationData>>();
+    private readonly AnalyticsService _analyticsService;
+
+    public AnalyticsServiceTestsDemo()
+    {
+        _analyticsService = new AnalyticsService(_journeyRepository, _locationDataRepository);
+    }
+
+    [Fact]
+    public async Task GetTotalJourneys_ShouldReturnCorrectCount()
+    {
+        // Arrange
+        _journeyRepository.GetAllAsync().Returns(new List<Journey>
+        {
+            new Journey { Id = "journey1", DeviceId = "device1", StartTime = DateTime.UtcNow.AddHours(-2), EndTime = DateTime.UtcNow.AddHours(-1) },
+            new Journey { Id = "journey2", DeviceId = "device1", StartTime = DateTime.UtcNow.AddHours(-4), EndTime = DateTime.UtcNow.AddHours(-3) }
+        });
+
+        // Act
+        var totalJourneys = await _analyticsService.GetTotalJourneysAsync().ConfigureAwait(false);
+
+        // Assert
+        Assert.Equal(2, totalJourneys);
+    }
+
+    [Fact]
+    public async Task GetAverageJourneyDuration_ShouldReturnCorrectAverage()
+    {
+        // Arrange
+        _journeyRepository.GetAllAsync().Returns(new List<Journey>
+        {
+            new Journey { Id = "journey1", DeviceId = "device1", StartTime = DateTime.UtcNow.AddHours(-2), EndTime = DateTime.UtcNow.AddHours(-1) },
+            new Journey { Id = "journey2", DeviceId = "device1", StartTime = DateTime.UtcNow.AddHours(-4), EndTime = DateTime.UtcNow.AddHours(-2) }
+        });
+
+        // Act
+        var averageDuration = await _analyticsService.GetAverageJourneyDurationAsync().ConfigureAwait(false);
+
+        // Assert
+        Assert.Equal(TimeSpan.FromHours(1.5), averageDuration);
+    }
+
+    [Fact]
+    public async Task GetMostActiveDevice_ShouldReturnCorrectDeviceId()
+    {
+        // Arrange
+        _journeyRepository.GetAllAsync().Returns(new List<Journey>
+        {
+            new Journey { Id = "j1", DeviceId = "deviceA", StartTime = DateTime.UtcNow, EndTime = DateTime.UtcNow.AddMinutes(30) },
+            new Journey { Id = "j2", DeviceId = "deviceB", StartTime = DateTime.UtcNow, EndTime = DateTime.UtcNow.AddMinutes(30) },
+            new Journey { Id = "j3", DeviceId = "deviceA", StartTime = DateTime.UtcNow, EndTime = DateTime.UtcNow.AddMinutes(30) }
+        });
+
+        // Act
+        var mostActiveDevice = await _analyticsService.GetMostActiveDeviceAsync().ConfigureAwait(false);
+
+        // Assert
+        Assert.Equal("deviceA", mostActiveDevice);
+    }
+}
+```
+
+<!-- (rest of README.md remains the same) -->
