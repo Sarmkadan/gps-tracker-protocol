@@ -445,6 +445,99 @@ public class DeviceServiceTestsDemo
 
 <!-- (rest of README.md remains the same) -->
 
+## ProtocolParserServiceTests
+
+The `ProtocolParserServiceTests` class provides comprehensive unit tests for the `ProtocolParserService` class, which provides protocol detection, validation, and frame parsing functionality for various GPS tracker protocols including GT06, TK103, and H02. The tests cover protocol detection based on protocol-specific markers, frame validation with checksum verification, and frame parsing with coordinate extraction for all supported protocols.
+
+Example usage in a protocol parsing service:
+
+```csharp
+using System;
+using System.Threading.Tasks;
+using GpsTrackerProtocol.Domain;
+using GpsTrackerProtocol.Domain.Models;
+using GpsTrackerProtocol.Services;
+
+public class ProtocolParsingService
+{
+    private readonly ProtocolParserService _protocolParser;
+
+    public ProtocolParsingService()
+    {
+        _protocolParser = new ProtocolParserService();
+    }
+
+    public async Task ProcessGpsDataAsync(byte[] rawData, string sourceAddress, int sourcePort)
+    {
+        try
+        {
+            // Step 1: Detect the protocol from raw data
+            var protocolType = await _protocolParser.DetectProtocolAsync(rawData);
+            
+            Console.WriteLine($"Detected protocol: {protocolType}");
+            
+            if (protocolType == ProtocolType.Unknown)
+            {
+                Console.WriteLine("Unknown protocol - cannot parse frame");
+                return;
+            }
+
+            // Step 2: Create a GPS frame
+            var frame = new GpsFrame
+            {
+                Protocol = protocolType,
+                RawData = rawData,
+                ReceivedAt = DateTime.UtcNow,
+                SourceAddress = sourceAddress,
+                SourcePort = sourcePort
+            };
+
+            // Step 3: Validate the frame (checksum verification for GT06)
+            var isValid = await _protocolParser.ValidateFrameAsync(frame);
+            
+            Console.WriteLine($"Frame validation: {(isValid ? "Valid" : "Invalid")}");
+            
+            if (!isValid)
+            {
+                Console.WriteLine("Invalid frame - checksum mismatch");
+                return;
+            }
+
+            // Step 4: Parse the frame to extract location data
+            var parsedData = await _protocolParser.ParseFrameAsync(frame);
+            
+            Console.WriteLine($"Parsed location - Lat: {parsedData.Latitude:F6}, Lon: {parsedData.Longitude:F6}");
+            Console.WriteLine($"Speed: {parsedData.Speed:F1} km/h, Bearing: {parsedData.Bearing:F1}°");
+            Console.WriteLine($"Satellites: {parsedData.SatelliteCount}, Device: {parsedData.DeviceId}");
+            
+            // Use the parsed data for further processing
+            // ... (store in database, send to tracking system, etc.)
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error processing GPS data: {ex.Message}");
+        }
+    }
+}
+
+// Example usage with different protocol formats:
+var parsingService = new ProtocolParsingService();
+
+// GT06 protocol example (binary format)
+byte[] gt06Data = { 0x78, 0x78, 0x1F, 0x12, 0x01, 0x19, 0x11, 0x0B, 0x16, 0x23, 0x34, 
+                    0x02, 0xA2, 0xC0, 0x40, 0x05, 0x27, 0x6F, 0xD1, 0x00, 0x00, 0xA2, 
+                    0x00, 0x00, 0x08, 0xFF, 0xFE, 0xF3, 0x0D, 0x0A };
+await parsingService.ProcessGpsDataAsync(gt06Data, "192.168.1.100", 5000);
+
+// H02 protocol example (NMEA format)
+string h02Data = "$GPRMC,010000.00,A,2824.237,N,08100.237,W,0.00,0.0,010100,0,E*68";
+await parsingService.ProcessGpsDataAsync(System.Text.Encoding.ASCII.GetBytes(h02Data), "192.168.1.101", 5001);
+
+// TK103 protocol example (text format)
+string tk103Data = "(000000000000000)BP05,160517010000,A,2824.237,N,08100.237,W,0.00,0.0";
+await parsingService.ProcessGpsDataAsync(System.Text.Encoding.ASCII.GetBytes(tk103Data), "192.168.1.102", 5002);
+```
+
 ## DeviceDiagnosticsServiceTests
 
 The `DeviceDiagnosticsServiceTests` class provides unit tests for the `DeviceDiagnosticsService` class, covering device diagnostics retrieval, self-test execution, and connectivity analysis. It uses mock repositories with NSubstitute to test various scenarios including healthy devices, low battery conditions, weak signal situations, and missing devices.
