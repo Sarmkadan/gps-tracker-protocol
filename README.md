@@ -147,6 +147,72 @@ These tests ensure that the route replay service correctly handles journey data 
 
 Example usage in a test project:
 
+## INotificationService
+
+The `INotificationService` interface defines a contract for sending and managing notifications related to GPS tracker device events such as speeding alerts, geofence boundary breaches, and device offline status. It provides methods to send different types of alerts and retrieve notification history for devices.
+
+Example usage in a service:
+
+```csharp
+using GpsTrackerProtocol.Domain.Models;
+using GpsTrackerProtocol.Integration;
+
+public class NotificationServiceExample
+{
+    private readonly INotificationService _notificationService;
+
+    public NotificationServiceExample(INotificationService notificationService)
+    {
+        _notificationService = notificationService;
+    }
+
+    public async Task HandleSpeedingAlertAsync(string deviceId, double currentSpeed, double speedLimit)
+    {
+        // Send speeding alert notification
+        await _notificationService.SendSpeedingAlertAsync(
+            deviceId,
+            currentSpeed,
+            speedLimit,
+            "Speeding detected on device!"
+        );
+
+        // Retrieve recent notifications for this device
+        var recentNotifications = _notificationService
+            .GetNotifications(deviceId)
+            .Where(n => !n.IsRead && n.Type == NotificationType.SpeedingAlert)
+            .OrderByDescending(n => n.Timestamp)
+            .ToList();
+
+        // Mark notification as read
+        if (recentNotifications.Any())
+        {
+            _notificationService.MarkAsRead(recentNotifications.First().Id);
+        }
+    }
+
+    public async Task HandleGeofenceAlertAsync(string deviceId, string geofenceName, bool isInside)
+    {
+        // Send geofence alert notification
+        await _notificationService.SendGeofenceAlertAsync(
+            deviceId,
+            geofenceName,
+            isInside,
+            "Geofence boundary crossed"
+        );
+    }
+
+    public async Task HandleDeviceOfflineAsync(string deviceId, TimeSpan offlineDuration)
+    {
+        // Send offline alert notification
+        await _notificationService.SendOfflineAlertAsync(
+            deviceId,
+            offlineDuration,
+            "Device has been offline for an extended period"
+        );
+    }
+}
+```
+
 ```csharp
 using Xunit;
 using NSubstitute;
