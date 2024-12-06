@@ -147,6 +147,42 @@ These tests ensure that the route replay service correctly handles journey data 
 
 Example usage in a test project:
 
+## IGeocodingService
+
+The `IGeocodingService` interface provides functionality for reverse geocoding, enabling the conversion of geographic coordinates (latitude and longitude) into readable addresses. It supports looking up location details, such as the city and country, and can check if specific coordinates fall within a given region.
+
+Example usage in a service:
+
+```csharp
+using GpsTrackerProtocol.Integration;
+
+public class GeocodingServiceExample
+{
+    private readonly IGeocodingService _geocodingService;
+
+    public GeocodingServiceExample(IGeocodingService geocodingService)
+    {
+        _geocodingService = geocodingService;
+    }
+
+    public async Task ProcessLocationAsync(double lat, double lon)
+    {
+        // Perform reverse geocoding
+        GeocodingResult result = await _geocodingService.ReverseGeocodeAsync(lat, lon);
+
+        if (result.Success)
+        {
+            Console.WriteLine($"Location: {result.DisplayName}");
+            Console.WriteLine($"Address: {result.Address}, {result.City}, {result.Country}");
+        }
+
+        // Check if coordinates are in the 'UK' region
+        bool isInRegion = await _geocodingService.IsInRegionAsync(lat, lon, "UK");
+        Console.WriteLine($"Is in UK: {isInRegion}");
+    }
+}
+```
+
 ## INotificationService
 
 The `INotificationService` interface defines a contract for sending and managing notifications related to GPS tracker device events such as speeding alerts, geofence boundary breaches, and device offline status. It provides methods to send different types of alerts and retrieve notification history for devices.
