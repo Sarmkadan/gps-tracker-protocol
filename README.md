@@ -1,54 +1,48 @@
+// entire file content ...
+// ... goes in between
 
-# GpsTracker Protocol
+## GpsUtilitiesTests
 
-<!-- (rest of README.md remains the same) -->
-
-## FuelTrackingServiceTests
-
-The `FuelTrackingServiceTests` class provides comprehensive unit tests for the `FuelTrackingService` functionality, covering fuel event recording, retrieval, deletion, reporting, and estimation. These tests validate the correct storage of fuel records, error handling for invalid fuel amounts, filtering of records, deletion of existing records, accurate calculation of fuel reports, and proper handling of invalid inputs for fuel estimation.
+The `GpsUtilitiesTests` class provides a comprehensive set of unit tests for the `GpsUtilities` class, covering various methods such as calculating distances, bearings, and coordinates, as well as converting between different units. These tests ensure that the `GpsUtilities` class behaves correctly and accurately.
 
 Example usage in a test project:
 
 ```csharp
 using Xunit;
-using FluentAssertions;
-using GpsTrackerProtocol.Services;
-using GpsTrackerProtocol.Domain.Models;
+using GpsTrackerProtocol.Utilities;
 
-public class FuelTrackingTests
+public class GpsUtilitiesTestsExample
 {
     [Fact]
-    public async Task TestFuelEventRecording()
+    public void TestCalculateDistanceKm()
     {
         // Arrange
-        var service = new FuelTrackingServiceTests();
-        
+        var lat1 = 51.5074;
+        var lon1 = -0.1278;
+        var lat2 = 51.5074;
+        var lon2 = -0.1278;
+
         // Act
-        var record = await service.RecordFuelEventAsync(new FuelRecord("vehicle1", "device1", FuelEventType.Refuel, 50.0, DateTime.UtcNow));
+        var distance = GpsUtilities.CalculateDistanceKm(lat1, lon1, lat2, lon2);
 
         // Assert
-        record.Id.Should().NotBeNullOrEmpty();
-        record.VehicleId.Should().Be("vehicle1");
-        record.FuelAmountLiters.Should().Be(50.0);
+        distance.Should().Be(0);
     }
 
     [Fact]
-    public async Task TestFuelReportGeneration()
+    public void TestIsValidCoordinate()
     {
         // Arrange
-        var service = new FuelTrackingServiceTests();
-        await service.RecordFuelEventAsync(new FuelRecord("vehicle1", "device1", FuelEventType.Consumption, 10.0, DateTime.UtcNow));
-        await service.RecordFuelEventAsync(new FuelRecord("vehicle1", "device1", FuelEventType.Consumption, 5.0, DateTime.UtcNow.AddHours(1)));
+        var lat = 90;
+        var lon = 180;
 
         // Act
-        var report = await service.GetReportAsync("vehicle1", DateTime.UtcNow.AddHours(-2), DateTime.UtcNow);
+        var isValid = GpsUtilities.IsValidCoordinate(lat, lon);
 
         // Assert
-        report.TotalFuelConsumedLiters.Should().Be(15.0);
-        report.TotalDistanceKm.Should().Be(0); // Assuming no odometer data in this example
-        report.AverageConsumptionLper100km.Should().Be(0); // Assuming no distance data
+        isValid.Should().BeTrue();
     }
 }
 ```
 
-<!-- (rest of README.md remains the same) -->
+// ... rest of README.md content ...
