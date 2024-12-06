@@ -249,6 +249,124 @@ public class NotificationServiceExample
 }
 ```
 
+## IWebhookClient
+
+The `IWebhookClient` interface provides functionality for sending webhook notifications to external services when GPS tracker device events occur. It enables integration with third-party systems by sending structured payloads containing event details such as location updates, journey completion status, device status changes, and geofence boundary events.
+
+Example usage in a service:
+
+```csharp
+using GpsTrackerProtocol.Integration;
+using System.Text.Json;
+
+public class WebhookClientExample
+{
+    private readonly IWebhookClient _webhookClient;
+
+    public WebhookClientExample(IWebhookClient webhookClient)
+    {
+        _webhookClient = webhookClient;
+    }
+
+    public async Task SendLocationUpdateToWebhookAsync(string deviceId, double latitude, double longitude, double speed)
+    {
+        // Create webhook payload
+        var payload = new
+        {
+            EventType = "location_update",
+            Timestamp = DateTime.UtcNow,
+            DeviceId = deviceId,
+            Data = new
+            {
+                Latitude = latitude,
+                Longitude = longitude,
+                Speed = speed,
+                Timestamp = DateTime.UtcNow
+            }
+        };
+
+        // Send webhook notification
+        await _webhookClient.SendLocationUpdateAsync(
+            deviceId,
+            payload.EventType,
+            payload.Data
+        );
+    }
+
+    public async Task SendJourneyCompletedWebhookAsync(string deviceId, string journeyId, TimeSpan duration)
+    {
+        // Create journey completed payload
+        var payload = new
+        {
+            EventType = "journey_completed",
+            Timestamp = DateTime.UtcNow,
+            DeviceId = deviceId,
+            Data = new
+            {
+                JourneyId = journeyId,
+                Duration = duration.TotalMinutes,
+                Distance = 12.5 // km
+            }
+        };
+
+        // Send webhook notification
+        await _webhookClient.SendJourneyCompletedAsync(
+            deviceId,
+            payload.EventType,
+            payload.Data
+        );
+    }
+
+    public async Task SendDeviceStatusWebhookAsync(string deviceId, string status)
+    {
+        // Create device status payload
+        var payload = new
+        {
+            EventType = "device_status",
+            Timestamp = DateTime.UtcNow,
+            DeviceId = deviceId,
+            Data = new
+            {
+                Status = status,
+                BatteryLevel = 85,
+                SignalStrength = -72
+            }
+        };
+
+        // Send webhook notification
+        await _webhookClient.SendDeviceStatusAsync(
+            deviceId,
+            payload.EventType,
+            payload.Data
+        );
+    }
+
+    public async Task SendGeofenceEventWebhookAsync(string deviceId, string geofenceName, bool isInside)
+    {
+        // Create geofence event payload
+        var payload = new
+        {
+            EventType = "geofence_event",
+            Timestamp = DateTime.UtcNow,
+            DeviceId = deviceId,
+            Data = new
+            {
+                GeofenceName = geofenceName,
+                IsInside = isInside,
+                EventType = isInside ? "enter" : "exit"
+            }
+        };
+
+        // Send webhook notification
+        await _webhookClient.SendGeofenceEventAsync(
+            deviceId,
+            payload.EventType,
+            payload.Data
+        );
+    }
+}
+```
+
 ```csharp
 using Xunit;
 using NSubstitute;
