@@ -1,0 +1,63 @@
+# Build directories
+bin/
+obj/
+.vs/
+.vscode/
+
+# IDE
+*.sln.docstates
+.vs/
+.vscode/
+*.userprefs
+*.usertasks
+*.suo
+
+# Debug files
+*.pdb
+*.dbg
+*.ilk
+*.map
+*.exp
+
+# NuGet
+packages/
+*.nupkg
+*.snupkg
+.nuget/
+nuget.config
+
+# Test results
+TestResults/
+.coverage
+*.trx
+
+# Rider
+.idea/
+*.sln.iml
+*.csproj.user
+
+# OS
+.DS_Store
+Thumbs.db
+*.swp
+*~
+
+# Local environment
+.env
+.env.local
+appsettings.local.json
+launchSettings.local.json
+
+# Logs
+logs/
+*.log
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
