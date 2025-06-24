@@ -1,101 +1,241 @@
 # GPS Tracker Protocol Parser
 
-A comprehensive .NET library for parsing GPS tracker protocols (GT06, H02, TK103) - converting raw TCP/UDP data streams into structured location information.
+A comprehensive .NET library for parsing GPS tracker protocols (GT06, H02, TK103) - converting raw TCP/UDP data streams into structured location information with full device management, journey tracking, and command execution capabilities.
+
+**Status**: Production Ready | **Latest Version**: 1.2.0 | **.NET**: 10.0 | **License**: MIT
+
+---
+
+## Table of Contents
+
+- [Features](#features)
+- [Architecture](#architecture)
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [Usage Examples](#usage-examples)
+- [API Reference](#api-reference)
+- [Configuration](#configuration)
+- [Troubleshooting](#troubleshooting)
+- [Contributing](#contributing)
+- [License](#license)
+
+---
 
 ## Features
 
-- **Multi-Protocol Support**: GT06, H02, TK103 protocol parsing
-- **Frame Validation**: Checksum validation and frame integrity checking
-- **Location Services**: Store, query, and analyze GPS location data
-- **Device Management**: Register, monitor, and manage tracking devices
-- **Journey Tracking**: Record and analyze trips with distance/speed metrics
-- **Command System**: Send and manage commands to tracking devices
-- **In-Memory Storage**: Demo repository implementation with full CRUD operations
-- **Dependency Injection**: Built with Microsoft.Extensions.DependencyInjection
-- **Async/Await**: Fully asynchronous API design
+### Core Capabilities
+
+- **Multi-Protocol Support**: Parse GT06, H02, and TK103 GPS tracker protocols
+- **Frame Validation**: Checksum validation with protocol-specific error detection
+- **Location Services**: Store, retrieve, and analyze GPS coordinates with metadata
+- **Device Management**: Register, monitor, and manage tracking devices with lifecycle tracking
+- **Journey Tracking**: Record trips with waypoints, distance, speed, and duration analytics
+- **Command System**: Send configuration commands to devices (intervals, alarms, settings)
+- **Real-Time Processing**: Async/await patterns for efficient concurrent operations
+- **Data Formatting**: JSON, CSV, and GeoJSON export support
+- **Caching Layer**: In-memory caching for high-frequency queries
+- **Rate Limiting**: Protection against excessive API calls
+- **Error Handling**: Comprehensive exception hierarchy with custom error codes
+- **Logging Pipeline**: Structured logging with multiple output levels
+- **Dependency Injection**: Microsoft.Extensions integration for flexible composition
 - **.NET 10**: Latest C# language features and performance optimizations
 
-## Project Structure
+### Protocol Details
+
+| Protocol | Type | Checksum | Frame Size | Max Devices |
+|----------|------|----------|-----------|-------------|
+| **GT06** | Binary | XOR | 25-100 bytes | 64K+ |
+| **H02** | ASCII | NMEA | 50-150 bytes | Unlimited |
+| **TK103** | Binary | Sum | Fixed 32 bytes | 16K |
+
+---
+
+## Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Presentation Layer                       │
+│           (CLI, API Controllers, WebSocket Gateway)         │
+└─────────────────────┬───────────────────────────────────────┘
+                      │
+┌─────────────────────▼───────────────────────────────────────┐
+│                   Service Layer                             │
+│  ProtocolParserService | DeviceService | LocationService   │
+│  JourneyService | CommandService | AnalyticsService        │
+└─────────────────────┬───────────────────────────────────────┘
+                      │
+┌─────────────────────▼───────────────────────────────────────┐
+│                  Infrastructure Layer                       │
+│  Validation | Logging | Caching | Rate Limiting | Errors   │
+└─────────────────────┬───────────────────────────────────────┘
+                      │
+┌─────────────────────▼───────────────────────────────────────┐
+│                    Data Layer                               │
+│  IRepository<T> | InMemoryRepository | Specialized Repos   │
+└─────────────────────┬───────────────────────────────────────┘
+                      │
+┌─────────────────────▼───────────────────────────────────────┐
+│                  Domain Models                              │
+│  Device | LocationData | Journey | Command | GpsFrame      │
+│  ResponseMessage | Enums | Exceptions                       │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Directory Structure
 
 ```
 gps-tracker-protocol/
-├── Domain/
-│   ├── Models/              # Domain entities (LocationData, Device, Journey, etc.)
-│   ├── Enums.cs            # Protocol enums and types
-│   └── Exceptions.cs        # Custom exceptions
-├── Data/
-│   ├── IRepository.cs       # Repository interfaces
-│   ├── InMemoryRepository.cs    # In-memory implementations
-│   └── InMemoryRepositories.cs  # Specialized repository implementations
-├── Services/
-│   ├── ProtocolParserService.cs # Protocol parsing
-│   ├── DeviceService.cs         # Device management
-│   ├── LocationDataService.cs   # Location data handling
-│   ├── CommandService.cs        # Command management
-│   └── JourneyService.cs        # Journey tracking
-├── Configuration/
-│   └── DependencyInjection.cs   # DI setup
-├── Program.cs               # Console application with demo
-├── Constants.cs             # Protocol and configuration constants
-├── GpsTrackerProtocol.csproj
-├── LICENSE                  # MIT License
-├── .gitignore
-└── README.md
+├── Domain/                          # Business logic and entities
+│   ├── Models/                      # Domain models
+│   │   ├── Device.cs               # Tracking device
+│   │   ├── LocationData.cs         # GPS coordinates and metadata
+│   │   ├── Journey.cs              # Trip tracking
+│   │   ├── Command.cs              # Device commands
+│   │   ├── GpsFrame.cs             # Raw protocol frames
+│   │   └── ResponseMessage.cs      # Device responses
+│   ├── Enums.cs                    # Protocol types and status enums
+│   └── Exceptions.cs               # Custom exception hierarchy
+├── Data/                            # Data access patterns
+│   ├── IRepository.cs              # Generic repository interface
+│   ├── InMemoryRepository.cs       # Generic in-memory implementation
+│   └── InMemoryRepositories.cs     # Specialized repositories
+├── Services/                        # Business logic services
+│   ├── ProtocolParserService.cs    # Frame parsing and detection
+│   ├── DeviceService.cs            # Device lifecycle management
+│   ├── LocationDataService.cs      # Location storage and queries
+│   ├── CommandService.cs           # Command creation and execution
+│   ├── JourneyService.cs           # Journey analytics
+│   ├── AnalyticsService.cs         # Usage analytics and metrics
+│   └── GeofenceService.cs          # Geofence management
+├── Configuration/                   # DI and application setup
+│   └── DependencyInjection.cs      # Service registration
+├── Infrastructure/                  # Cross-cutting concerns
+│   ├── ErrorHandlingMiddleware.cs  # Global error handling
+│   ├── ValidationPipeline.cs       # Input validation
+│   ├── LoggingPipeline.cs          # Structured logging
+│   └── RateLimitingService.cs      # API rate limiting
+├── Integration/                     # External service integration
+│   ├── HttpClientFactory.cs        # HTTP client creation
+│   ├── WebhookClient.cs            # Webhook delivery
+│   ├── GeocodingService.cs         # Address reverse lookup
+│   ├── WeatherApiClient.cs         # Weather data
+│   ├── NotificationService.cs      # Alert notifications
+│   └── SimulationService.cs        # Test data generation
+├── Formatting/                      # Output formatters
+│   ├── JsonFormatter.cs            # JSON output
+│   ├── CsvFormatter.cs             # CSV export
+│   └── GeoJsonFormatter.cs         # GeoJSON/Map format
+├── BackgroundWorkers/               # Background processing
+│   ├── BackgroundProcessingService.cs
+│   ├── JourneyAnalyticsWorker.cs
+│   └── LocationAggregationWorker.cs
+├── CLI/                             # Command-line interface
+│   └── CommandLineInterface.cs     # CLI commands and parsing
+├── Utilities/                       # Helper extensions and utilities
+│   ├── ByteExtensions.cs           # Byte array operations
+│   ├── StringExtensions.cs         # String utilities
+│   ├── DateTimeExtensions.cs       # Date/time helpers
+│   ├── GpsUtilities.cs             # GPS math and conversions
+│   ├── CollectionExtensions.cs     # LINQ helpers
+│   ├── DictionaryExtensions.cs     # Dictionary operations
+│   └── PerformanceMonitor.cs       # Performance metrics
+├── Caching/                         # Caching layer
+│   └── CachingService.cs           # In-memory caching
+├── Program.cs                       # Console app entry point
+├── Constants.cs                     # Protocol constants
+├── GpsTrackerProtocol.csproj       # Project configuration
+├── LICENSE                          # MIT License
+├── .gitignore                       # Git ignore patterns
+└── README.md                        # This file
 ```
 
-## Core Components
+---
 
-### Domain Models (8 entities)
+## Installation
 
-1. **LocationData** - GPS coordinates, speed, bearing, satellite count
-2. **Device** - Tracking device with IMEI, protocol, status
-3. **GpsFrame** - Raw protocol frame with validation
-4. **Journey** - Trip data with waypoints and analytics
-5. **Command** - Commands to send to devices
-6. **ResponseMessage** - Device responses and status updates
-7. Plus type definitions: ProtocolType, DeviceStatus, CommandType, etc.
-
-### Services (5 implementations)
-
-1. **ProtocolParserService** - Frame parsing and protocol detection
-2. **DeviceService** - Device registration and lifecycle management
-3. **LocationDataService** - Location storage and querying
-4. **CommandService** - Command creation and execution
-5. **JourneyService** - Journey creation and analytics
-
-### Data Layer
-
-- Generic `IRepository<T>` interface with CRUD operations
-- Specialized repository interfaces for each domain model
-- In-memory implementations suitable for testing and demos
-- Thread-safe operations with `ReaderWriterLockSlim`
-- Unit of Work pattern for transaction management
-
-## Quick Start
-
-### Building
+### Option 1: Clone and Build from Source
 
 ```bash
+git clone https://github.com/sarmkadan/gps-tracker-protocol.git
+cd gps-tracker-protocol
 dotnet build
-```
-
-### Running the Demo
-
-```bash
 dotnet run
 ```
 
-The demo application demonstrates:
-- Device registration with IMEI validation
-- GPS frame parsing and validation
-- Location data storage and queries
-- Journey creation and metrics calculation
-- Command creation and execution
-- Device status tracking
+### Option 2: NuGet Package (when published)
 
-## Usage Example
+```bash
+dotnet add package GpsTrackerProtocol
+```
+
+### Option 3: Docker Container
+
+```bash
+docker build -t gps-tracker-protocol .
+docker run -it gps-tracker-protocol
+```
+
+### Option 4: Docker Compose (with example services)
+
+```bash
+docker-compose up --build
+```
+
+### Requirements
+
+- **.NET Runtime**: 10.0 or later
+- **C# Version**: 12 or later
+- **Platform**: Windows, macOS, Linux
+- **Memory**: 256MB minimum (512MB+ recommended)
+- **Disk**: 50MB for dependencies
+
+---
+
+## Quick Start
+
+### Minimal Example: Parse a GPS Frame
 
 ```csharp
+using GpsTrackerProtocol;
+using GpsTrackerProtocol.Domain.Models;
+using GpsTrackerProtocol.Services;
+using Microsoft.Extensions.DependencyInjection;
+
+// Setup services
+var services = new ServiceCollection();
+services.AddGpsTrackerServices();
+var provider = services.BuildServiceProvider();
+
+// Get parser service
+var parser = provider.GetRequiredService<IProtocolParserService>();
+
+// Parse raw GPS data (GT06 protocol)
+byte[] rawData = new byte[] { 
+    0x78, 0x78, 0x1F, 0x12, 0x01, 0x19, 0x11, 0x0B, 0x16, 0x23, 0x34, 0x02, 
+    0xA2, 0xC0, 0x40, 0x05, 0x27, 0x6F, 0xD1, 0x00, 0x00, 0xA2, 0x00, 0x00, 
+    0x08, 0xFF, 0xFE, 0xF3, 0x0D, 0x0A 
+};
+
+var frame = new GpsFrame
+{
+    RawData = rawData,
+    Protocol = ProtocolType.GT06,
+    ReceivedAt = DateTime.UtcNow
+};
+
+bool isValid = await parser.ValidateFrameAsync(frame);
+ProtocolType detected = await parser.DetectProtocolAsync(rawData);
+
+Console.WriteLine($"Valid: {isValid}, Protocol: {detected}");
+```
+
+### Complete Example: Device Registration and Location Tracking
+
+```csharp
+using GpsTrackerProtocol.Services;
+using GpsTrackerProtocol.Domain.Models;
+using Microsoft.Extensions.DependencyInjection;
+
 var services = new ServiceCollection();
 services.AddGpsTrackerServices();
 var provider = services.BuildServiceProvider();
@@ -103,83 +243,440 @@ var provider = services.BuildServiceProvider();
 var deviceService = provider.GetRequiredService<IDeviceService>();
 var locationService = provider.GetRequiredService<ILocationDataService>();
 
-// Register device
-var device = new Device { Imei = "358240050447491", Protocol = ProtocolType.GT06 };
-await deviceService.RegisterDeviceAsync(device);
+// Register tracking device
+var device = new Device
+{
+    Imei = "358240050447491",
+    DeviceName = "Vehicle #001",
+    Protocol = ProtocolType.GT06,
+    IsActive = true
+};
 
-// Store location
-var location = new LocationData 
-{ 
-    DeviceId = device.Id,
+var registered = await deviceService.RegisterDeviceAsync(device);
+Console.WriteLine($"Device registered with ID: {registered.Id}");
+
+// Record location
+var location = new LocationData
+{
+    DeviceId = registered.Id,
     Latitude = 40.7128,
     Longitude = -74.0060,
-    Speed = 50.0
+    Speed = 55.5,
+    Bearing = 123.45,
+    Altitude = 15.0,
+    SatelliteCount = 12,
+    Accuracy = 5.0,
+    Timestamp = DateTime.UtcNow,
+    Protocol = ProtocolType.GT06
 };
-await locationService.StoreLocationAsync(location);
 
-// Query location
-var latest = await locationService.GetLatestLocationAsync(device.Id);
-var history = await locationService.GetLocationHistoryAsync(device.Id, limit: 100);
+var stored = await locationService.StoreLocationAsync(location);
+Console.WriteLine($"Location stored: {stored.Latitude}, {stored.Longitude}");
+
+// Query latest location
+var latest = await locationService.GetLatestLocationAsync(registered.Id);
+Console.WriteLine($"Latest: Speed={latest?.Speed}km/h, Sats={latest?.SatelliteCount}");
+
+// Get location history
+var history = await locationService.GetLocationHistoryAsync(registered.Id, limit: 100);
+Console.WriteLine($"History records: {history.Count()}");
 ```
 
-## Protocol Support
+---
 
-### GT06
-- Binary protocol with XOR checksum
-- Support for extended data fields
-- Device-specific implementations
+## Usage Examples
 
-### H02
-- ASCII-based GPRMC format
-- NMEA compatible parsing
-- Standard coordinate formats
+### Example 1: Real-Time TCP Server
 
-### TK103
-- Fixed-size frame structure
-- Compact binary representation
-- Efficient transmission for low-bandwidth scenarios
+See `examples/RealTimeGpsServer.cs` - Listen for GPS updates over TCP, parse frames, store locations.
 
-## Exception Handling
+```bash
+dotnet run --project examples/RealTimeGpsServer.cs
+```
 
-Custom exception hierarchy for proper error handling:
-- `ParseException` - Protocol parsing failures
-- `ChecksumException` - Validation failures
-- `DeviceException` - Device-related errors
-- `CommandException` - Command execution failures
-- `ValidationException` - Data validation errors
-- `RepositoryException` - Data access errors
+Then connect with raw GPS data:
+```bash
+nc localhost 5000 < gps_samples.bin
+```
+
+### Example 2: Batch Data Import
+
+See `examples/BatchDataImporter.cs` - Import locations from CSV/JSON files.
+
+```bash
+dotnet run --project examples/BatchDataImporter.cs --file devices.csv
+```
+
+### Example 3: Journey Analysis
+
+See `examples/JourneyAnalyzer.cs` - Calculate trip metrics and generate reports.
+
+```bash
+dotnet run --project examples/JourneyAnalyzer.cs --device device-001
+```
+
+### Example 4: Device Command Center
+
+See `examples/DeviceCommandCenter.cs` - Interactive CLI for managing devices and sending commands.
+
+```bash
+dotnet run --project examples/DeviceCommandCenter.cs
+```
+
+### Example 5: Geofence Monitoring
+
+See `examples/GeofenceMonitor.cs` - Monitor devices within geofence boundaries.
+
+```bash
+dotnet run --project examples/GeofenceMonitor.cs --config fences.json
+```
+
+### Example 6: Data Export
+
+See `examples/DataExporter.cs` - Export locations to JSON, CSV, GeoJSON formats.
+
+```bash
+dotnet run --project examples/DataExporter.cs --format geojson --output map.json
+```
+
+### Example 7: Performance Benchmark
+
+See `examples/PerformanceBenchmark.cs` - Stress test parsing and storage performance.
+
+```bash
+dotnet run --project examples/PerformanceBenchmark.cs --frames 100000
+```
+
+### Example 8: Protocol Converter
+
+See `examples/ProtocolConverter.cs` - Convert between GPS tracker protocols.
+
+```bash
+dotnet run --project examples/ProtocolConverter.cs --from GT06 --to H02 --input data.bin
+```
+
+---
+
+## API Reference
+
+### IDeviceService
+
+```csharp
+public interface IDeviceService
+{
+    Task<Device> RegisterDeviceAsync(Device device);
+    Task<Device?> GetDeviceAsync(string deviceId);
+    Task<IEnumerable<Device>> GetAllDevicesAsync();
+    Task<bool> UnregisterDeviceAsync(string deviceId);
+    Task<Device> UpdateDeviceAsync(Device device);
+    Task<IEnumerable<Device>> GetDevicesByProtocolAsync(ProtocolType protocol);
+    Task<IEnumerable<Device>> GetActiveDevicesAsync();
+}
+```
+
+### ILocationDataService
+
+```csharp
+public interface ILocationDataService
+{
+    Task<LocationData> StoreLocationAsync(LocationData location);
+    Task<LocationData?> GetLatestLocationAsync(string deviceId);
+    Task<IEnumerable<LocationData>> GetLocationHistoryAsync(string deviceId, int limit = 100);
+    Task<IEnumerable<LocationData>> GetLocationsByDateRangeAsync(
+        string deviceId, 
+        DateTime startTime, 
+        DateTime endTime
+    );
+    Task<IEnumerable<LocationData>> GetLocationsByRegionAsync(
+        double lat, 
+        double lng, 
+        double radiusKm
+    );
+}
+```
+
+### IJourneyService
+
+```csharp
+public interface IJourneyService
+{
+    Task<Journey> StartJourneyAsync(string deviceId);
+    Task<Journey> CompleteJourneyAsync(string journeyId);
+    Task AddWaypointAsync(string journeyId, LocationData waypoint);
+    Task<Journey?> GetJourneyAsync(string journeyId);
+    Task<IEnumerable<Journey>> GetJourneyHistoryAsync(string deviceId);
+    Task<double> GetTotalDistanceAsync(string deviceId);
+    Task<TimeSpan> GetTotalDurationAsync(string deviceId);
+    Task<double> GetAverageSpeedAsync(string deviceId);
+}
+```
+
+### IProtocolParserService
+
+```csharp
+public interface IProtocolParserService
+{
+    Task<ProtocolType> DetectProtocolAsync(byte[] data);
+    Task<bool> ValidateFrameAsync(GpsFrame frame);
+    Task<ParseResult> ParseFrameAsync(GpsFrame frame);
+    Task<LocationData?> ExtractLocationDataAsync(GpsFrame frame);
+    Task<CommandResponse?> ExtractCommandResponseAsync(GpsFrame frame);
+}
+```
+
+### ICommandService
+
+```csharp
+public interface ICommandService
+{
+    Task<Command> CreateCommandAsync(Command command);
+    Task<bool> ExecuteCommandAsync(string commandId);
+    Task<CommandStatus> GetCommandStatusAsync(string commandId);
+    Task<IEnumerable<Command>> GetCommandHistoryAsync(string deviceId);
+    Task<CommandResponse?> GetCommandResponseAsync(string commandId);
+}
+```
+
+### IAnalyticsService
+
+```csharp
+public interface IAnalyticsService
+{
+    Task<AnalyticsReport> GetDeviceAnalyticsAsync(string deviceId, DateRange dateRange);
+    Task<FleetAnalytics> GetFleetAnalyticsAsync(DateRange dateRange);
+    Task<DrivingStatistics> AnalyzeDrivingPatterns(string deviceId);
+    Task<AlertsReport> DetectAnomaliesAsync(string deviceId);
+}
+```
+
+---
 
 ## Configuration
 
-Protocol-specific constants in `Constants.cs`:
-- Frame sizes and markers
-- GPS intervals and timeouts
-- Measurement bounds
-- Alarm thresholds
-- Error codes and patterns
+### appsettings.json
 
-## Testing
+```json
+{
+  "GpsTrackerProtocol": {
+    "DefaultProtocol": "GT06",
+    "MaxDevices": 10000,
+    "LocationHistoryLimit": 1000,
+    "CacheExpirationMinutes": 60,
+    "RateLimitPerMinute": 1000,
+    "ValidationEnabled": true,
+    "LoggingLevel": "Information"
+  },
+  "ProtocolSettings": {
+    "GT06": {
+      "Enabled": true,
+      "Timeout": 30,
+      "MaxFrameSize": 200
+    },
+    "H02": {
+      "Enabled": true,
+      "Timeout": 30,
+      "MaxFrameSize": 300
+    },
+    "TK103": {
+      "Enabled": true,
+      "Timeout": 30,
+      "MaxFrameSize": 100
+    }
+  },
+  "Services": {
+    "Geocoding": {
+      "ApiKey": "your-api-key",
+      "Provider": "OpenStreetMap"
+    },
+    "Notifications": {
+      "Enabled": false,
+      "WebhookUrl": "https://your-server/webhook"
+    }
+  }
+}
+```
 
-The in-memory repository implementations are suitable for:
-- Unit testing services
-- Integration testing workflows
-- Demo and prototype development
-- Performance testing without I/O overhead
+### Environment Variables
 
-## Future Enhancements
+```bash
+GPS_PROTOCOL_DEFAULT=GT06
+GPS_MAX_DEVICES=10000
+GPS_CACHE_EXPIRATION=60
+GPS_LOG_LEVEL=Information
+GPS_RATE_LIMIT=1000
+```
 
-- Database storage implementations (SQL Server, PostgreSQL)
-- Real-time WebSocket/gRPC support
-- Message queue integration
-- Geofencing and alert system
-- Analytics and reporting engine
-- Mobile companion app support
+### Constants Reference (Constants.cs)
+
+- **FRAME_START_MARKER**: Protocol-specific frame delimiters
+- **MAX_LATITUDE**: ±90.0 degrees
+- **MAX_LONGITUDE**: ±180.0 degrees
+- **MIN_SATELLITE_COUNT**: 3 (for valid fix)
+- **MAX_SPEED**: 999.9 km/h
+- **GEOFENCE_ALERT_THRESHOLD**: 100 meters
+- **COMMAND_TIMEOUT**: 30 seconds
+- **LOCATION_HISTORY_RETENTION**: 90 days
+
+---
+
+## Troubleshooting
+
+### Issue: Frame Validation Fails
+
+**Symptom**: `ChecksumException: Checksum mismatch`
+
+**Solutions**:
+1. Verify raw data is complete and not truncated
+2. Check protocol type matches frame format
+3. Ensure byte order is correct (Little-Endian for GT06/TK103, Big-Endian for H02)
+4. Validate frame delimiters: GT06 uses `0x78 0x78`, H02 uses `$`, TK103 uses `78 78`
+
+```csharp
+// Enable detailed logging
+services.AddLogging(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug));
+```
+
+### Issue: Null Reference When Parsing
+
+**Symptom**: `NullReferenceException` in ParseFrameAsync
+
+**Solutions**:
+1. Always check if protocol is detected correctly
+2. Validate device exists before storing location
+3. Use try-catch blocks around parsing operations
+
+```csharp
+try 
+{
+    var result = await parser.ParseFrameAsync(frame);
+    if (result != null) { /* process */ }
+}
+catch (ParseException ex)
+{
+    logger.LogError(ex, "Frame parsing failed");
+}
+```
+
+### Issue: Memory Consumption Grows Over Time
+
+**Symptom**: Process memory usage increases continuously
+
+**Solutions**:
+1. Implement location history cleanup
+2. Configure cache expiration timeouts
+3. Use database storage instead of in-memory for large datasets
+4. Monitor with PerformanceMonitor utility
+
+```csharp
+// Periodic cleanup
+var timer = new Timer(async _ => 
+{
+    await locationService.PurgeOldLocationsAsync(DateTime.UtcNow.AddDays(-30));
+}, null, TimeSpan.Zero, TimeSpan.FromHours(1));
+```
+
+### Issue: Slow Performance with Large Datasets
+
+**Symptom**: Response times exceed 1 second for queries
+
+**Solutions**:
+1. Enable caching for frequently accessed data
+2. Use pagination for history queries
+3. Create indexes on DeviceId and Timestamp
+4. Consider switching to SQL database
+
+```csharp
+// Use pagination
+var page = await locationService.GetLocationHistoryAsync(
+    deviceId, 
+    limit: 100, 
+    offset: pageNumber * 100
+);
+```
+
+### Issue: Protocol Detection Fails
+
+**Symptom**: `DetectProtocolAsync` returns Unknown
+
+**Solutions**:
+1. Ensure raw data includes complete frame (with delimiters)
+2. Check frame size meets minimum requirements
+3. Verify protocol is enabled in configuration
+4. Manually specify protocol if detection fails
+
+```csharp
+if (detected == ProtocolType.Unknown)
+{
+    frame.Protocol = ProtocolType.GT06; // Fallback
+}
+```
+
+---
+
+## Deployment
+
+### Docker Deployment
+
+```bash
+# Build image
+docker build -t gps-tracker:latest .
+
+# Run container with volume mounting
+docker run -v $(pwd)/data:/app/data gps-tracker:latest
+
+# Use docker-compose for multiple services
+docker-compose up -d
+```
+
+### Kubernetes Deployment
+
+See `docs/deployment.md` for K8s manifest examples.
+
+### Performance Tuning
+
+- **Thread Pool**: Increase MinThreads for high-throughput scenarios
+- **GC Settings**: Use `Server` GC for production (net10.0.runtimeconfig.json)
+- **Async Limits**: Configure MaxDegreeOfParallelism based on CPU cores
+- **Buffer Sizes**: Tune socket buffer sizes for network performance
+
+---
+
+## Contributing
+
+We welcome contributions! Please follow these guidelines:
+
+1. **Fork** the repository
+2. **Create** a feature branch: `git checkout -b feature/your-feature`
+3. **Commit** changes: `git commit -am 'Add feature'`
+4. **Push** to branch: `git push origin feature/your-feature`
+5. **Submit** a Pull Request with description
+
+### Code Standards
+
+- Follow C# naming conventions (PascalCase for public, camelCase for private)
+- Write unit tests for new features
+- Update documentation for API changes
+- Run `dotnet format` before committing
+- Include XML comments for public APIs
+
+### Development Setup
+
+```bash
+git clone https://github.com/sarmkadan/gps-tracker-protocol.git
+cd gps-tracker-protocol
+dotnet restore
+dotnet build
+dotnet test
+```
+
+---
 
 ## License
 
 MIT License - See LICENSE file for details
 
-## Author
+---
 
-Vladyslav Zaiets  
-https://sarmkadan.com
+**Built by [Vladyslav Zaiets](https://sarmkadan.com) - CTO & Software Architect**
+
+[Portfolio](https://sarmkadan.com) | [GitHub](https://github.com/sarmkadan) | [Telegram](https://t.me/sarmkadan)
