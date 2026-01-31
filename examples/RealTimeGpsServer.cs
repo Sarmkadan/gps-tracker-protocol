@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -151,7 +152,7 @@ public class RealTimeGpsServer
             }
 
             var location = await _parserService.ExtractLocationDataAsync(frame);
-            if (location == null) return;
+            if (location is null) return;
 
             var stored = await _locationService.StoreLocationAsync(location);
             _logger.LogInformation("Location stored: Device={0} Lat={1:F4} Lng={2:F4} Speed={3:F1}",

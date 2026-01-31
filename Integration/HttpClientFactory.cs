@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -102,7 +103,7 @@ public abstract class ExternalApiClient
 
     protected string BuildQueryString(Dictionary<string, string> parameters)
     {
-        if (parameters == null || parameters.Count == 0)
+        if (parameters is null || parameters.Count == 0)
             return string.Empty;
 
         var query = string.Join("&", parameters.Select(p => $"{Uri.EscapeDataString(p.Key)}={Uri.EscapeDataString(p.Value)}"));

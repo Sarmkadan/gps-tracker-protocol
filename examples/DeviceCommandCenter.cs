@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -145,7 +146,7 @@ public class DeviceCommandCenter
         var deviceId = Console.ReadLine();
 
         var device = await _deviceService.GetDeviceAsync(deviceId ?? "");
-        if (device == null)
+        if (device is null)
         {
             _logger.LogWarning("Device not found");
             return;
@@ -169,7 +170,7 @@ public class DeviceCommandCenter
         var deviceId = Console.ReadLine();
 
         var device = await _deviceService.GetDeviceAsync(deviceId ?? "");
-        if (device == null)
+        if (device is null)
         {
             _logger.LogWarning("Device not found");
             return;
@@ -249,7 +250,7 @@ public class DeviceCommandCenter
         var deviceId = Console.ReadLine();
 
         var location = await _locationService.GetLatestLocationAsync(deviceId ?? "");
-        if (location == null)
+        if (location is null)
         {
             _logger.LogWarning("No location data found");
             return;

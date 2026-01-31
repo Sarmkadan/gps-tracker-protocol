@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -27,7 +28,7 @@ public class CsvFormatter : ICsvFormatter
 
     public string FormatLocationHistory(IEnumerable<LocationData> locations)
     {
-        if (locations == null || !locations.Any())
+        if (locations is null || !locations.Any())
             return LocationHeader;
 
         var sb = new StringBuilder();
@@ -43,7 +44,7 @@ public class CsvFormatter : ICsvFormatter
 
     public string FormatJourney(Journey journey)
     {
-        if (journey == null || !journey.Waypoints.Any())
+        if (journey is null || !journey.Waypoints.Any())
             return JourneyHeader;
 
         var sb = new StringBuilder();
@@ -74,7 +75,7 @@ public class CsvFormatter : ICsvFormatter
 
     public string FormatDevices(IEnumerable<Device> devices)
     {
-        if (devices == null || !devices.Any())
+        if (devices is null || !devices.Any())
             return DeviceHeader;
 
         var sb = new StringBuilder();
@@ -138,7 +139,7 @@ public class CsvFormatter : ICsvFormatter
     {
         return string.Join(",", fields.Select(field =>
         {
-            if (field == null)
+            if (field is null)
                 return string.Empty;
 
             if (field.Contains(",") || field.Contains("\"") || field.Contains("\n"))
