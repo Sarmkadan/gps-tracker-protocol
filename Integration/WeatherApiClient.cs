@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -45,7 +46,7 @@ public class WeatherApiClient : ExternalApiClient, IWeatherApiClient
             var json = await response.Content.ReadAsStringAsync();
             var weatherResponse = System.Text.Json.JsonSerializer.Deserialize<WeatherResponse>(json);
 
-            if (weatherResponse?.Current == null)
+            if (weatherResponse?.Current is null)
                 throw new InvalidOperationException("Invalid weather response");
 
             return new WeatherData

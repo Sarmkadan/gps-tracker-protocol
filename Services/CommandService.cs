@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -43,14 +44,14 @@ public class CommandService : ICommandService
     /// </summary>
     public async Task<Command> CreateCommandAsync(Command command)
     {
-        if (command == null)
+        if (command is null)
             throw new ArgumentNullException(nameof(command));
 
         if (!command.IsValid())
             throw new ValidationException("Command validation failed", nameof(command));
 
         var device = await _deviceRepository.GetByIdAsync(command.DeviceId);
-        if (device == null)
+        if (device is null)
             throw new DeviceException($"Device {command.DeviceId} not found", command.DeviceId);
 
         if (!device.IsActive)
@@ -100,7 +101,7 @@ public class CommandService : ICommandService
     public async Task<bool> ExecuteCommandAsync(string commandId)
     {
         var command = await _repository.GetByIdAsync(commandId);
-        if (command == null)
+        if (command is null)
             throw new CommandException($"Command {commandId} not found", commandId);
 
         command.Execute();
@@ -114,7 +115,7 @@ public class CommandService : ICommandService
     public async Task<bool> MarkCommandAsFailedAsync(string commandId)
     {
         var command = await _repository.GetByIdAsync(commandId);
-        if (command == null)
+        if (command is null)
             throw new CommandException($"Command {commandId} not found", commandId);
 
         if (!command.CanRetry())

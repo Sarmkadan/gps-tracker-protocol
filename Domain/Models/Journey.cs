@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -23,7 +24,7 @@ public class Journey
     /// </summary>
     public void AddWaypoint(LocationData location)
     {
-        if (location == null)
+        if (location is null)
             throw new ArgumentNullException(nameof(location));
 
         if (!location.IsValid())
@@ -74,7 +75,7 @@ public class Journey
     /// </summary>
     public TimeSpan GetDuration()
     {
-        if (EndTime == null)
+        if (EndTime is null)
             return DateTime.UtcNow - StartTime;
         return EndTime.Value - StartTime;
     }
