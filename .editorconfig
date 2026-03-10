@@ -1,0 +1,152 @@
+# EditorConfig is awesome: https://EditorConfig.org
+
+# top-most EditorConfig file
+root = true
+
+# All files
+[*]
+charset = utf-8
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+
+# C# files
+[*.cs]
+indent_size = 4
+max_line_length = 100
+
+# Naming conventions
+[*.cs]
+# Async methods should end with Async
+dotnet_naming_rule.async_methods_should_end_with_async.severity = warning
+dotnet_naming_rule.async_methods_should_end_with_async.symbols = async_method_names
+dotnet_naming_rule.async_methods_should_end_with_async.style = async_method_style
+
+dotnet_naming_symbols.async_method_names.applicable_kinds = method
+dotnet_naming_symbols.async_method_names.applicable_accessibilities = *
+dotnet_naming_symbols.async_method_names.required_modifiers = async
+
+dotnet_naming_style.async_method_style.required_suffix = Async
+dotnet_naming_style.async_method_style.capitalization = pascal_case
+
+# Public members should be PascalCase
+dotnet_naming_rule.public_members_pascal_case.severity = warning
+dotnet_naming_rule.public_members_pascal_case.symbols = public_members
+dotnet_naming_rule.public_members_pascal_case.style = pascal_case_style
+
+dotnet_naming_symbols.public_members.applicable_kinds = property, method, field, event
+dotnet_naming_symbols.public_members.applicable_accessibilities = public
+dotnet_naming_symbols.public_members.required_modifiers =
+
+dotnet_naming_style.pascal_case_style.capitalization = pascal_case
+
+# Private/Internal members should be camelCase or _camelCase
+dotnet_naming_rule.private_members_camel_case.severity = suggestion
+dotnet_naming_rule.private_members_camel_case.symbols = private_members
+dotnet_naming_rule.private_members_camel_case.style = camel_case_style
+
+dotnet_naming_symbols.private_members.applicable_kinds = property, method, field, event
+dotnet_naming_symbols.private_members.applicable_accessibilities = private, internal
+dotnet_naming_symbols.private_members.required_modifiers =
+
+dotnet_naming_style.camel_case_style.required_prefix = _
+dotnet_naming_style.camel_case_style.capitalization = camel_case
+
+# Constants should be UPPER_CASE
+dotnet_naming_rule.constants_upper_case.severity = warning
+dotnet_naming_rule.constants_upper_case.symbols = constant_fields
+dotnet_naming_rule.constants_upper_case.style = upper_case_style
+
+dotnet_naming_symbols.constant_fields.applicable_kinds = field
+dotnet_naming_symbols.constant_fields.required_modifiers = const
+
+dotnet_naming_style.upper_case_style.capitalization = all_upper
+dotnet_naming_style.upper_case_style.word_separator = _
+
+# Code style rules
+[*.cs]
+# Indentation and spacing
+csharp_indent_case_contents = true
+csharp_indent_switch_labels = true
+csharp_indent_labels = one_less_than_current
+csharp_indent_block_contents = true
+csharp_indent_braces = false
+csharp_space_after_cast = false
+csharp_space_after_keywords_in_control_flow_statements = true
+csharp_space_between_method_call_parameter_list_parentheses = false
+csharp_space_between_method_declaration_parameter_list_parentheses = false
+
+# Newlines
+csharp_new_line_before_open_brace = all
+csharp_new_line_before_else = true
+csharp_new_line_before_catch = true
+csharp_new_line_before_finally = true
+csharp_new_line_before_members_in_object_initializers = true
+csharp_new_line_before_members_in_anonymous_types = true
+csharp_new_line_between_query_expression_clauses = true
+
+# Wrapping
+csharp_preserve_single_line_statements = false
+csharp_preserve_single_line_blocks = true
+
+# var preferences
+csharp_var_for_built_in_types = false
+csharp_var_when_type_is_apparent = true
+csharp_var_elsewhere = false
+
+# Expression preferences
+dotnet_style_prefer_auto_properties = true:silent
+dotnet_style_prefer_conditional_expression_over_assignment = true:silent
+dotnet_style_prefer_conditional_expression_over_return = true:silent
+dotnet_style_prefer_compound_assignment = true:suggestion
+dotnet_style_prefer_explicit_tuple_names = true:suggestion
+dotnet_style_prefer_inferred_anonymous_type_member_names = true:suggestion
+dotnet_style_prefer_inferred_tuple_names = true:suggestion
+dotnet_style_prefer_pattern_matching = true:silent
+dotnet_style_prefer_simplified_boolean_expressions = true:suggestion
+dotnet_style_prefer_simplified_interpolation = true:suggestion
+
+# null-checking preferences
+csharp_style_conditional_delegate_call = true:suggestion
+csharp_style_throw_expression = true:silent
+
+# Code block preferences
+csharp_prefer_braces = true:silent
+csharp_prefer_simple_default_expression = true:suggestion
+csharp_style_pattern_local_over_anonymous_function = true:suggestion
+
+# Expression-bodied members
+csharp_style_expression_bodied_accessors = true:silent
+csharp_style_expression_bodied_constructors = false:silent
+csharp_style_expression_bodied_indexers = true:silent
+csharp_style_expression_bodied_methods = false:silent
+csharp_style_expression_bodied_operators = true:silent
+csharp_style_expression_bodied_properties = true:silent
+
+# Pattern matching preferences
+csharp_style_pattern_matching_over_as_with_null_check = true:suggestion
+csharp_style_pattern_matching_over_is_with_cast_check = true:suggestion
+
+# Inline out variables
+csharp_style_inlined_variable_declaration = true:suggestion
+
+# C# formatting rules
+csharp_prefer_simple_using_statement = true:suggestion
+csharp_style_namespace_declarations = file_scoped:silent
+
+# JSON files
+[*.json]
+indent_size = 2
+
+# YAML files
+[*.{yml,yaml}]
+indent_size = 2
+
+# Markdown files
+[*.md]
+trim_trailing_whitespace = false
+indent_size = 2
+
+# Project files
+[*.{csproj,vbproj}]
+indent_size = 2
