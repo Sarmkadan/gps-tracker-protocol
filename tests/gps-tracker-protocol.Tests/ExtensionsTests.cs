@@ -5,6 +5,7 @@
 
 using FluentAssertions;
 using GpsTrackerProtocol.Utilities;
+using Xunit; // Added explicitly
 
 namespace GpsTrackerProtocol.Tests;
 
