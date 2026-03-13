@@ -6,6 +6,7 @@
 using System.Text;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using GpsTrackerProtocol.Domain; // Added for ProtocolType
 using GpsTrackerProtocol.Domain.Models;
 using GpsTrackerProtocol.Services;
 using GpsTrackerProtocol.Configuration;
