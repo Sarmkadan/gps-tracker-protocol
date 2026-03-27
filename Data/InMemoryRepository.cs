@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -44,7 +45,7 @@ public class InMemoryRepository<T> : IRepository<T> where T : class
 
     public virtual async Task<T> CreateAsync(T entity)
     {
-        if (entity == null)
+        if (entity is null)
             throw new ArgumentNullException(nameof(entity));
 
         var id = GetId(entity);
@@ -64,7 +65,7 @@ public class InMemoryRepository<T> : IRepository<T> where T : class
 
     public virtual async Task<T> UpdateAsync(T entity)
     {
-        if (entity == null)
+        if (entity is null)
             throw new ArgumentNullException(nameof(entity));
 
         var id = GetId(entity);
