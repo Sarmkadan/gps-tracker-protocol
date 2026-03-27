@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -84,7 +85,7 @@ public class NotificationService : INotificationService
 
     public IEnumerable<Notification> GetNotifications(string deviceId = null)
     {
-        return deviceId == null
+        return deviceId is null
             ? _notifications
             : _notifications.Where(n => n.DeviceId == deviceId);
     }
@@ -95,7 +96,7 @@ public class NotificationService : INotificationService
             return;
 
         var notification = _notifications.FirstOrDefault(n => n.Id == notificationId);
-        if (notification != null)
+        if (notification is not null)
             notification.IsRead = true;
     }
 }

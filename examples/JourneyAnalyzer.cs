@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -38,7 +39,7 @@ public class JourneyAnalyzer
     public async Task AnalyzeDeviceAsync(string deviceId)
     {
         var device = await _deviceService.GetDeviceAsync(deviceId);
-        if (device == null)
+        if (device is null)
         {
             _logger.LogError("Device not found: {0}", deviceId);
             return;
@@ -89,7 +90,7 @@ public class JourneyAnalyzer
     public async Task SimulateJourneyAsync(string deviceId, int waypointCount = 10)
     {
         var device = await _deviceService.GetDeviceAsync(deviceId);
-        if (device == null)
+        if (device is null)
         {
             _logger.LogError("Device not found: {0}", deviceId);
             return;

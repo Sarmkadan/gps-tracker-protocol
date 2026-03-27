@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -129,7 +130,7 @@ public class InMemoryJourneyRepository : InMemoryRepository<Journey>, IJourneyRe
         try
         {
             return _store.Values
-                .Where(j => j.StartTime >= start && (j.EndTime == null || j.EndTime <= end))
+                .Where(j => j.StartTime >= start && (j.EndTime is null || j.EndTime <= end))
                 .ToList();
         }
         finally

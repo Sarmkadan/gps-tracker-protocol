@@ -133,6 +133,8 @@ csharp_style_inlined_variable_declaration = true:suggestion
 # C# formatting rules
 csharp_prefer_simple_using_statement = true:suggestion
 csharp_style_namespace_declarations = file_scoped:silent
+csharp_using_directive_placement = outside_namespace:suggestion
+dotnet_separate_import_directive_groups = true:suggestion
 
 # JSON files
 [*.json]

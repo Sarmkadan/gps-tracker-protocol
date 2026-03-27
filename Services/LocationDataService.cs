@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -42,14 +43,14 @@ public class LocationDataService : ILocationDataService
     /// </summary>
     public async Task<LocationData> StoreLocationAsync(LocationData location)
     {
-        if (location == null)
+        if (location is null)
             throw new ArgumentNullException(nameof(location));
 
         if (!location.IsValid())
             throw new ValidationException("Location data validation failed", nameof(location));
 
         var device = await _deviceRepository.GetByIdAsync(location.DeviceId);
-        if (device == null)
+        if (device is null)
             throw new DeviceException($"Device {location.DeviceId} not found", location.DeviceId);
 
         if (location.Timestamp == default)
