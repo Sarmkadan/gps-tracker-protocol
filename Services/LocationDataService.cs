@@ -49,18 +49,18 @@ public class LocationDataService : ILocationDataService
         if (!location.IsValid())
             throw new ValidationException("Location data validation failed", nameof(location));
 
-        var device = await _deviceRepository.GetByIdAsync(location.DeviceId);
+        var device = await _deviceRepository.GetByIdAsync(location.DeviceId).ConfigureAwait(false);
         if (device is null)
             throw new DeviceException($"Device {location.DeviceId} not found", location.DeviceId);
 
         if (location.Timestamp == default)
             location.Timestamp = DateTime.UtcNow;
 
-        var stored = await _repository.CreateAsync(location);
+        var stored = await _repository.CreateAsync(location).ConfigureAwait(false);
 
         // Update device location cache
         device.UpdateHeartbeat();
-        await _deviceRepository.UpdateAsync(device);
+        await _deviceRepository.UpdateAsync(device).ConfigureAwait(false);
 
         return stored;
     }
@@ -73,7 +73,7 @@ public class LocationDataService : ILocationDataService
         if (string.IsNullOrWhiteSpace(deviceId))
             throw new ArgumentException("Device ID cannot be empty", nameof(deviceId));
 
-        return await _repository.GetLatestByDeviceIdAsync(deviceId);
+        return await _repository.GetLatestByDeviceIdAsync(deviceId).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -87,7 +87,7 @@ public class LocationDataService : ILocationDataService
         if (limit <= 0)
             throw new ArgumentException("Limit must be greater than 0", nameof(limit));
 
-        var history = await _repository.GetByDeviceIdAsync(deviceId);
+        var history = await _repository.GetByDeviceIdAsync(deviceId).ConfigureAwait(false);
         return history.OrderByDescending(l => l.Timestamp).Take(Math.Min(limit, ConfigConstants.MAX_LOCATION_HISTORY)).ToList();
     }
 
@@ -102,7 +102,7 @@ public class LocationDataService : ILocationDataService
         if (start >= end)
             throw new ArgumentException("Start time must be before end time");
 
-        return await _repository.GetByDeviceAndTimeRangeAsync(deviceId, start, end);
+        return await _repository.GetByDeviceAndTimeRangeAsync(deviceId, start, end).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -119,7 +119,7 @@ public class LocationDataService : ILocationDataService
         if (radiusKm <= 0)
             throw new ArgumentException("Radius must be positive", nameof(radiusKm));
 
-        return await _repository.GetWithinRadiusAsync(latitude, longitude, radiusKm);
+        return await _repository.GetWithinRadiusAsync(latitude, longitude, radiusKm).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -127,7 +127,7 @@ public class LocationDataService : ILocationDataService
     /// </summary>
     public async Task<double> CalculateTravelDistanceAsync(string deviceId, DateTime start, DateTime end)
     {
-        var locations = await GetLocationsByTimeRangeAsync(deviceId, start, end);
+        var locations = await GetLocationsByTimeRangeAsync(deviceId, start, end).ConfigureAwait(false);
         var sortedLocations = locations.OrderBy(l => l.Timestamp).ToList();
 
         if (sortedLocations.Count < 2)
@@ -150,6 +150,6 @@ public class LocationDataService : ILocationDataService
         if (olderThan >= DateTime.UtcNow)
             throw new ArgumentException("Cleanup date must be in the past");
 
-        return await _repository.DeleteOlderThanAsync(olderThan);
+        return await _repository.DeleteOlderThanAsync(olderThan).ConfigureAwait(false);
     }
 }

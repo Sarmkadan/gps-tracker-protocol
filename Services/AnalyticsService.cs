@@ -42,8 +42,8 @@ public class AnalyticsService : IAnalyticsService
 
     public async Task<DeviceAnalytics> GetDeviceAnalyticsAsync(string deviceId)
     {
-        var locations = await _locationService.GetLocationHistoryAsync(deviceId, 1000);
-        var journeys = await _journeyService.GetJourneyHistoryAsync(deviceId);
+        var locations = await _locationService.GetLocationHistoryAsync(deviceId, 1000).ConfigureAwait(false);
+        var journeys = await _journeyService.GetJourneyHistoryAsync(deviceId).ConfigureAwait(false);
         var completedJourneys = journeys.Where(j => j.Status == 1).ToList();
 
         var analytics = new DeviceAnalytics
@@ -65,12 +65,12 @@ public class AnalyticsService : IAnalyticsService
 
     public async Task<FleetAnalytics> GetFleetAnalyticsAsync()
     {
-        var devices = await _deviceService.GetAllDevicesAsync();
+        var devices = await _deviceService.GetAllDevicesAsync().ConfigureAwait(false);
         var deviceAnalytics = new List<DeviceAnalytics>();
 
         foreach (var device in devices)
         {
-            var analytics = await GetDeviceAnalyticsAsync(device.Id);
+            var analytics = await GetDeviceAnalyticsAsync(device.Id).ConfigureAwait(false);
             deviceAnalytics.Add(analytics);
         }
 
@@ -88,7 +88,7 @@ public class AnalyticsService : IAnalyticsService
 
     public async Task<RouteAnalytics> GetRouteAnalyticsAsync(string journeyId)
     {
-        var journeys = await _journeyService.GetJourneyHistoryAsync("");
+        var journeys = await _journeyService.GetJourneyHistoryAsync("").ConfigureAwait(false);
         var journey = journeys.FirstOrDefault(j => j.Id == journeyId);
 
         if (journey is null)

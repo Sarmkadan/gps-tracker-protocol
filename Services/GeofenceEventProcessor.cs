@@ -127,9 +127,9 @@ public class GeofenceEventProcessor : IGeofenceEventProcessor
             cancellationToken.ThrowIfCancellationRequested();
 
             if (entered)
-                await OnEnteredAsync(location, geofenceId, webhookUrl);
+                await OnEnteredAsync(location, geofenceId, webhookUrl).ConfigureAwait(false);
             else
-                await OnExitedAsync(location, geofenceId, dwell, webhookUrl);
+                await OnExitedAsync(location, geofenceId, dwell, webhookUrl).ConfigureAwait(false);
         }
     }
 
@@ -176,8 +176,8 @@ public class GeofenceEventProcessor : IGeofenceEventProcessor
             Speed       = location.Speed
         };
 
-        await _eventPublisher.PublishAsync(@event);
-        await _notificationService.SendGeofenceAlertAsync(location.DeviceId, location.Latitude, location.Longitude);
+        await _eventPublisher.PublishAsync(@event).ConfigureAwait(false);
+        await _notificationService.SendGeofenceAlertAsync(location.DeviceId, location.Latitude, location.Longitude).ConfigureAwait(false);
 
         if (!string.IsNullOrWhiteSpace(webhookUrl))
         {
@@ -209,7 +209,7 @@ public class GeofenceEventProcessor : IGeofenceEventProcessor
             DwellDuration = dwell
         };
 
-        await _eventPublisher.PublishAsync(@event);
+        await _eventPublisher.PublishAsync(@event).ConfigureAwait(false);
 
         if (!string.IsNullOrWhiteSpace(webhookUrl))
         {

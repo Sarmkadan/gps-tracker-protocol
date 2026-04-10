@@ -39,13 +39,13 @@ public class JourneyAnalyticsWorker : RecurringBackgroundWorker
 
     protected override async Task ExecuteAsync()
     {
-        var devices = await _deviceService.GetAllDevicesAsync();
+        var devices = await _deviceService.GetAllDevicesAsync().ConfigureAwait(false);
 
         foreach (var device in devices)
         {
             try
             {
-                await AnalyzeDeviceJourneysAsync(device.Id);
+                await AnalyzeDeviceJourneysAsync(device.Id).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -56,7 +56,7 @@ public class JourneyAnalyticsWorker : RecurringBackgroundWorker
 
     private async Task AnalyzeDeviceJourneysAsync(string deviceId)
     {
-        var journeys = await _journeyService.GetJourneyHistoryAsync(deviceId);
+        var journeys = await _journeyService.GetJourneyHistoryAsync(deviceId).ConfigureAwait(false);
         var completedJourneys = journeys.Where(j => j.Status == 1).ToList();
 
         if (!completedJourneys.Any())

@@ -73,7 +73,7 @@ public class SimulationService : ISimulationService
             };
 
             locations.Add(location);
-            await _locationService.StoreLocationAsync(location);
+            await _locationService.StoreLocationAsync(location).ConfigureAwait(false);
         }
 
         _logger.LogInformation("Simulated route: {DeviceId}, {Points} points, {Distance:F2}km, {Bearing:F1}°",
@@ -109,7 +109,7 @@ public class SimulationService : ISimulationService
             Protocol = ProtocolType.GT06
         };
 
-        await _locationService.StoreLocationAsync(location);
+        await _locationService.StoreLocationAsync(location).ConfigureAwait(false);
         return location;
     }
 }
