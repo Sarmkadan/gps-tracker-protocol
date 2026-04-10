@@ -48,10 +48,10 @@ public class GeocodingService : ExternalApiClient, IGeocodingService
             };
 
             var url = NominatimUrl + BuildQueryString(parameters);
-            var response = await _httpClient.GetAsync(url);
+            var response = await _httpClient.GetAsync(url).ConfigureAwait(false);
             response.EnsureSuccessStatusCode();
 
-            var json = await response.Content.ReadAsStringAsync();
+            var json = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
             var nominatimResult = System.Text.Json.JsonSerializer.Deserialize<NominatimResponse>(json);
 
             return new GeocodingResult
@@ -72,7 +72,7 @@ public class GeocodingService : ExternalApiClient, IGeocodingService
 
     public async Task<bool> IsInRegionAsync(double latitude, double longitude, string regionCode)
     {
-        var geocoding = await ReverseGeocodeAsync(latitude, longitude);
+        var geocoding = await ReverseGeocodeAsync(latitude, longitude).ConfigureAwait(false);
         return geocoding.Success && !string.IsNullOrEmpty(geocoding.Country);
     }
 }

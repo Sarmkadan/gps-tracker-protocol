@@ -40,7 +40,7 @@ namespace gps_tracker_protocol.Tests
             });
 
             // Act
-            var totalJourneys = await _sut.GetTotalJourneysAsync();
+            var totalJourneys = await _sut.GetTotalJourneysAsync().ConfigureAwait(false);
 
             // Assert
             totalJourneys.Should().Be(2);
@@ -53,7 +53,7 @@ namespace gps_tracker_protocol.Tests
             _journeyRepository.GetAllAsync().Returns(new List<Journey>());
 
             // Act
-            var totalJourneys = await _sut.GetTotalJourneysAsync();
+            var totalJourneys = await _sut.GetTotalJourneysAsync().ConfigureAwait(false);
 
             // Assert
             totalJourneys.Should().Be(0);
@@ -70,7 +70,7 @@ namespace gps_tracker_protocol.Tests
             });
 
             // Act
-            var averageDuration = await _sut.GetAverageJourneyDurationAsync();
+            var averageDuration = await _sut.GetAverageJourneyDurationAsync().ConfigureAwait(false);
 
             // Assert
             averageDuration.Should().Be(TimeSpan.FromHours(1.5));
@@ -83,7 +83,7 @@ namespace gps_tracker_protocol.Tests
             _journeyRepository.GetAllAsync().Returns(new List<Journey>());
 
             // Act
-            var averageDuration = await _sut.GetAverageJourneyDurationAsync();
+            var averageDuration = await _sut.GetAverageJourneyDurationAsync().ConfigureAwait(false);
 
             // Assert
             averageDuration.Should().Be(TimeSpan.Zero);
@@ -101,7 +101,7 @@ namespace gps_tracker_protocol.Tests
             });
 
             // Act
-            var mostActiveDevice = await _sut.GetMostActiveDeviceAsync();
+            var mostActiveDevice = await _sut.GetMostActiveDeviceAsync().ConfigureAwait(false);
 
             // Assert
             mostActiveDevice.Should().Be("deviceA");
@@ -114,7 +114,7 @@ namespace gps_tracker_protocol.Tests
             _journeyRepository.GetAllAsync().Returns(new List<Journey>());
 
             // Act
-            var mostActiveDevice = await _sut.GetMostActiveDeviceAsync();
+            var mostActiveDevice = await _sut.GetMostActiveDeviceAsync().ConfigureAwait(false);
 
             // Assert
             mostActiveDevice.Should().BeNull();
