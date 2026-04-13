@@ -35,14 +35,14 @@ namespace gps_tracker_protocol.Tests
             _deviceRepository.GetByIdAsync(deviceId).Returns((Device)null);
 
             // Act
-            var device = await _sut.RegisterDeviceAsync(deviceId);
+            var device = await _sut.RegisterDeviceAsync(deviceId).ConfigureAwait(false);
 
             // Assert
             device.Should().NotBeNull();
             device.Id.Should().Be(deviceId);
             device.IsActive.Should().BeTrue();
             device.RegistrationDate.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
-            await _deviceRepository.Received(1).AddAsync(Arg.Is<Device>(d => d.Id == deviceId));
+            await _deviceRepository.Received(1).AddAsync(Arg.Is<Device>(d => d.Id == deviceId)).ConfigureAwait(false);
         }
 
         [Fact]
@@ -54,11 +54,11 @@ namespace gps_tracker_protocol.Tests
             _deviceRepository.GetByIdAsync(deviceId).Returns(existingDevice);
 
             // Act
-            var device = await _sut.RegisterDeviceAsync(deviceId);
+            var device = await _sut.RegisterDeviceAsync(deviceId).ConfigureAwait(false);
 
             // Assert
             device.Should().Be(existingDevice);
-            await _deviceRepository.DidNotReceive().AddAsync(Arg.Any<Device>());
+            await _deviceRepository.DidNotReceive().AddAsync(Arg.Any<Device>()).ConfigureAwait(false);
         }
 
         [Fact]
@@ -70,7 +70,7 @@ namespace gps_tracker_protocol.Tests
             _deviceRepository.GetByIdAsync(deviceId).Returns(expectedDevice);
 
             // Act
-            var actualDevice = await _sut.GetDeviceByIdAsync(deviceId);
+            var actualDevice = await _sut.GetDeviceByIdAsync(deviceId).ConfigureAwait(false);
 
             // Assert
             actualDevice.Should().Be(expectedDevice);
@@ -84,7 +84,7 @@ namespace gps_tracker_protocol.Tests
             _deviceRepository.GetByIdAsync(deviceId).Returns((Device)null);
 
             // Act
-            var actualDevice = await _sut.GetDeviceByIdAsync(deviceId);
+            var actualDevice = await _sut.GetDeviceByIdAsync(deviceId).ConfigureAwait(false);
 
             // Assert
             actualDevice.Should().BeNull();
@@ -99,11 +99,11 @@ namespace gps_tracker_protocol.Tests
             _deviceRepository.GetByIdAsync(deviceId).Returns(device);
 
             // Act
-            await _sut.UpdateDeviceStatusAsync(deviceId, false);
+            await _sut.UpdateDeviceStatusAsync(deviceId, false).ConfigureAwait(false);
 
             // Assert
             device.IsActive.Should().BeFalse();
-            await _deviceRepository.Received(1).UpdateAsync(device);
+            await _deviceRepository.Received(1).UpdateAsync(device).ConfigureAwait(false);
         }
 
         [Fact]
@@ -114,10 +114,10 @@ namespace gps_tracker_protocol.Tests
             _deviceRepository.GetByIdAsync(deviceId).Returns((Device)null);
 
             // Act
-            await _sut.UpdateDeviceStatusAsync(deviceId, false);
+            await _sut.UpdateDeviceStatusAsync(deviceId, false).ConfigureAwait(false);
 
             // Assert
-            await _deviceRepository.DidNotReceive().UpdateAsync(Arg.Any<Device>());
+            await _deviceRepository.DidNotReceive().UpdateAsync(Arg.Any<Device>()).ConfigureAwait(false);
         }
 
         [Fact]
@@ -132,7 +132,7 @@ namespace gps_tracker_protocol.Tests
             _deviceRepository.GetAllAsync().Returns(devices);
 
             // Act
-            var result = await _sut.GetAllDevicesAsync();
+            var result = await _sut.GetAllDevicesAsync().ConfigureAwait(false);
 
             // Assert
             result.Should().HaveCount(2);
