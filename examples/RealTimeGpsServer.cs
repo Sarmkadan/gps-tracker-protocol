@@ -50,7 +50,7 @@ public class RealTimeGpsServer
         var tcpTask = ListenTcpAsync(tcpPort, _cancellationTokenSource.Token);
         var udpTask = ListenUdpAsync(udpPort, _cancellationTokenSource.Token);
 
-        await Task.WhenAll(tcpTask, udpTask);
+        await Task.WhenAll(tcpTask, udpTask).ConfigureAwait(false);
     }
 
     /// <summary>Listens for TCP connections and processes GPS frames</summary>
@@ -64,7 +64,7 @@ public class RealTimeGpsServer
         {
             while (!cancellationToken.IsCancellationRequested)
             {
-                var client = await _tcpListener.AcceptTcpClientAsync(cancellationToken);
+                var client = await _tcpListener.AcceptTcpClientAsync(cancellationToken).ConfigureAwait(false);
                 _ = ProcessTcpClientAsync(client, cancellationToken);
             }
         }
@@ -88,11 +88,11 @@ public class RealTimeGpsServer
                 var buffer = new byte[1024];
                 while (!cancellationToken.IsCancellationRequested)
                 {
-                    int bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length, cancellationToken);
+                    int bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
                     if (bytesRead == 0) break;
 
                     var frameData = buffer[..bytesRead];
-                    await ProcessFrameAsync(frameData, remoteEndpoint?.Address?.ToString() ?? "Unknown");
+                    await ProcessFrameAsync(frameData, remoteEndpoint?.Address?.ToString() ?? "Unknown").ConfigureAwait(false);
                 }
             }
             catch (Exception ex)
@@ -114,8 +114,8 @@ public class RealTimeGpsServer
         {
             while (!cancellationToken.IsCancellationRequested)
             {
-                var result = await _udpClient.ReceiveAsync(cancellationToken);
-                await ProcessFrameAsync(result.Buffer, result.RemoteEndPoint.Address.ToString());
+                var result = await _udpClient.ReceiveAsync(cancellationToken).ConfigureAwait(false);
+                await ProcessFrameAsync(result.Buffer, result.RemoteEndPoint.Address.ToString()).ConfigureAwait(false);
             }
         }
         catch (OperationCanceledException)
@@ -129,7 +129,7 @@ public class RealTimeGpsServer
     {
         try
         {
-            var protocol = await _parserService.DetectProtocolAsync(data);
+            var protocol = await _parserService.DetectProtocolAsync(data).ConfigureAwait(false);
             if (protocol == ProtocolType.Unknown)
             {
                 _logger.LogWarning("Unknown protocol from {0}", sourceAddress);
@@ -144,17 +144,17 @@ public class RealTimeGpsServer
                 SourceAddress = sourceAddress
             };
 
-            bool isValid = await _parserService.ValidateFrameAsync(frame);
+            bool isValid = await _parserService.ValidateFrameAsync(frame).ConfigureAwait(false);
             if (!isValid)
             {
                 _logger.LogWarning("Invalid frame from {0}", sourceAddress);
                 return;
             }
 
-            var location = await _parserService.ExtractLocationDataAsync(frame);
+            var location = await _parserService.ExtractLocationDataAsync(frame).ConfigureAwait(false);
             if (location is null) return;
 
-            var stored = await _locationService.StoreLocationAsync(location);
+            var stored = await _locationService.StoreLocationAsync(location).ConfigureAwait(false);
             _logger.LogInformation("Location stored: Device={0} Lat={1:F4} Lng={2:F4} Speed={3:F1}",
                 stored.DeviceId, stored.Latitude, stored.Longitude, stored.Speed);
         }
@@ -184,7 +184,7 @@ public class RealTimeGpsServer
         try
         {
             var serverTask = server.StartAsync(tcpPort, udpPort);
-            await Task.Delay(Timeout.Infinite, cts.Token);
+            await Task.Delay(Timeout.Infinite, cts.Token).ConfigureAwait(false);
         }
         catch (OperationCanceledException)
         {

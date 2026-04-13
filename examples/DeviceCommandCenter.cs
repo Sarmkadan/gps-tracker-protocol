@@ -50,22 +50,22 @@ public class DeviceCommandCenter
             switch (choice)
             {
                 case "1":
-                    await RegisterDeviceAsync();
+                    await RegisterDeviceAsync().ConfigureAwait(false);
                     break;
                 case "2":
-                    await ListDevicesAsync();
+                    await ListDevicesAsync().ConfigureAwait(false);
                     break;
                 case "3":
-                    await QueryDeviceAsync();
+                    await QueryDeviceAsync().ConfigureAwait(false);
                     break;
                 case "4":
-                    await SendCommandAsync();
+                    await SendCommandAsync().ConfigureAwait(false);
                     break;
                 case "5":
-                    await ViewCommandHistoryAsync();
+                    await ViewCommandHistoryAsync().ConfigureAwait(false);
                     break;
                 case "6":
-                    await GetDeviceLocationAsync();
+                    await GetDeviceLocationAsync().ConfigureAwait(false);
                     break;
                 case "7":
                     running = false;
@@ -116,14 +116,14 @@ public class DeviceCommandCenter
             IsActive = true
         };
 
-        var registered = await _deviceService.RegisterDeviceAsync(device);
+        var registered = await _deviceService.RegisterDeviceAsync(device).ConfigureAwait(false);
         _logger.LogInformation("Device registered: {0} (ID: {1})", registered.DeviceName, registered.Id);
     }
 
     /// <summary>Lists all registered devices</summary>
     private async Task ListDevicesAsync()
     {
-        var devices = await _deviceService.GetAllDevicesAsync();
+        var devices = await _deviceService.GetAllDevicesAsync().ConfigureAwait(false);
         var deviceList = devices.ToList();
 
         Console.WriteLine("\n--- Registered Devices ---");
@@ -145,7 +145,7 @@ public class DeviceCommandCenter
         Console.Write("\nEnter device ID: ");
         var deviceId = Console.ReadLine();
 
-        var device = await _deviceService.GetDeviceAsync(deviceId ?? "");
+        var device = await _deviceService.GetDeviceAsync(deviceId ?? "").ConfigureAwait(false);
         if (device is null)
         {
             _logger.LogWarning("Device not found");
@@ -169,7 +169,7 @@ public class DeviceCommandCenter
         Console.Write("\nEnter device ID: ");
         var deviceId = Console.ReadLine();
 
-        var device = await _deviceService.GetDeviceAsync(deviceId ?? "");
+        var device = await _deviceService.GetDeviceAsync(deviceId ?? "").ConfigureAwait(false);
         if (device is null)
         {
             _logger.LogWarning("Device not found");
@@ -213,8 +213,8 @@ public class DeviceCommandCenter
             CreatedAt = DateTime.UtcNow
         };
 
-        var created = await _commandService.CreateCommandAsync(command);
-        var executed = await _commandService.ExecuteCommandAsync(created.Id);
+        var created = await _commandService.CreateCommandAsync(command).ConfigureAwait(false);
+        var executed = await _commandService.ExecuteCommandAsync(created.Id).ConfigureAwait(false);
 
         _logger.LogInformation("Command {0} executed: {1}", created.Id, executed);
     }
@@ -225,7 +225,7 @@ public class DeviceCommandCenter
         Console.Write("\nEnter device ID: ");
         var deviceId = Console.ReadLine();
 
-        var commands = await _commandService.GetCommandHistoryAsync(deviceId ?? "");
+        var commands = await _commandService.GetCommandHistoryAsync(deviceId ?? "").ConfigureAwait(false);
         var commandList = commands.ToList();
 
         Console.WriteLine("\n--- Command History ---");
@@ -249,7 +249,7 @@ public class DeviceCommandCenter
         Console.Write("\nEnter device ID: ");
         var deviceId = Console.ReadLine();
 
-        var location = await _locationService.GetLatestLocationAsync(deviceId ?? "");
+        var location = await _locationService.GetLatestLocationAsync(deviceId ?? "").ConfigureAwait(false);
         if (location is null)
         {
             _logger.LogWarning("No location data found");
@@ -271,6 +271,6 @@ public class DeviceCommandCenter
     public static async Task Main(string[] args)
     {
         var center = new DeviceCommandCenter();
-        await center.RunInteractiveAsync();
+        await center.RunInteractiveAsync().ConfigureAwait(false);
     }
 }

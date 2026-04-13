@@ -45,14 +45,14 @@ public class ProtocolConverter
             ReceivedAt = DateTime.UtcNow
         };
 
-        bool isValid = await _parserService.ValidateFrameAsync(sourceFrame);
+        bool isValid = await _parserService.ValidateFrameAsync(sourceFrame).ConfigureAwait(false);
         if (!isValid)
         {
             _logger.LogWarning("Source frame validation failed");
             return null;
         }
 
-        var location = await _parserService.ExtractLocationDataAsync(sourceFrame);
+        var location = await _parserService.ExtractLocationDataAsync(sourceFrame).ConfigureAwait(false);
         if (location is null)
         {
             _logger.LogWarning("Could not extract location from source frame");
@@ -209,11 +209,11 @@ public class ProtocolConverter
             return;
         }
 
-        var inputData = await File.ReadAllBytesAsync(inputPath);
+        var inputData = await File.ReadAllBytesAsync(inputPath).ConfigureAwait(false);
         _logger.LogInformation("Converting {0} bytes from {1} to {2}",
             inputData.Length, sourceProtocol, targetProtocol);
 
-        var convertedData = await ConvertFrameAsync(inputData, sourceProtocol, targetProtocol);
+        var convertedData = await ConvertFrameAsync(inputData, sourceProtocol, targetProtocol).ConfigureAwait(false);
 
         if (convertedData is null)
         {
@@ -221,7 +221,7 @@ public class ProtocolConverter
             return;
         }
 
-        await File.WriteAllBytesAsync(outputPath, convertedData);
+        await File.WriteAllBytesAsync(outputPath, convertedData).ConfigureAwait(false);
         _logger.LogInformation("Converted frame written to: {0}", outputPath);
     }
 
@@ -249,6 +249,6 @@ public class ProtocolConverter
         var inputPath = args[2];
         var outputPath = args.Length > 3 ? args[3] : $"output_{targetProtocol}.bin";
 
-        await converter.ConvertFileAsync(inputPath, sourceProtocol, targetProtocol, outputPath);
+        await converter.ConvertFileAsync(inputPath, sourceProtocol, targetProtocol, outputPath).ConfigureAwait(false);
     }
 }

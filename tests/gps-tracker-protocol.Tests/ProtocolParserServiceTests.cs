@@ -30,7 +30,7 @@ public class ProtocolParserServiceTests
         byte[] rawData = { ProtocolConstants.GT06_START_MARKER, 0x01, 0x02 };
 
         // Act
-        var result = await _sut.DetectProtocolAsync(rawData);
+        var result = await _sut.DetectProtocolAsync(rawData).ConfigureAwait(false);
 
         // Assert
         result.Should().Be(ProtocolType.GT06);
@@ -43,7 +43,7 @@ public class ProtocolParserServiceTests
         byte[] rawData = { ProtocolConstants.TK103_START_MARKER, 0x01, 0x02 };
 
         // Act
-        var result = await _sut.DetectProtocolAsync(rawData);
+        var result = await _sut.DetectProtocolAsync(rawData).ConfigureAwait(false);
 
         // Assert
         result.Should().Be(ProtocolType.TK103);
@@ -56,7 +56,7 @@ public class ProtocolParserServiceTests
         byte[] rawData = Encoding.ASCII.GetBytes("$GPRMC,010000.00,A,2824.237,N,08100.237,W,0.00,0.0,010100,0,E*68");
 
         // Act
-        var result = await _sut.DetectProtocolAsync(rawData);
+        var result = await _sut.DetectProtocolAsync(rawData).ConfigureAwait(false);
 
         // Assert
         result.Should().Be(ProtocolType.H02);
@@ -69,7 +69,7 @@ public class ProtocolParserServiceTests
         byte[] rawData = { 0x01, 0x02, 0x03 };
 
         // Act
-        var result = await _sut.DetectProtocolAsync(rawData);
+        var result = await _sut.DetectProtocolAsync(rawData).ConfigureAwait(false);
 
         // Assert
         result.Should().Be(ProtocolType.Unknown);
@@ -82,7 +82,7 @@ public class ProtocolParserServiceTests
         byte[] rawData = new byte[0];
 
         // Act
-        Func<Task> act = async () => await _sut.DetectProtocolAsync(rawData);
+        Func<Task> act = async () => await _sut.DetectProtocolAsync(rawData).ConfigureAwait(false);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentException>()
@@ -107,7 +107,7 @@ public class ProtocolParserServiceTests
         };
 
         // Act
-        var result = await _sut.ValidateFrameAsync(frame);
+        var result = await _sut.ValidateFrameAsync(frame).ConfigureAwait(false);
 
         // Assert
         result.Should().BeTrue();
@@ -125,7 +125,7 @@ public class ProtocolParserServiceTests
         };
 
         // Act
-        var result = await _sut.ValidateFrameAsync(frame);
+        var result = await _sut.ValidateFrameAsync(frame).ConfigureAwait(false);
 
         // Assert
         result.Should().BeFalse();
@@ -143,7 +143,7 @@ public class ProtocolParserServiceTests
         };
 
         // Act
-        var result = await _sut.ValidateFrameAsync(frame);
+        var result = await _sut.ValidateFrameAsync(frame).ConfigureAwait(false);
 
         // Assert
         result.Should().BeFalse();
@@ -160,7 +160,7 @@ public class ProtocolParserServiceTests
         };
 
         // Act
-        var result = await _sut.ValidateFrameAsync(frame);
+        var result = await _sut.ValidateFrameAsync(frame).ConfigureAwait(false);
 
         // Assert
         result.Should().BeTrue();
@@ -177,7 +177,7 @@ public class ProtocolParserServiceTests
         };
 
         // Act
-        var result = await _sut.ValidateFrameAsync(frame);
+        var result = await _sut.ValidateFrameAsync(frame).ConfigureAwait(false);
 
         // Assert
         result.Should().BeTrue();
@@ -248,7 +248,7 @@ public class ProtocolParserServiceTests
         var expectedDeviceId = "unknown"; // ASCII string for 0x01,0x19,0x11,0x0B,0x16 is not readable.
 
         // Act
-        var result = await _sut.ParseFrameAsync(frameToParse);
+        var result = await _sut.ParseFrameAsync(frameToParse).ConfigureAwait(false);
 
         // Assert
         result.Should().NotBeNull();
@@ -322,7 +322,7 @@ public class ProtocolParserServiceTests
         var expectedDeviceId = "12345"; // From ASCII bytes
 
         // Act
-        var result = await _sut.ParseFrameAsync(frameToParse);
+        var result = await _sut.ParseFrameAsync(frameToParse).ConfigureAwait(false);
 
         // Assert
         result.Should().NotBeNull();
@@ -359,7 +359,7 @@ public class ProtocolParserServiceTests
         var expectedDeviceId = "$GPRMC";
 
         // Act
-        var result = await _sut.ParseFrameAsync(frame);
+        var result = await _sut.ParseFrameAsync(frame).ConfigureAwait(false);
 
         // Assert
         result.Should().NotBeNull();
@@ -433,7 +433,7 @@ public class ProtocolParserServiceTests
         var expectedDeviceId = "12345"; // From ASCII bytes
 
         // Act
-        var result = await _sut.ParseFrameAsync(frameToParse);
+        var result = await _sut.ParseFrameAsync(frameToParse).ConfigureAwait(false);
 
         // Assert
         result.Should().NotBeNull();
@@ -470,7 +470,7 @@ public class ProtocolParserServiceTests
         var expectedDeviceId = "(000000000000000)";
 
         // Act
-        var result = await _sut.ParseFrameAsync(frame);
+        var result = await _sut.ParseFrameAsync(frame).ConfigureAwait(false);
 
         // Assert
         result.Should().NotBeNull();

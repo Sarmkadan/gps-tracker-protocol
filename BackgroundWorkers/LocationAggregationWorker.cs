@@ -39,13 +39,13 @@ public class LocationAggregationWorker : RecurringBackgroundWorker
 
     protected override async Task ExecuteAsync()
     {
-        var devices = await _deviceService.GetAllDevicesAsync();
+        var devices = await _deviceService.GetAllDevicesAsync().ConfigureAwait(false);
 
         foreach (var device in devices)
         {
             try
             {
-                await AggregateDeviceLocationAsync(device.Id);
+                await AggregateDeviceLocationAsync(device.Id).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -56,7 +56,7 @@ public class LocationAggregationWorker : RecurringBackgroundWorker
 
     private async Task AggregateDeviceLocationAsync(string deviceId)
     {
-        var locations = await _locationService.GetLocationHistoryAsync(deviceId, 1000);
+        var locations = await _locationService.GetLocationHistoryAsync(deviceId, 1000).ConfigureAwait(false);
 
         if (!locations.Any())
             return;
