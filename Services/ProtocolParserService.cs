@@ -57,9 +57,11 @@ public class ProtocolParserService : IProtocolParserService
         if (rawData[0] == ProtocolConstants.TK103_START_MARKER)
             return ProtocolType.TK103;
 
-        // H02 protocol starts with $GPRMC
         var header = System.Text.Encoding.ASCII.GetString(rawData.Take(6).ToArray());
-        if (header.StartsWith(ProtocolConstants.H02_START_MARKER))
+
+        // H02 protocol: $GPRMC (NMEA) or *HQ (proprietary H02)
+        if (header.StartsWith(ProtocolConstants.H02_START_MARKER) ||
+            header.StartsWith(ProtocolConstants.H02_HQ_START_MARKER))
             return ProtocolType.H02;
 
         return ProtocolType.Unknown;
@@ -137,14 +139,30 @@ public class ProtocolParserService : IProtocolParserService
                 Timestamp = frame.ReceivedAt
             };
 
-            if (parts.Length >= 9)
+            if (frameStr.StartsWith(ProtocolConstants.H02_HQ_START_MARKER))
             {
-                location.Timestamp = DateTime.ParseExact(parts[1] + parts[2], "ddMMyyHHmmss", null);
+                // *HQ,{IMEI},V1,{HHMMSS},{lat},{NS},{lon},{EW},{speed},{bearing},{DDMMYY},...
+                if (parts.Length >= 10)
+                {
+                    if (parts.Length > 10 && parts[10].Length >= 6)
+                        location.Timestamp = DateTime.ParseExact(parts[10][..6] + parts[3], "ddMMyyHHmmss", null);
+                    location.Latitude = ParseCoordinate(parts[4], parts[5]);
+                    // Use the E/W indicator at parts[7], not parts[6] which is the longitude value.
+                    location.Longitude = ParseCoordinate(parts[6], parts[7]);
+                    location.Speed = double.Parse(parts[8]);
+                    location.Bearing = double.Parse(parts[9]);
+                }
+            }
+            else if (parts.Length >= 9)
+            {
+                // $GPRMC,{HHMMSS.ss},{A/V},{lat},{NS},{lon},{EW},{speed},{bearing},{DDMMYY},...
+                var timeStr = parts[1].Length >= 6 ? parts[1][..6] : parts[1];
+                if (parts.Length > 9 && parts[9].Length >= 6)
+                    location.Timestamp = DateTime.ParseExact(parts[9][..6] + timeStr, "ddMMyyHHmmss", null);
                 location.Latitude = ParseCoordinate(parts[3], parts[4]);
                 location.Longitude = ParseCoordinate(parts[5], parts[6]);
                 location.Speed = double.Parse(parts[7]);
                 location.Bearing = double.Parse(parts[8]);
-                location.SatelliteCount = int.Parse(parts[9]);
             }
 
             if (!location.IsValid())
@@ -282,6 +300,8 @@ public class ProtocolParserService : IProtocolParserService
     {
         var frameStr = System.Text.Encoding.ASCII.GetString(frame.RawData);
         var parts = frameStr.Split(',');
+        if (frameStr.StartsWith(ProtocolConstants.H02_HQ_START_MARKER))
+            return parts.Length > 1 ? parts[1] : "unknown";
         return parts.Length > 0 ? parts[0] : "unknown";
     }
 
