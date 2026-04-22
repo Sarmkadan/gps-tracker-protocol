@@ -40,6 +40,12 @@ public static class DependencyInjection
         services.AddSingleton<ICommandService, CommandService>();
         services.AddSingleton<IJourneyService, JourneyService>();
 
+        // Register protocol handlers and auto-detector
+        services.AddSingleton<IProtocolHandler, GT06ProtocolHandler>();
+        services.AddSingleton<IProtocolHandler, H02ProtocolHandler>();
+        services.AddSingleton<IProtocolHandler, TK103ProtocolHandler>();
+        services.AddSingleton<IProtocolAutoDetector, ProtocolAutoDetector>();
+
         // Register infrastructure
         services.AddSingleton<ILoggingPipeline, LoggingPipeline>();
         services.AddSingleton<IValidationPipeline>(sp => new ValidationPipeline(
