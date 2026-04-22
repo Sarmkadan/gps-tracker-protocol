@@ -49,8 +49,9 @@ public class ProtocolParserService : IProtocolParserService
         if (rawData.Length == 0)
             throw new ArgumentException("Raw data is empty");
 
-        // GT06 protocol starts with 0x78
-        if (rawData[0] == ProtocolConstants.GT06_START_MARKER)
+        // GT06: standard packets start with 0x78 0x78; extended packets with 0x79 0x79
+        if (rawData[0] == ProtocolConstants.GT06_START_MARKER ||
+            rawData[0] == ProtocolConstants.GT06_EXTENDED_START_MARKER)
             return ProtocolType.GT06;
 
         // TK103 protocol starts with 0x28
