@@ -120,7 +120,8 @@ public class ProtocolParserService : IProtocolParserService
 
             return location;
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is FormatException or OverflowException
+            or IndexOutOfRangeException or InvalidOperationException or GpsTrackerException)
         {
             throw new ParseException($"GT06 parsing failed: {ex.Message}", frame.ToHex(), ProtocolType.GT06);
         }
@@ -171,7 +172,8 @@ public class ProtocolParserService : IProtocolParserService
 
             return location;
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is FormatException or OverflowException
+            or IndexOutOfRangeException or InvalidOperationException or GpsTrackerException)
         {
             throw new ParseException($"H02 parsing failed: {ex.Message}", frame.ToHex(), ProtocolType.H02);
         }
@@ -205,7 +207,8 @@ public class ProtocolParserService : IProtocolParserService
 
             return location;
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is FormatException or OverflowException
+            or IndexOutOfRangeException or InvalidOperationException or GpsTrackerException)
         {
             throw new ParseException($"TK103 parsing failed: {ex.Message}", frame.ToHex(), ProtocolType.TK103);
         }
