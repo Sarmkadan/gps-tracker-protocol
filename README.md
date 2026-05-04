@@ -367,6 +367,53 @@ public class WebhookClientExample
 }
 ```
 
+## IWeatherApiClient
+
+The `IWeatherApiClient` interface provides functionality for retrieving weather data from weather services based on geographic coordinates. It integrates with weather APIs to fetch current weather conditions including temperature, wind speed, weather code, and weather description for any given latitude and longitude.
+
+Example usage in a service:
+
+```csharp
+using GpsTrackerProtocol.Integration;
+
+public class WeatherServiceExample
+{
+    private readonly IWeatherApiClient _weatherApiClient;
+
+    public WeatherServiceExample(IWeatherApiClient weatherApiClient)
+    {
+        _weatherApiClient = weatherApiClient;
+    }
+
+    public async Task ProcessWeatherForLocationAsync(double latitude, double longitude)
+    {
+        // Get current weather data for specified coordinates
+        WeatherData weatherData = await _weatherApiClient.GetWeatherAsync(latitude, longitude);
+
+        // Display weather information
+        Console.WriteLine($"Weather at {latitude}, {longitude}:");
+        Console.WriteLine($"Temperature: {weatherData.Temperature}°C");
+        Console.WriteLine($"Wind Speed: {weatherData.WindSpeed} km/h");
+        Console.WriteLine($"Conditions: {weatherData.Description}");
+        Console.WriteLine($"Weather Code: {weatherData.WeatherCode}");
+        Console.WriteLine($"Timestamp: {weatherData.Timestamp:u}");
+    }
+
+    public async Task LogWeatherForDeviceAsync(string deviceId, double latitude, double longitude)
+    {
+        // Get weather data
+        WeatherData weatherData = await _weatherApiClient.GetWeatherAsync(latitude, longitude);
+
+        // Log weather information for device tracking
+        Console.WriteLine($"[{deviceId}] Weather update:");
+        Console.WriteLine($"  Location: {weatherData.Latitude}, {weatherData.Longitude}");
+        Console.WriteLine($"  Temperature: {weatherData.Temperature}°C");
+        Console.WriteLine($"  Wind: {weatherData.WindSpeed} km/h ({weatherData.Description})");
+        Console.WriteLine($"  Reported at: {weatherData.Timestamp:yyyy-MM-dd HH:mm:ss}");
+    }
+}
+```
+
 ```csharp
 using Xunit;
 using NSubstitute;
