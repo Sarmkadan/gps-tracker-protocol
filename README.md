@@ -1,3 +1,7 @@
+[![Build](https://github.com/sarmkadan/gps-tracker-protocol/actions/workflows/build.yml/badge.svg)](https://github.com/sarmkadan/gps-tracker-protocol/actions/workflows/build.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![.NET](https://img.shields.io/badge/.NET-10.0-purple.svg)](https://dotnet.microsoft.com/)
+
 # GPS Tracker Protocol Parser
 
 A comprehensive .NET library for parsing GPS tracker protocols (GT06, H02, TK103) - converting raw TCP/UDP data streams into structured location information with full device management, journey tracking, and command execution capabilities.
