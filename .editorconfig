@@ -135,6 +135,7 @@ csharp_prefer_simple_using_statement = true:suggestion
 csharp_style_namespace_declarations = file_scoped:silent
 csharp_using_directive_placement = outside_namespace:suggestion
 dotnet_separate_import_directive_groups = true:suggestion
+dotnet_sort_system_directives_first = true
 
 # JSON files
 [*.json]
