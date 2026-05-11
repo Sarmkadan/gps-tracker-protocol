@@ -32,6 +32,7 @@ public class CommandLineInterface : ICommandLineInterface
     private readonly IJsonFormatter _jsonFormatter;
     private readonly ICsvFormatter _csvFormatter;
     private readonly IGeofenceAlertingService _geofenceAlerting;
+    private readonly IRouteReplayService _routeReplay;
 
     public CommandLineInterface(
         ILogger<CommandLineInterface> logger,
@@ -41,7 +42,8 @@ public class CommandLineInterface : ICommandLineInterface
         IJourneyService journeyService,
         IJsonFormatter jsonFormatter,
         ICsvFormatter csvFormatter,
-        IGeofenceAlertingService geofenceAlerting)
+        IGeofenceAlertingService geofenceAlerting,
+        IRouteReplayService routeReplay)
     {
         _logger = logger;
         _parserService = parserService;
@@ -51,6 +53,7 @@ public class CommandLineInterface : ICommandLineInterface
         _jsonFormatter = jsonFormatter;
         _csvFormatter = csvFormatter;
         _geofenceAlerting = geofenceAlerting;
+        _routeReplay = routeReplay;
     }
 
     public async Task<int> ExecuteAsync(string[] args)
@@ -74,6 +77,7 @@ public class CommandLineInterface : ICommandLineInterface
                 "journey" => await GetJourneyCommandAsync(commandArgs),
                 "export" => await ExportCommandAsync(commandArgs),
                 "alerts" => await AlertsCommandAsync(commandArgs),
+                "replay" => await ReplayCommandAsync(commandArgs),
                 "help" => HandleHelpCommand(commandArgs),
                 _ => HandleUnknownCommand(command)
             };
@@ -288,6 +292,49 @@ public class CommandLineInterface : ICommandLineInterface
         }
     }
 
+
+    private async Task<int> ReplayCommandAsync(string[] args)
+    {
+        if (args.Length == 0)
+        {
+            Console.WriteLine("Usage: replay <journey-id> [speed-multiplier]");
+            return 1;
+        }
+
+        var journeyId = args[0];
+        double multiplier = 1.0;
+        if (args.Length > 1 && !double.TryParse(args[1], out multiplier))
+        {
+            Console.Error.WriteLine("Invalid speed multiplier; must be a positive number.");
+            return 1;
+        }
+
+        try
+        {
+            var options = new ReplayOptions { SpeedMultiplier = multiplier };
+            var result  = await _routeReplay.ReplayJourneyAsync(journeyId, options).ConfigureAwait(false);
+
+            Console.WriteLine($"Route replay for journey {result.JourneyId} (device: {result.DeviceId})");
+            Console.WriteLine($"  Frames        : {result.Frames.Count}");
+            Console.WriteLine($"  Distance      : {result.TotalDistanceKm:F2} km");
+            Console.WriteLine($"  Real duration : {result.OriginalDuration:hh\\:mm\\:ss}");
+            Console.WriteLine($"  Replay time   : {result.ReplayDuration:hh\\:mm\\:ss} ({multiplier}x speed)");
+            Console.WriteLine();
+            Console.WriteLine($"{\"#\",-5} {\"Lat\",10} {\"Lon\",12} {\"Speed\",8} {\"Replay Time\",-25} {\"Km\",8}");
+            foreach (var f in result.Frames)
+            {
+                Console.WriteLine($"{f.Index,-5} {f.Location.Latitude,10:F5} {f.Location.Longitude,12:F5} " +
+                                  $"{f.Location.Speed,8:F1} {f.ReplayTimestamp,-25:u} {f.CumulativeDistanceKm,8:F2}");
+            }
+            return 0;
+        }
+        catch (InvalidOperationException ex)
+        {
+            Console.Error.WriteLine($"Replay failed: {ex.Message}");
+            return 1;
+        }
+    }
+
     private int HandleHelpCommand(string[] args)
     {
         PrintHelp();
@@ -317,6 +364,7 @@ Commands:
   alerts list <device-id>                   List active geofence alerts
   alerts add <device-id> <fence> <enter|exit>  Create an alert rule
   alerts ack <alert-id> [notes]             Acknowledge an alert
+  replay <journey-id> [speed-multiplier]    Replay a journey's route
   help [command]                            Show help information
 
 Examples:
@@ -325,6 +373,7 @@ Examples:
   GpsTrackerProtocol location device-001 50
   GpsTrackerProtocol export device-001 csv output.csv
   GpsTrackerProtocol alerts add device-001 zone-hq enter
+  GpsTrackerProtocol replay journey-abc 10
 ");
     }
 }
