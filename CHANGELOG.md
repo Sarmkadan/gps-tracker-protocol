@@ -5,203 +5,166 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.2.0] - 2026-05-04
+## [1.0.0] - 2025-05-02
 
 ### Added
-- Comprehensive documentation suite (getting-started, architecture, api-reference, deployment, faq)
-- Real-time GPS server example (RealTimeGpsServer.cs) with TCP/UDP support
-- Batch data importer example for CSV and JSON files
-- Journey analyzer with distance, speed, and duration calculations
-- Interactive device command center CLI application
-- Data exporter supporting JSON, CSV, and GeoJSON formats
-- Performance benchmark suite with stress testing capabilities
-- Protocol converter for converting between GT06, H02, and TK103 formats
-- Docker and Docker Compose support with health checks
-- Kubernetes deployment manifests and configuration examples
-- Production deployment guide with scaling strategies
-- Enhanced logging infrastructure with structured logging support
-- Rate limiting service to protect from excessive API calls
-- Caching service with configurable TTL and automatic expiration
-- Geofence monitoring capabilities
-- Background worker services for analytics and aggregation
-- CLI interface for device management
-- Makefile for common build tasks
-- .editorconfig for consistent code formatting
+- Docker and Docker Compose support with health checks and restart policies
+- Comprehensive documentation suite: getting-started, architecture, api-reference, deployment, faq
+- Example applications: RealTimeGpsServer, BatchDataImporter, JourneyAnalyzer, DeviceCommandCenter, DataExporter, PerformanceBenchmark, ProtocolConverter
+- Makefile for common build and development tasks
+- `.editorconfig` for consistent code formatting across editors
+- NuGet packaging configuration and GitHub Actions publish workflow
+- CodeQL security scanning workflow
+- Dependabot configuration for automated dependency updates
+- SECURITY.md, CODE_OF_CONDUCT.md, and CONTRIBUTING.md
 
 ### Changed
-- Updated README with comprehensive 2000+ word documentation
-- Enhanced API reference with complete interface documentation
-- Improved error handling with custom exception hierarchy
-- Optimized in-memory repository for better performance
-- Enhanced validation pipeline with protocol-specific rules
-- Updated project structure for better organization
+- Promoted to stable 1.0.0 following successful integration testing
+- Finalized all public interfaces — no further breaking changes planned for 1.x
 
 ### Fixed
-- Frame validation error handling for corrupted data
-- Memory leak issues in long-running services
-- Thread safety for concurrent repository operations
+- Frame validation error handling for truncated or corrupted data
+- Thread safety for concurrent repository write operations
 - Cache invalidation on device updates
-- Protocol detection edge cases
+- Protocol detection edge case with ambiguous frame headers
 
-### Security
-- Added input validation for all GPS frames
-- Implemented rate limiting for API operations
-- Enhanced error messages to prevent information leakage
-- Added TLS/SSL configuration examples in deployment guide
-
-## [1.1.0] - 2026-04-15
+## [0.9.0] - 2025-04-10
 
 ### Added
-- GeofenceService for boundary monitoring
-- Device command center with interactive menu
-- Location history queries by date range and region
-- Journey analytics with waypoint tracking
-- Analytics service for device and fleet metrics
-- Background processing services
-- CLI command interface
-- Integration service layer for external APIs
+- Background worker services: `BackgroundProcessingService`, `JourneyAnalyticsWorker`, `LocationAggregationWorker`
+- CLI command-line interface (`CommandLineInterface.cs`) for device management
+- Integration layer: `GeocodingService`, `WeatherApiClient`, `NotificationService`, `WebhookClient`, `SimulationService`, `HttpClientFactory`
+- `CachingService` with configurable TTL and automatic expiration
+- `RateLimitingService` to protect against excessive API calls
+- `ErrorHandlingMiddleware` for centralized exception handling
+- Geofence event processing extensions and `GeofenceEventProcessor`
+- `EventPublisher` for internal domain events
 
 ### Changed
-- Refactored services for better composition
-- Improved async/await patterns throughout
-- Enhanced domain models with validation
-- Better separation of concerns in data layer
+- Async/await patterns applied consistently across all service methods
+- Validation pipeline extended with protocol-specific frame rules
+- Logging pipeline upgraded to structured logging format
 
 ### Fixed
-- Coordinate validation bounds checking
-- Frame parsing edge cases for GT06 protocol
-- Journey distance calculation accuracy
-- Device status tracking consistency
+- Memory leak in long-running location aggregation loop
+- Geofence boundary check for devices at exact perimeter coordinates
 
-## [1.0.0] - 2026-02-01
+## [0.7.0] - 2025-03-20
 
 ### Added
-- Core protocol parser service supporting GT06, H02, and TK103
-- Device management service with registration and lifecycle
-- Location data service for storing and querying positions
-- Journey tracking service with waypoint support
-- Command service for device communication
-- Generic repository pattern for data access
-- In-memory repository implementations for testing
-- Dependency injection configuration with Microsoft.Extensions
-- Async/await support throughout API
-- Comprehensive exception hierarchy
-- Input validation pipeline
-- Logging infrastructure with console output
-- ByteExtensions for binary data handling
-- StringExtensions for coordinate parsing
-- DateTimeExtensions for GPS-specific formatting
-- GpsUtilities for distance and bearing calculations
-- PerformanceMonitor for metrics collection
-- CollectionExtensions for LINQ operations
-- Constants definitions for protocol specifications
-- Unit test support with in-memory repositories
+- `JourneyService` with waypoint recording and trip lifecycle (start / complete)
+- `CommandService` for creating, executing, and tracking device commands
+- `AnalyticsService` for per-device and fleet-level metrics
+- `GeofenceService` for boundary definitions and entry/exit detection
+- `CollectionExtensions` and `DictionaryExtensions` LINQ helpers
+- `PerformanceMonitor` utility for timing and throughput measurement
 
-### Features
-- **Multi-Protocol Support**: Parse GT06, H02, TK103 protocols
-- **Frame Validation**: Checksum and structure validation
-- **Location Management**: Store and query GPS coordinates
-- **Device Tracking**: Register and manage tracking devices
-- **Journey Analytics**: Calculate trip distance and duration
-- **Command System**: Send configuration commands to devices
-- **.NET 10 Support**: Latest C# language features
-- **Thread-Safe Operations**: Concurrent access support
-- **Extensible Architecture**: Easy to add new protocols or services
+### Changed
+- `InMemoryRepository<T>` made thread-safe with `ConcurrentDictionary`
+- Domain models (`Journey`, `Command`, `ResponseMessage`) finalised with validation attributes
 
-## [0.9.0] - 2026-01-10
+### Fixed
+- Journey distance calculation accuracy at high-latitude coordinates
+- Device status tracking consistency when device is updated concurrently
+
+## [0.5.0] - 2025-02-28
 
 ### Added
-- Initial project scaffolding
-- Basic domain models (Device, LocationData, GpsFrame)
-- Protocol enum definitions
-- Exception hierarchy
-- Repository interface definitions
-- Service interface declarations
+- `DeviceService` with device registration, update, and lifecycle management
+- `LocationDataService` with store, latest-query, history, date-range, and region queries
+- Generic `IRepository<T>` interface and `InMemoryRepository<T>` implementation
+- Specialised repositories in `InMemoryRepositories.cs`
+- `ValidationPipeline` for input validation across all service entry points
+- `LoggingPipeline` with structured console output and log levels
+- `GeoJsonFormatter` output formatter alongside existing JSON and CSV formatters
+
+### Changed
+- Dependency injection registration consolidated into `DependencyInjection.cs`
+- Domain models (`Device`, `LocationData`) extended with audit timestamps
+
+### Fixed
+- Coordinate bounds validation (`±90` lat, `±180` lon) not enforced on store
+- Null-reference on empty location history result set
+
+## [0.3.0] - 2025-02-01
+
+### Added
+- `ProtocolParserService` supporting GT06, H02, and TK103 frame parsing
+- Checksum validation: XOR for GT06, NMEA for H02, sum for TK103
+- `DetectProtocolAsync` for automatic protocol identification from raw bytes
+- `ExtractLocationDataAsync` to map parsed frames to `LocationData` objects
+- `ByteExtensions` for reading multi-byte integers and extracting nibbles
+- `StringExtensions` for NMEA sentence field splitting and coordinate conversion
+- `DateTimeExtensions` for GPS epoch and UTC formatting helpers
+- `GpsUtilities` — Haversine distance, bearing, and bounding-box calculations
+- `Constants.cs` with frame delimiters, max/min bounds, and timeout values
+- `JsonFormatter` and `CsvFormatter` for structured output
+
+### Fixed
+- GT06 frame boundary detection when start marker appears inside payload
+- H02 checksum rejection for frames with optional trailing fields
+
+## [0.1.0] - 2025-01-15
+
+### Added
+- Initial project scaffolding: solution file, `.csproj`, `.gitignore`
+- Domain models: `Device`, `LocationData`, `GpsFrame`, `Journey`, `Command`, `ResponseMessage`
+- `Enums.cs` — `ProtocolType`, `DeviceStatus`, `CommandStatus`, `JourneyStatus`
+- Custom exception hierarchy in `Exceptions.cs`
+- Service interface declarations: `IProtocolParserService`, `IDeviceService`, `ILocationDataService`, `IJourneyService`, `ICommandService`
+- `IRepository<T>` interface
+- Basic `Program.cs` entry point and `ServiceCollection` wiring
+- MIT License, initial README
 
 ---
 
 ## Versioning Notes
 
-- **Major Version**: Significant API changes or new major features
-- **Minor Version**: New features with backward compatibility
-- **Patch Version**: Bug fixes and minor improvements
+- **Major version**: significant API changes or new major capabilities
+- **Minor version**: new features with backward compatibility
+- **Patch version**: bug fixes and minor improvements
 
 ## Upgrade Guide
 
-### From 1.1.0 to 1.2.0
-
-- No breaking changes
-- New examples and documentation are available
-- Docker support is now included
-- Consider migrating to the new CLI interface
-
-### From 1.0.0 to 1.1.0
-
-- Service interfaces remain unchanged
-- New services available (GeofenceService, AnalyticsService)
-- Command service enhanced with new methods
-
 ### From 0.9.0 to 1.0.0
 
-- Complete API redesign with service-oriented architecture
-- All services now async
-- Dependency injection required for initialization
-- Repository pattern introduced
+No breaking API changes. Docker and CI/CD configuration added. Examples and documentation expanded.
+
+### From 0.7.0 to 0.9.0
+
+Background workers are now registered as `IHostedService` via `AddGpsTrackerServices()`. Ensure your host calls `builder.Services.AddHostedService<BackgroundProcessingService>()` if you need them.
+
+### From 0.5.0 to 0.7.0
+
+`IJourneyService` and `ICommandService` added to the DI container. No changes to existing interfaces.
+
+### From 0.3.0 to 0.5.0
+
+`IRepository<T>` is now required for service construction. Replace any direct list usage with `InMemoryRepository<T>` or your own implementation.
 
 ---
 
 ## Known Issues
 
-### Version 1.2.0
-- In-memory repository not suitable for 100K+ devices (use SQL Server)
-- WebSocket real-time updates not yet implemented
-- Geofencing requires manual boundary definition
-
-### Performance Considerations
-- Memory usage grows with stored location count
-- Large date-range queries benefit from database indexing
-- High-concurrency scenarios benefit from load balancing
+### 1.0.0
+- In-memory repository is not suitable for 100 K+ devices — use a database-backed implementation for production at scale
+- WebSocket real-time push not yet implemented (planned for 1.1.0)
+- Geofencing requires manual boundary definition; automatic alert delivery is in progress
 
 ---
 
 ## Future Roadmap
 
-### 1.3.0 (Planned)
-- [ ] Real-time WebSocket support
-- [ ] REST API layer
-- [ ] Advanced geofencing with automatic alerts
-- [ ] Web dashboard interface
+### 1.1.0 (Planned)
+- [ ] Real-time WebSocket event push
+- [ ] REST API layer with OpenAPI spec
+- [ ] Advanced geofencing with configurable alert channels
 
 ### 2.0.0 (Future)
-- [ ] Database abstraction layer (EF Core)
+- [ ] EF Core database abstraction layer
 - [ ] gRPC service interface
-- [ ] Mobile app support
-- [ ] Advanced machine learning analytics
+- [ ] Advanced analytics and anomaly detection
 
 ---
 
-## Contributing
-
-To contribute to this project:
-
-1. Check existing issues and discussions
-2. Fork the repository
-3. Create a feature branch
-4. Make your changes
-5. Submit a pull request
-6. Include changelog entry for user-facing changes
-
----
-
-## Support
-
-For issues and questions:
-
-- Check [FAQ](docs/faq.md)
-- Review [Documentation](docs/)
-- Search existing [GitHub Issues](https://github.com/sarmkadan/gps-tracker-protocol/issues)
-- Create a new issue with detailed description
-
----
-
-**Latest Version**: 1.2.0 | **Status**: Production Ready | **License**: MIT
+**Latest Version**: 1.0.0 | **Status**: Production Ready | **License**: MIT
