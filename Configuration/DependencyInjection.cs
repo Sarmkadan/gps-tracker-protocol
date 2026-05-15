@@ -81,6 +81,7 @@ public static class DependencyInjection
         services.AddSingleton<IGeofenceAlertingService, GeofenceAlertingService>();
         services.AddSingleton<IAnalyticsService, AnalyticsService>();
         services.AddSingleton<IRouteReplayService, RouteReplayService>();
+        services.AddSingleton<IDeviceDiagnosticsService, DeviceDiagnosticsService>();
 
         // Register background workers
         services.AddSingleton<IBackgroundProcessingService, BackgroundProcessingService>();
