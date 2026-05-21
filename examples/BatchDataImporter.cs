@@ -49,7 +49,7 @@ public class BatchDataImporter
         }
 
         _logger.LogInformation("Starting CSV import from {0}", filePath);
-        var lines = await File.ReadAllLinesAsync(filePath);
+        var lines = await File.ReadAllLinesAsync(filePath).ConfigureAwait(false);
 
         foreach (var line in lines.Skip(1))
         {
@@ -71,7 +71,7 @@ public class BatchDataImporter
                     Accuracy = 5.0
                 };
 
-                await _locationService.StoreLocationAsync(location);
+                await _locationService.StoreLocationAsync(location).ConfigureAwait(false);
                 _successCount++;
 
                 if (_successCount % 1000 == 0)
@@ -101,7 +101,7 @@ public class BatchDataImporter
         }
 
         _logger.LogInformation("Starting JSON import from {0}", filePath);
-        var json = await File.ReadAllTextAsync(filePath);
+        var json = await File.ReadAllTextAsync(filePath).ConfigureAwait(false);
 
         try
         {
@@ -127,7 +127,7 @@ public class BatchDataImporter
                             Accuracy = 5.0
                         };
 
-                        await _locationService.StoreLocationAsync(location);
+                        await _locationService.StoreLocationAsync(location).ConfigureAwait(false);
                         _successCount++;
 
                         if (_successCount % 1000 == 0)
@@ -163,7 +163,7 @@ public class BatchDataImporter
         }
 
         _logger.LogInformation("Starting device import from {0}", filePath);
-        var lines = await File.ReadAllLinesAsync(filePath);
+        var lines = await File.ReadAllLinesAsync(filePath).ConfigureAwait(false);
 
         foreach (var line in lines.Skip(1))
         {
@@ -184,7 +184,7 @@ public class BatchDataImporter
                     IsActive = true
                 };
 
-                await _deviceService.RegisterDeviceAsync(device);
+                await _deviceService.RegisterDeviceAsync(device).ConfigureAwait(false);
                 count++;
 
                 _logger.LogInformation("Device registered: {0} ({1})", device.Imei, device.Protocol);
@@ -215,13 +215,13 @@ public class BatchDataImporter
         switch (command)
         {
             case "csv":
-                await importer.ImportCsvAsync(filePath);
+                await importer.ImportCsvAsync(filePath).ConfigureAwait(false);
                 break;
             case "json":
-                await importer.ImportJsonAsync(filePath);
+                await importer.ImportJsonAsync(filePath).ConfigureAwait(false);
                 break;
             case "devices":
-                await importer.ImportDevicesAsync(filePath);
+                await importer.ImportDevicesAsync(filePath).ConfigureAwait(false);
                 break;
             default:
                 Console.WriteLine("Unknown command: {0}", command);

@@ -114,7 +114,7 @@ public sealed class FleetDashboardService : IFleetDashboardService
             throw new InvalidOperationException(
                 $"Fleet has reached the configured maximum of {_options.MaxFleetSize} vehicles");
 
-        var device = await _deviceService.GetDeviceAsync(vehicle.DeviceId);
+        var device = await _deviceService.GetDeviceAsync(vehicle.DeviceId).ConfigureAwait(false);
         if (device is null)
             throw new DeviceException(
                 $"Device '{vehicle.DeviceId}' does not exist — vehicle cannot be registered without a linked device",
@@ -197,8 +197,8 @@ public sealed class FleetDashboardService : IFleetDashboardService
         var statusTasks = vehicles.Select(v => BuildVehicleStatusAsync(v, today, tomorrow));
         var reportTasks = vehicles.Select(v => _fuelTracking.GetReportAsync(v.Id, today, tomorrow));
 
-        var statuses = await Task.WhenAll(statusTasks);
-        var fuelReports = await Task.WhenAll(reportTasks);
+        var statuses = await Task.WhenAll(statusTasks).ConfigureAwait(false);
+        var fuelReports = await Task.WhenAll(reportTasks).ConfigureAwait(false);
 
         var totalFuel = fuelReports.Sum(r => r.TotalFuelConsumedLiters);
         var totalDist = statuses.Sum(s => s.TodayDistanceKm);
@@ -227,7 +227,7 @@ public sealed class FleetDashboardService : IFleetDashboardService
             throw new KeyNotFoundException($"Vehicle '{vehicleId}' not found in the fleet registry");
 
         var today = DateTime.UtcNow.Date;
-        return await BuildVehicleStatusAsync(vehicle, today, today.AddDays(1));
+        return await BuildVehicleStatusAsync(vehicle, today, today.AddDays(1)).ConfigureAwait(false);
     }
 
     /// <inheritdoc/>
@@ -239,7 +239,7 @@ public sealed class FleetDashboardService : IFleetDashboardService
         if (!_vehicles.TryGetValue(vehicleId, out var vehicle))
             throw new KeyNotFoundException($"Vehicle '{vehicleId}' not found in the fleet registry");
 
-        return await _routeEngine.OptimizeAsync(vehicle, stops, algorithmOverride);
+        return await _routeEngine.OptimizeAsync(vehicle, stops, algorithmOverride).ConfigureAwait(false);
     }
 
     /// <inheritdoc/>
@@ -252,7 +252,7 @@ public sealed class FleetDashboardService : IFleetDashboardService
         if (vehicles.Count == 0)
             return new Dictionary<string, double>();
 
-        var reports = await Task.WhenAll(vehicles.Select(v => _fuelTracking.GetReportAsync(v.Id, from, to)));
+        var reports = await Task.WhenAll(vehicles.Select(v => _fuelTracking.GetReportAsync(v.Id, from, to))).ConfigureAwait(false);
         var totalDist = reports.Sum(r => r.TotalDistanceKm);
         var totalFuel = reports.Sum(r => r.TotalFuelConsumedLiters);
 
@@ -271,7 +271,7 @@ public sealed class FleetDashboardService : IFleetDashboardService
         var distanceTask = _locationService.CalculateTravelDistanceAsync(vehicle.DeviceId, since, until);
         var fuelTask = _fuelTracking.GetReportAsync(vehicle.Id, since, until);
 
-        await Task.WhenAll(deviceTask, latestTask, distanceTask, fuelTask);
+        await Task.WhenAll(deviceTask, latestTask, distanceTask, fuelTask).ConfigureAwait(false);
 
         var device = deviceTask.Result;
         var latest = latestTask.Result;

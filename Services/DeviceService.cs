@@ -51,7 +51,7 @@ public class DeviceService : IDeviceService
         if (!device.IsValid())
             throw new ValidationException("Device validation failed", nameof(device));
 
-        var existing = await _repository.GetByImeiAsync(device.Imei);
+        var existing = await _repository.GetByImeiAsync(device.Imei).ConfigureAwait(false);
         if (existing is not null)
             throw new DeviceException($"Device with IMEI {device.Imei} already exists", device.Id);
 
@@ -59,7 +59,7 @@ public class DeviceService : IDeviceService
         device.LastSeen = DateTime.UtcNow;
         device.Status = DeviceStatus.Offline;
 
-        return await _repository.CreateAsync(device);
+        return await _repository.CreateAsync(device).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -70,7 +70,7 @@ public class DeviceService : IDeviceService
         if (string.IsNullOrWhiteSpace(deviceId))
             throw new ArgumentException("Device ID cannot be empty", nameof(deviceId));
 
-        return await _repository.GetByIdAsync(deviceId);
+        return await _repository.GetByIdAsync(deviceId).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -81,7 +81,7 @@ public class DeviceService : IDeviceService
         if (string.IsNullOrWhiteSpace(imei))
             throw new ArgumentException("IMEI cannot be empty", nameof(imei));
 
-        return await _repository.GetByImeiAsync(imei);
+        return await _repository.GetByImeiAsync(imei).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -89,7 +89,7 @@ public class DeviceService : IDeviceService
     /// </summary>
     public async Task<IEnumerable<Device>> GetAllDevicesAsync()
     {
-        return await _repository.GetAllAsync();
+        return await _repository.GetAllAsync().ConfigureAwait(false);
     }
 
     /// <summary>
@@ -97,7 +97,7 @@ public class DeviceService : IDeviceService
     /// </summary>
     public async Task<IEnumerable<Device>> GetOnlineDevicesAsync()
     {
-        return await _repository.GetByStatusAsync(DeviceStatus.Online);
+        return await _repository.GetByStatusAsync(DeviceStatus.Online).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -108,14 +108,14 @@ public class DeviceService : IDeviceService
         if (device is null)
             throw new ArgumentNullException(nameof(device));
 
-        var existing = await _repository.GetByIdAsync(device.Id);
+        var existing = await _repository.GetByIdAsync(device.Id).ConfigureAwait(false);
         if (existing is null)
             throw new DeviceException($"Device {device.Id} not found", device.Id);
 
         if (!device.IsValid())
             throw new ValidationException("Device validation failed", nameof(device));
 
-        await _repository.UpdateAsync(device);
+        await _repository.UpdateAsync(device).ConfigureAwait(false);
         return true;
     }
 
@@ -127,12 +127,12 @@ public class DeviceService : IDeviceService
         if (string.IsNullOrWhiteSpace(deviceId))
             throw new ArgumentException("Device ID cannot be empty", nameof(deviceId));
 
-        var device = await _repository.GetByIdAsync(deviceId);
+        var device = await _repository.GetByIdAsync(deviceId).ConfigureAwait(false);
         if (device is null)
             throw new DeviceException($"Device {deviceId} not found", deviceId);
 
         device.IsActive = false;
-        await _repository.UpdateAsync(device);
+        await _repository.UpdateAsync(device).ConfigureAwait(false);
         return true;
     }
 
@@ -141,12 +141,12 @@ public class DeviceService : IDeviceService
     /// </summary>
     public async Task UpdateDeviceHeartbeatAsync(string deviceId, string? ipAddress = null, int port = 0)
     {
-        var device = await _repository.GetByIdAsync(deviceId);
+        var device = await _repository.GetByIdAsync(deviceId).ConfigureAwait(false);
         if (device is null)
             throw new DeviceException($"Device {deviceId} not found", deviceId);
 
         device.UpdateHeartbeat(ipAddress, port);
-        await _repository.UpdateAsync(device);
+        await _repository.UpdateAsync(device).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -154,6 +154,6 @@ public class DeviceService : IDeviceService
     /// </summary>
     public async Task<IEnumerable<Device>> GetOfflineDevicesAsync(TimeSpan timeout)
     {
-        return await _repository.GetOfflineDevicesAsync(timeout);
+        return await _repository.GetOfflineDevicesAsync(timeout).ConfigureAwait(false);
     }
 }
