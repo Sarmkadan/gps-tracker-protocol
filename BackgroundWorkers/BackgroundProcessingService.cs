@@ -54,7 +54,7 @@ public class BackgroundProcessingService : IBackgroundProcessingService
             _logger.LogInformation("Worker started: {WorkerName}", worker.WorkerName);
         }
 
-        await Task.WhenAll(_runningTasks);
+        await Task.WhenAll(_runningTasks).ConfigureAwait(false);
     }
 
     public async Task StopAllWorkersAsync()
@@ -65,7 +65,7 @@ public class BackgroundProcessingService : IBackgroundProcessingService
         {
             try
             {
-                await worker.StopAsync();
+                await worker.StopAsync().ConfigureAwait(false);
                 _logger.LogInformation("Worker stopped: {WorkerName}", worker.WorkerName);
             }
             catch (Exception ex)
@@ -104,7 +104,7 @@ public abstract class RecurringBackgroundWorker : IBackgroundWorker
                 try
                 {
                     _logger.LogDebug("[{WorkerName}] Executing...", WorkerName);
-                    await ExecuteAsync();
+                    await ExecuteAsync().ConfigureAwait(false);
                     _consecutiveFailures = 0;
                 }
                 catch (Exception ex)
@@ -120,7 +120,7 @@ public abstract class RecurringBackgroundWorker : IBackgroundWorker
                     }
                 }
 
-                await Task.Delay(_interval, cancellationToken);
+                await Task.Delay(_interval, cancellationToken).ConfigureAwait(false);
             }
         }
         catch (OperationCanceledException)
@@ -154,10 +154,10 @@ public class ParallelWorkerPool
 
     public async Task ExecuteAsync(Func<Task> work)
     {
-        await _semaphore.WaitAsync();
+        await _semaphore.WaitAsync().ConfigureAwait(false);
         try
         {
-            await work();
+            await work().ConfigureAwait(false);
         }
         finally
         {
@@ -168,6 +168,6 @@ public class ParallelWorkerPool
     public async Task ExecuteAsync<T>(IEnumerable<T> items, Func<T, Task> work)
     {
         var tasks = items.Select(item => ExecuteAsync(() => work(item)));
-        await Task.WhenAll(tasks);
+        await Task.WhenAll(tasks).ConfigureAwait(false);
     }
 }
