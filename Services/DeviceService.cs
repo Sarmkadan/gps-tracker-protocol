@@ -15,16 +15,79 @@ using GpsTrackerProtocol.Domain.Models;
 /// </summary>
 public interface IDeviceService
 {
+/// <summary>
+    /// Registers a new device in the system.
+    /// </summary>
+    /// <param name="device">The device to register.</param>
+    /// <returns>The registered device.</returns>
     Task<Device> RegisterDeviceAsync(Device device);
+
+    /// <summary>
+    /// Gets a device by its ID.
+    /// </summary>
+    /// <param name="deviceId">The device ID.</param>
+    /// <returns>The device if found, otherwise null.</returns>
     Task<Device?> GetDeviceAsync(string deviceId);
+
+    /// <summary>
+    /// Gets a device by its IMEI.
+    /// </summary>
+    /// <param name="imei">The device IMEI.</param>
+    /// <returns>The device if found, otherwise null.</returns>
     Task<Device?> GetDeviceByImeiAsync(string imei);
+
+    /// <summary>
+    /// Gets all registered devices.
+    /// </summary>
+    /// <returns>A collection of devices.</returns>
     Task<IEnumerable<Device>> GetAllDevicesAsync();
+
+    /// <summary>
+    /// Gets all currently online devices.
+    /// </summary>
+    /// <returns>A collection of online devices.</returns>
     Task<IEnumerable<Device>> GetOnlineDevicesAsync();
+
+    /// <summary>
+    /// Updates device information.
+    /// </summary>
+    /// <param name="device">The device to update.</param>
+    /// <returns>True if the update was successful, otherwise false.</returns>
     Task<bool> UpdateDeviceAsync(Device device);
+
+    /// <summary>
+    /// Deregisters a device from the system.
+    /// </summary>
+    /// <param name="deviceId">The device ID.</param>
+    /// <returns>True if the deregistration was successful, otherwise false.</returns>
     Task<bool> DeregisterDeviceAsync(string deviceId);
+
+    /// <summary>
+    /// Updates device heartbeat and status.
+    /// </summary>
+    /// <param name="deviceId">The device ID.</param>
+    /// <param name="ipAddress">The IP address of the device.</param>
+    /// <param name="port">The port of the device.</param>
     Task UpdateDeviceHeartbeatAsync(string deviceId, string? ipAddress = null, int port = 0);
+
+    /// <summary>
+    /// Gets devices that are offline based on heartbeat timeout.
+    /// </summary>
+    /// <param name="timeout">The timeout duration.</param>
+    /// <returns>A collection of offline devices.</returns>
     Task<IEnumerable<Device>> GetOfflineDevicesAsync(TimeSpan timeout);
+
+    /// <summary>
+    /// Gets the connection status snapshot for a single device.
+    /// </summary>
+    /// <param name="deviceId">The device ID.</param>
+    /// <returns>The device status DTO if found, otherwise null.</returns>
     Task<DeviceStatusDto?> GetDeviceStatusAsync(string deviceId);
+
+    /// <summary>
+    /// Gets the connection status snapshot for every registered device.
+    /// </summary>
+    /// <returns>A collection of device status DTOs.</returns>
     Task<IEnumerable<DeviceStatusDto>> GetAllDeviceStatusesAsync();
 }
 

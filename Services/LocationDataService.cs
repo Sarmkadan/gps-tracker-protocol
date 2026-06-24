@@ -15,12 +15,60 @@ using GpsTrackerProtocol.Domain.Models;
 /// </summary>
 public interface ILocationDataService
 {
+/// <summary>
+    /// Stores a new location data point.
+    /// </summary>
+    /// <param name="location">The location data to store.</param>
+    /// <returns>The stored location data.</returns>
     Task<LocationData> StoreLocationAsync(LocationData location);
+
+    /// <summary>
+    /// Gets the latest location for a device.
+    /// </summary>
+    /// <param name="deviceId">The device ID.</param>
+    /// <returns>The latest location data if found, otherwise null.</returns>
     Task<LocationData?> GetLatestLocationAsync(string deviceId);
+
+    /// <summary>
+    /// Gets location history for a device with limit.
+    /// </summary>
+    /// <param name="deviceId">The device ID.</param>
+    /// <param name="limit">The maximum number of records to return.</param>
+    /// <returns>A collection of location data.</returns>
     Task<IEnumerable<LocationData>> GetLocationHistoryAsync(string deviceId, int limit = 100);
+
+    /// <summary>
+    /// Gets location data within a time range.
+    /// </summary>
+    /// <param name="deviceId">The device ID.</param>
+    /// <param name="start">The start time.</param>
+    /// <param name="end">The end time.</param>
+    /// <returns>A collection of location data.</returns>
     Task<IEnumerable<LocationData>> GetLocationsByTimeRangeAsync(string deviceId, DateTime start, DateTime end);
+
+    /// <summary>
+    /// Gets locations within a specified radius.
+    /// </summary>
+    /// <param name="latitude">The latitude.</param>
+    /// <param name="longitude">The longitude.</param>
+    /// <param name="radiusKm">The radius in kilometers.</param>
+    /// <returns>A collection of location data.</returns>
     Task<IEnumerable<LocationData>> GetLocationsNearbyAsync(double latitude, double longitude, double radiusKm);
+
+    /// <summary>
+    /// Calculates total travel distance for a device in a time period.
+    /// </summary>
+    /// <param name="deviceId">The device ID.</param>
+    /// <param name="start">The start time.</param>
+    /// <param name="end">The end time.</param>
+    /// <returns>The total distance traveled in kilometers.</returns>
     Task<double> CalculateTravelDistanceAsync(string deviceId, DateTime start, DateTime end);
+
+    /// <summary>
+    /// Cleans up old location data.
+    /// </summary>
+    /// <param name="olderThan">The threshold date.</param>
+    /// <returns>The number of records deleted.</returns>
     Task<int> CleanupOldDataAsync(DateTime olderThan);
 }
 
