@@ -1,0 +1,15 @@
+**/.bin/
+**/.obj/
+**/.git/
+**/.vs/
+**/.vscode/
+**/.idea/
+**/.DS_Store
+**/bin/
+**/obj/
+**/tests/
+**/examples/
+Dockerfile
+docker-compose.yml
+.gitignore
+README.md
