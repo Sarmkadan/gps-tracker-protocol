@@ -171,14 +171,19 @@ dotnet run
 dotnet add package Zaiets.gps.tracker.protocol
 ```
 
-### Option 3: Docker Container
+### Option 3: Run as Docker Container
 
 ```bash
+# Build the console application image
 docker build -t gps-tracker-protocol .
-docker run -it gps-tracker-protocol
+
+# Run the console application
+docker run --rm gps-tracker-protocol
 ```
 
-### Option 4: Docker Compose (with example services)
+### Option 4: Run with Docker Compose
+
+This will start the GPS tracker console application along with a Redis instance for caching.
 
 ```bash
 docker-compose up --build
@@ -289,7 +294,60 @@ Console.WriteLine($"History records: {history.Count()}");
 
 ## Usage Examples
 
-### Example 1: Real-Time TCP Server
+The repository includes comprehensive usage examples demonstrating various scenarios and integration patterns.
+
+
+
+
+### Quick Start Examples
+
+#### Basic Usage - Minimal Setup
+
+See `examples/BasicUsage.cs` - Minimal setup and first call to get started quickly.
+
+```bash
+dotnet run --project examples/BasicUsage.cs
+```
+
+This example shows:
+- Service registration
+- Device registration
+- Frame parsing
+- Location storage
+- Basic queries
+
+#### Advanced Usage - Configuration and Error Handling
+
+See `examples/AdvancedUsage.cs` - Advanced configuration, custom options, error handling, and multi-protocol support.
+
+```bash
+dotnet run --project examples/AdvancedUsage.cs
+```
+
+This example demonstrates:
+- Custom service configuration
+- Advanced error handling
+- Multi-protocol support (GT06, H02, TK103)
+- Advanced queries and analytics
+- Journey tracking
+
+#### ASP.NET Core Integration
+
+See `examples/IntegrationExample.cs` - Integration with ASP.NET Core's dependency injection system.
+
+```bash
+dotnet run --project examples/IntegrationExample.cs
+```
+
+This example shows:
+- Registering GPS Tracker Protocol in ASP.NET Core
+- Creating REST API endpoints for GPS data ingestion
+- Device management via HTTP API
+- Location analytics endpoints
+
+### Real-World Examples
+
+#### Real-Time TCP Server
 
 See `examples/RealTimeGpsServer.cs` - Listen for GPS updates over TCP, parse frames, store locations.
 
@@ -298,11 +356,12 @@ dotnet run --project examples/RealTimeGpsServer.cs
 ```
 
 Then connect with raw GPS data:
+
 ```bash
 nc localhost 5000 < gps_samples.bin
 ```
 
-### Example 2: Batch Data Import
+#### Batch Data Import
 
 See `examples/BatchDataImporter.cs` - Import locations from CSV/JSON files.
 
@@ -310,7 +369,7 @@ See `examples/BatchDataImporter.cs` - Import locations from CSV/JSON files.
 dotnet run --project examples/BatchDataImporter.cs --file devices.csv
 ```
 
-### Example 3: Journey Analysis
+#### Journey Analysis
 
 See `examples/JourneyAnalyzer.cs` - Calculate trip metrics and generate reports.
 
@@ -318,7 +377,7 @@ See `examples/JourneyAnalyzer.cs` - Calculate trip metrics and generate reports.
 dotnet run --project examples/JourneyAnalyzer.cs --device device-001
 ```
 
-### Example 4: Device Command Center
+#### Device Command Center
 
 See `examples/DeviceCommandCenter.cs` - Interactive CLI for managing devices and sending commands.
 
@@ -326,7 +385,7 @@ See `examples/DeviceCommandCenter.cs` - Interactive CLI for managing devices and
 dotnet run --project examples/DeviceCommandCenter.cs
 ```
 
-### Example 5: Geofence Monitoring
+#### Geofence Monitoring
 
 See `examples/GeofenceMonitor.cs` - Monitor devices within geofence boundaries.
 
@@ -334,7 +393,7 @@ See `examples/GeofenceMonitor.cs` - Monitor devices within geofence boundaries.
 dotnet run --project examples/GeofenceMonitor.cs --config fences.json
 ```
 
-### Example 6: Data Export
+#### Data Export
 
 See `examples/DataExporter.cs` - Export locations to JSON, CSV, GeoJSON formats.
 
@@ -342,7 +401,7 @@ See `examples/DataExporter.cs` - Export locations to JSON, CSV, GeoJSON formats.
 dotnet run --project examples/DataExporter.cs --format geojson --output map.json
 ```
 
-### Example 7: Performance Benchmark
+#### Performance Benchmark
 
 See `examples/PerformanceBenchmark.cs` - Stress test parsing and storage performance.
 
@@ -350,7 +409,7 @@ See `examples/PerformanceBenchmark.cs` - Stress test parsing and storage perform
 dotnet run --project examples/PerformanceBenchmark.cs --frames 100000
 ```
 
-### Example 8: Protocol Converter
+#### Protocol Converter
 
 See `examples/ProtocolConverter.cs` - Convert between GPS tracker protocols.
 
