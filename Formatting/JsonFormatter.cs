@@ -121,10 +121,10 @@ public class JsonFormatter : IJsonFormatter
 public class LocationDataDto
 {
     [JsonPropertyName("device_id")]
-    public string DeviceId { get; set; }
+    public required string DeviceId { get; set; }
 
     [JsonPropertyName("timestamp")]
-    public string Timestamp { get; set; }
+    public required string Timestamp { get; set; }
 
     [JsonPropertyName("latitude")]
     public double Latitude { get; set; }
@@ -148,25 +148,25 @@ public class LocationDataDto
     public int SatelliteCount { get; set; }
 
     [JsonPropertyName("protocol")]
-    public string Protocol { get; set; }
+    public required string Protocol { get; set; }
 }
 
 public class GpsFrameDto
 {
     [JsonPropertyName("frame_id")]
-    public string FrameId { get; set; }
+    public required string FrameId { get; set; }
 
     [JsonPropertyName("protocol")]
-    public string Protocol { get; set; }
+    public required string Protocol { get; set; }
 
     [JsonPropertyName("raw_data_hex")]
-    public string RawDataHex { get; set; }
+    public required string RawDataHex { get; set; }
 
     [JsonPropertyName("received_at")]
-    public string ReceivedAt { get; set; }
+    public required string ReceivedAt { get; set; }
 
     [JsonPropertyName("source_address")]
-    public string SourceAddress { get; set; }
+    public required string SourceAddress { get; set; }
 
     [JsonPropertyName("source_port")]
     public int SourcePort { get; set; }
@@ -178,40 +178,40 @@ public class GpsFrameDto
 public class DeviceDto
 {
     [JsonPropertyName("id")]
-    public string Id { get; set; }
+    public required string Id { get; set; }
 
     [JsonPropertyName("imei")]
-    public string Imei { get; set; }
+    public required string Imei { get; set; }
 
     [JsonPropertyName("device_name")]
-    public string DeviceName { get; set; }
+    public required string DeviceName { get; set; }
 
     [JsonPropertyName("protocol")]
-    public string Protocol { get; set; }
+    public required string Protocol { get; set; }
 
     [JsonPropertyName("is_active")]
     public bool IsActive { get; set; }
 
     [JsonPropertyName("status")]
-    public string Status { get; set; }
+    public required string Status { get; set; }
 
     [JsonPropertyName("last_seen")]
-    public string LastSeen { get; set; }
+    public required string LastSeen { get; set; }
 }
 
 public class JourneyDto
 {
     [JsonPropertyName("id")]
-    public string Id { get; set; }
+    public required string Id { get; set; }
 
     [JsonPropertyName("device_id")]
-    public string DeviceId { get; set; }
+    public required string DeviceId { get; set; }
 
     [JsonPropertyName("start_time")]
-    public string StartTime { get; set; }
+    public required string StartTime { get; set; }
 
     [JsonPropertyName("end_time")]
-    public string EndTime { get; set; }
+    public string? EndTime { get; set; }
 
     [JsonPropertyName("waypoint_count")]
     public int WaypointCount { get; set; }
@@ -223,5 +223,5 @@ public class JourneyDto
     public double AverageSpeed { get; set; }
 
     [JsonPropertyName("status")]
-    public string Status { get; set; }
+    public required string Status { get; set; }
 }
