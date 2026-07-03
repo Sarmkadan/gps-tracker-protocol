@@ -409,6 +409,26 @@ See `examples/PerformanceBenchmark.cs` - Stress test parsing and storage perform
 dotnet run --project examples/PerformanceBenchmark.cs --frames 100000
 ```
 
+#### Running Benchmarks
+
+```bash
+# Build and run benchmarks
+cd gps-tracker-protocol
+dotnet build gps-tracker-protocol.Benchmarks
+dotnet run --project gps-tracker-protocol.Benchmarks -- --help
+
+# Run all benchmarks and generate detailed report
+dotnet run --project gps-tracker-protocol.Benchmarks
+
+# Run specific benchmark category
+# Example: Parsing benchmarks only
+dotnet run --project gps-tracker-protocol.Benchmarks -- --filter "*Parsing*"
+
+# Export results to file
+# (Run in PowerShell or adjust for bash)
+dotnet run --project gps-tracker-protocol.Benchmarks -- --exporters csv --artifacts-path ./benchmarks
+```
+
 #### Protocol Converter
 
 See `examples/ProtocolConverter.cs` - Convert between GPS tracker protocols.
@@ -857,6 +877,136 @@ Based on historical benchmark data (AMD Ryzen 5 5600X, .NET 10, in-memory storag
 | Batch parsing (100 frames) | ~40,000-50,000 ops/sec | ~20-25 μs/frame | ~20 KB |
 
 **Memory footprint**: approximately 1 MB per 10,000 stored `LocationData` records.
+
+### Benchmark Suite
+
+The `gps-tracker-protocol.Benchmarks` project contains comprehensive performance benchmarks using BenchmarkDotNet:
+
+#### Benchmark Categories
+
+- **Parsing**: Frame parsing performance for all supported protocols (GT06, H02, TK103)
+- **Detection**: Protocol auto-detection performance
+- **Validation**: Frame validation performance
+- **Storage**: Location data storage performance
+- **Query**: Location data retrieval performance
+- **Throughput**: Batch processing and high-throughput scenarios
+- **Analytics**: Analytics service performance
+- **Device**: Device lifecycle operations
+
+#### Key Benchmarks
+
+1. **Protocol Parsing**: Measures parsing throughput for all three protocols
+2. **Protocol Detection**: Critical for high-throughput data ingestion pipelines
+3. **Frame Validation**: Performance of checksum validation (executed on every frame)
+4. **Location Storage**: Throughput of storing parsed location data
+5. **Batch Processing**: Simulates real-world high-throughput data ingestion (100 frames)
+6. **Analytics**: Device and fleet-wide analytics generation performance
+7. **Device Operations**: Device registration and lifecycle performance
+8. **Query Performance**: Historical location data retrieval
+
+#### Memory Diagnostics
+
+All benchmarks include memory allocation tracking via `[MemoryDiagnoser]` attribute, providing:
+- Allocated memory per operation
+- Garbage collection pressure
+- Memory allocation patterns
+- Object generation statistics
+
+This helps identify memory-intensive operations and optimize for high-throughput scenarios.
+
+#### Running Benchmarks
+
+```bash
+# Navigate to benchmarks project
+cd gps-tracker-protocol.Benchmarks
+
+# Run all benchmarks
+# Output includes: Mean time, Operations/sec, Allocated memory, GC collections
+dotnet run
+
+# Run specific benchmark
+# Example: GT06 frame parsing only
+dotnet run -- --filter "*Parse_GT06*"
+
+# Run all parsing benchmarks
+dotnet run -- --filter "*Parsing*"
+
+# Run all throughput benchmarks
+dotnet run -- --filter "*Throughput*"
+
+# Export results to CSV for analysis
+dotnet run -- --exporters csv --artifacts-path ./results
+
+# Generate detailed HTML report
+dotnet run -- --exporters html --artifacts-path ./results
+```
+
+#### Interpreting Results
+
+Benchmark results include:
+- **Mean**: Average execution time
+- **Error**: Standard error
+- **StdDev**: Standard deviation
+- **Median**: 50th percentile
+- **Operations/sec**: Throughput (higher is better)
+- **Allocated**: Memory allocated per operation (lower is better)
+- **Gen 0/1/2**: Garbage collection generations triggered
+
+#### Performance Tuning Recommendations
+
+Based on benchmark results:
+
+1. **GT06 Protocol**: Optimized binary parsing with low memory overhead (~0.2 KB per frame)
+2. **H02 Protocol**: ASCII parsing has higher memory overhead due to string operations (~0.3 KB)
+3. **TK103 Protocol**: Fixed-size binary format provides best performance (~0.1 KB)
+4. **Protocol Detection**: Extremely fast (~10-12 μs) - suitable for high-throughput pipelines
+5. **Location Storage**: Consider batching writes for maximum throughput
+6. **Analytics**: Pre-aggregate data for frequent queries to reduce computation
+
+#### Continuous Integration
+
+Benchmarks run automatically on every CI build to detect performance regressions:
+- GitHub Actions workflow executes benchmarks
+- Results are compared against baseline
+- Performance regressions trigger alerts
+- Historical data tracked in CI artifacts
+
+#### Best Practices for High Throughput
+
+1. **Use Batch Processing**: Parse and store frames in batches (100+ frames per batch)
+2. **Enable Caching**: Use in-memory caching for frequently accessed devices and locations
+3. **Async Operations**: All services support async/await for efficient I/O
+4. **Thread Pool Tuning**: Increase minimum threads for CPU-bound operations
+5. **Memory Management**: Monitor GC pressure with MemoryDiagnoser
+6. **Protocol Selection**: TK103 provides best performance for binary protocols
+
+#### Example: High-Throughput Data Pipeline
+
+```csharp
+// Configure thread pool for high throughput
+ThreadPool.SetMinThreads(100, 100);
+
+// Use batch processing
+var frames = new List<GpsFrame>();
+for (int i = 0; i < batchSize; i++)
+{
+    frames.Add(new GpsFrame { RawData = rawData, Protocol = detectedProtocol });
+}
+
+// Parse in parallel
+var tasks = frames.Select(frame => parser.ParseFrameAsync(frame));
+await Task.WhenAll(tasks).ConfigureAwait(false);
+
+// Store in batch
+var locations = frames.Select(f => parser.ExtractLocationDataAsync(f))
+    .Where(l => l != null)
+    .Select(l => l.Result);
+
+foreach (var location in locations)
+{
+    await locationService.StoreLocationAsync(location).ConfigureAwait(false);
+}
+```
 
 ### Performance Tuning
 
