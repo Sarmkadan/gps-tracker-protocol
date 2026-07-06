@@ -374,7 +374,6 @@ services.AddLogging(builder => builder.AddConsole());
 - PascalCase for public members
 - camelCase for private/local
 - XML comments for public APIs
-- No AI-generated code mentions
 
 ### How do I run tests?
 
