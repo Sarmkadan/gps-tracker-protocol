@@ -20,6 +20,20 @@ public interface IRepository<T> where T : class
     Task<T> UpdateAsync(T entity);
     Task<bool> DeleteAsync(string id);
     Task<bool> ExistsAsync(string id);
+
+    /// <summary>
+    /// Adds a new entity. Convenience alias for <see cref="CreateAsync"/>.
+    /// </summary>
+    Task<T> AddAsync(T entity) => CreateAsync(entity);
+
+    /// <summary>
+    /// Finds all entities matching the given predicate.
+    /// </summary>
+    async Task<IEnumerable<T>> FindManyAsync(Func<T, bool> predicate)
+    {
+        var all = await GetAllAsync().ConfigureAwait(false);
+        return all.Where(predicate);
+    }
 }
 
 /// <summary>

@@ -30,13 +30,78 @@ public interface ICommandService
 /// </summary>
 public class CommandService : ICommandService
 {
-    private readonly ICommandRepository _repository;
-    private readonly IDeviceRepository _deviceRepository;
+    private readonly ICommandRepository _repository = null!;
+    private readonly IDeviceRepository _deviceRepository = null!;
+    private readonly IRepository<Command>? _legacyCommandRepository;
+    private readonly IRepository<Device>? _legacyDeviceRepository;
 
     public CommandService(IUnitOfWork unitOfWork)
     {
         _repository = unitOfWork.Commands;
         _deviceRepository = unitOfWork.Devices;
+    }
+
+    /// <summary>
+    /// Constructs the service directly from generic command and device repositories.
+    /// </summary>
+    public CommandService(IRepository<Command> commandRepository, IRepository<Device> deviceRepository)
+    {
+        _legacyCommandRepository = commandRepository;
+        _legacyDeviceRepository = deviceRepository;
+    }
+
+    /// <summary>
+    /// Sends a command to a device using the generic repositories, returning null if
+    /// the target device does not exist.
+    /// </summary>
+    public async Task<Command?> SendCommandAsync(string deviceId, string commandType, string payload)
+    {
+        if (_legacyCommandRepository is null || _legacyDeviceRepository is null)
+            throw new InvalidOperationException("Service was not constructed with generic repositories.");
+
+        var device = await _legacyDeviceRepository.GetByIdAsync(deviceId).ConfigureAwait(false);
+        if (device is null)
+            return null;
+
+        var command = new Command
+        {
+            DeviceId = deviceId,
+            CommandType = commandType,
+            Payload = payload,
+            SentTime = DateTime.UtcNow,
+            IsSent = true
+        };
+
+        await _legacyCommandRepository.AddAsync(command).ConfigureAwait(false);
+        return command;
+    }
+
+    /// <summary>
+    /// Gets all commands sent to a device using the generic repository.
+    /// </summary>
+    public async Task<IEnumerable<Command>> GetCommandsForDeviceAsync(string deviceId)
+    {
+        if (_legacyCommandRepository is null)
+            throw new InvalidOperationException("Service was not constructed with generic repositories.");
+
+        return await _legacyCommandRepository.FindManyAsync(c => c.DeviceId == deviceId).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Marks a command as acknowledged by the device using the generic repository.
+    /// </summary>
+    public async Task AcknowledgeCommandAsync(string commandId)
+    {
+        if (_legacyCommandRepository is null)
+            throw new InvalidOperationException("Service was not constructed with generic repositories.");
+
+        var command = await _legacyCommandRepository.GetByIdAsync(commandId).ConfigureAwait(false);
+        if (command is null)
+            return;
+
+        command.IsAcknowledged = true;
+        command.AcknowledgedTime = DateTime.UtcNow;
+        await _legacyCommandRepository.UpdateAsync(command).ConfigureAwait(false);
     }
 
     /// <summary>
