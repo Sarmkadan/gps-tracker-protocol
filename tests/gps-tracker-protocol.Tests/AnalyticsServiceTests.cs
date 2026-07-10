@@ -16,12 +16,18 @@ using System;
 
 namespace gps_tracker_protocol.Tests
 {
+    /// <summary>
+    /// Tests for the AnalyticsService class.
+    /// </summary>
     public class AnalyticsServiceTests
     {
         private readonly IRepository<Journey> _journeyRepository;
         private readonly IRepository<LocationData> _locationDataRepository;
         private readonly AnalyticsService _sut; // System Under Test
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AnalyticsServiceTests"/> class.
+        /// </summary>
         public AnalyticsServiceTests()
         {
             _journeyRepository = Substitute.For<IRepository<Journey>>();
@@ -29,6 +35,9 @@ namespace gps_tracker_protocol.Tests
             _sut = new AnalyticsService(_journeyRepository, _locationDataRepository);
         }
 
+        /// <summary>
+        /// Verifies that the GetTotalJourneysAsync method returns the correct count.
+        /// </summary>
         [Fact]
         public async Task GetTotalJourneys_ShouldReturnCorrectCount()
         {
@@ -46,6 +55,9 @@ namespace gps_tracker_protocol.Tests
             totalJourneys.Should().Be(2);
         }
 
+        /// <summary>
+        /// Verifies that the GetTotalJourneysAsync method returns 0 when no journeys exist.
+        /// </summary>
         [Fact]
         public async Task GetTotalJourneys_ShouldReturnZero_WhenNoJourneysExist()
         {
@@ -59,6 +71,9 @@ namespace gps_tracker_protocol.Tests
             totalJourneys.Should().Be(0);
         }
 
+        /// <summary>
+        /// Verifies that the GetAverageJourneyDurationAsync method returns the correct average duration.
+        /// </summary>
         [Fact]
         public async Task GetAverageJourneyDuration_ShouldReturnCorrectAverage()
         {
@@ -76,6 +91,9 @@ namespace gps_tracker_protocol.Tests
             averageDuration.Should().Be(TimeSpan.FromHours(1.5));
         }
 
+        /// <summary>
+        /// Verifies that the GetAverageJourneyDurationAsync method returns 0 when no journeys exist.
+        /// </summary>
         [Fact]
         public async Task GetAverageJourneyDuration_ShouldReturnZero_WhenNoJourneysExist()
         {
@@ -89,6 +107,9 @@ namespace gps_tracker_protocol.Tests
             averageDuration.Should().Be(TimeSpan.Zero);
         }
 
+        /// <summary>
+        /// Verifies that the GetMostActiveDeviceAsync method returns the correct device ID.
+        /// </summary>
         [Fact]
         public async Task GetMostActiveDevice_ShouldReturnCorrectDeviceId()
         {
@@ -107,6 +128,9 @@ namespace gps_tracker_protocol.Tests
             mostActiveDevice.Should().Be("deviceA");
         }
 
+        /// <summary>
+        /// Verifies that the GetMostActiveDeviceAsync method returns null when no journeys exist.
+        /// </summary>
         [Fact]
         public async Task GetMostActiveDevice_ShouldReturnNull_WhenNoJourneysExist()
         {
