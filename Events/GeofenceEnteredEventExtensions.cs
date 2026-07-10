@@ -20,10 +20,17 @@ public static class GeofenceEnteredEventExtensions
     /// Creates a webhook payload from the geofence entered event.
     /// </summary>
     /// <param name="event">The geofence entered event.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="event"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="event"/>.DeviceId is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="event"/>.GeofenceId is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="event"/>.Timestamp is <see cref="DateTime.MinValue"/>.</exception>
     /// <returns>A webhook payload ready for HTTP delivery.</returns>
     public static GeofenceWebhookPayload ToWebhookPayload(this GeofenceEnteredEvent @event)
     {
         ArgumentNullException.ThrowIfNull(@event);
+        ArgumentNullException.ThrowIfNull(@event.DeviceId);
+        ArgumentNullException.ThrowIfNull(@event.GeofenceId);
+        ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(@event.Timestamp, DateTime.MinValue);
 
         return new GeofenceWebhookPayload
         {
@@ -45,6 +52,7 @@ public static class GeofenceEnteredEventExtensions
     /// <param name="event">The geofence entered event.</param>
     /// <param name="latitude">Target latitude coordinate.</param>
     /// <param name="longitude">Target longitude coordinate.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="event"/> is <see langword="null"/>.</exception>
     /// <returns>Distance in meters between entry point and target coordinate.</returns>
     public static double DistanceTo(this GeofenceEnteredEvent @event, double latitude, double longitude)
     {
@@ -76,6 +84,7 @@ public static class GeofenceEnteredEventExtensions
     /// <param name="maxLatitude">Maximum latitude of bounding box.</param>
     /// <param name="minLongitude">Minimum longitude of bounding box.</param>
     /// <param name="maxLongitude">Maximum longitude of bounding box.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="event"/> is <see langword="null"/>.</exception>
     /// <returns>True if entry point is within the bounding box; otherwise false.</returns>
     public static bool IsWithinBoundingBox(
         this GeofenceEnteredEvent @event,
@@ -96,12 +105,13 @@ public static class GeofenceEnteredEventExtensions
     /// Creates a human-readable summary of the geofence entry event.
     /// </summary>
     /// <param name="event">The geofence entered event.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="event"/> is <see langword="null"/>.</exception>
     /// <returns>A formatted string containing key event details.</returns>
     public static string ToSummaryString(this GeofenceEnteredEvent @event)
     {
         ArgumentNullException.ThrowIfNull(@event);
 
-        return $"Geofence Entered: Device {(@event.DeviceId)} entered zone {(@event.GeofenceId)} " +
+        return $"Geofence Entered: Device {@event.DeviceId} entered zone {@event.GeofenceId} " +
                $"at {@event.Latitude:F6}, {@event.Longitude:F6} " +
                $"at {@event.Timestamp:yyyy-MM-dd HH:mm:ss} UTC " +
                $"(Speed: {@event.Speed:F1} km/h)";
