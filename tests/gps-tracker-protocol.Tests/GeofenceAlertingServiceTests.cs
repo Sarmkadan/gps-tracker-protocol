@@ -15,11 +15,22 @@ using GpsTrackerProtocol.Services;
 
 namespace GpsTrackerProtocol.Tests;
 
+/// <summary>
+/// Test class for <see cref="GeofenceAlertingService"/>.
+/// Provides unit tests for creating alert rules, processing geofence events,
+/// acknowledging alerts, and deleting rules.
+/// </summary>
 public class GeofenceAlertingServiceTests
 {
     private readonly IEventPublisher _publisher;
     private readonly GeofenceAlertingService _sut;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="GeofenceAlertingServiceTests"/> class.
+    /// Sets up a mocked <see cref="IEventPublisher"/> and <see cref="ILogger{GeofenceAlertingService}"/>,
+    /// and subscribes to <see cref="GeofenceEnteredEvent"/> and <see cref="GeofenceExitedEvent"/>
+    /// to simulate event handling.
+    /// </summary>
     public GeofenceAlertingServiceTests()
     {
         _publisher = Substitute.For<IEventPublisher>();
@@ -33,6 +44,10 @@ public class GeofenceAlertingServiceTests
         _sut = new GeofenceAlertingService(_publisher, Substitute.For<ILogger<GeofenceAlertingService>>());
     }
 
+    /// <summary>
+    /// Verifies that creating an alert rule adds the rule to the service
+    /// and that the rule properties are correctly set.
+    /// </summary>
     [Fact]
     public void CreateAlertRule_ShouldAddRuleForDevice()
     {
@@ -48,6 +63,10 @@ public class GeofenceAlertingServiceTests
         rules.Should().HaveCount(1);
     }
 
+    /// <summary>
+    /// Ensures that when a matching alert rule exists,
+    /// processing a <see cref="GeofenceEnteredEvent"/> triggers an active alert.
+    /// </summary>
     [Fact]
     public void ProcessGeofenceEntered_ShouldFireAlertWhenMatchingRuleExists()
     {
@@ -68,6 +87,10 @@ public class GeofenceAlertingServiceTests
         alerts[0].Status.Should().Be(GeofenceAlertStatus.Active);
     }
 
+    /// <summary>
+    /// Checks that a second <see cref="GeofenceEnteredEvent"/> within the cooldown period
+    /// results in a suppressed alert, while the first remains active.
+    /// </summary>
     [Fact]
     public void ProcessGeofenceEntered_ShouldSuppressAlertWithinCooldown()
     {
@@ -90,6 +113,10 @@ public class GeofenceAlertingServiceTests
         history.Count(a => a.Status == GeofenceAlertStatus.Suppressed).Should().Be(1);
     }
 
+    /// <summary>
+    /// Tests that acknowledging an active alert marks it as acknowledged
+    /// and removes it from the active alerts list.
+    /// </summary>
     [Fact]
     public void AcknowledgeAlert_ShouldMarkAlertAsAcknowledged()
     {
@@ -107,6 +134,9 @@ public class GeofenceAlertingServiceTests
         _sut.GetActiveAlerts("device-4").Should().BeEmpty();
     }
 
+    /// <summary>
+    /// Confirms that deleting an alert rule removes it from the service's rule collection.
+    /// </summary>
     [Fact]
     public void DeleteAlertRule_ShouldRemoveRule()
     {
@@ -116,6 +146,10 @@ public class GeofenceAlertingServiceTests
         _sut.GetRulesForDevice("device-5").Should().BeEmpty();
     }
 
+    /// <summary>
+    /// Verifies that processing a <see cref="GeofenceEnteredEvent"/> with no matching rule
+    /// does not produce any active alerts.
+    /// </summary>
     [Fact]
     public void ProcessGeofenceEntered_ShouldNotFireAlert_WhenNoMatchingRule()
     {
