@@ -14,10 +14,22 @@ using Xunit; // Added explicitly
 
 namespace GpsTrackerProtocol.Tests;
 
+/// <summary>
+/// Contains unit tests for domain models (LocationData, Device, GpsFrame) and
+/// services (GeofenceService). Each test validates a specific behavior or
+/// edge‑case of the corresponding model or service method.
+/// </summary>
 public class DomainAndServiceTests
 {
     // ── LocationData ──────────────────────────────────────────────────────────
 
+    /// <summary>
+    /// Verifies that <see cref="LocationData.IsValid"/> returns <c>true</c>
+    /// when all required properties contain valid values, including a
+    /// non‑empty <c>DeviceId</c>, latitude within ±90°, longitude within
+    /// ±180°, non‑negative speed, bearing within 0‑360°, and a positive
+    /// satellite count.
+    /// </summary>
     [Fact]
     public void LocationData_IsValid_WithValidCoordinatesAndDeviceId_ReturnsTrue()
     {
@@ -34,6 +46,10 @@ public class DomainAndServiceTests
         location.IsValid().Should().BeTrue();
     }
 
+    /// <summary>
+    /// Ensures that <see cref="LocationData.IsValid"/> returns <c>false</c>
+    /// when the latitude exceeds the allowed range of ±90 degrees.
+    /// </summary>
     [Fact]
     public void LocationData_IsValid_WithLatitudeExceedingNinetyDegrees_ReturnsFalse()
     {
@@ -50,6 +66,10 @@ public class DomainAndServiceTests
         location.IsValid().Should().BeFalse();
     }
 
+    /// <summary>
+    /// Checks that <see cref="LocationData.IsValid"/> returns <c>false</c>
+    /// when the speed is negative.
+    /// </summary>
     [Fact]
     public void LocationData_IsValid_WithNegativeSpeed_ReturnsFalse()
     {
@@ -66,6 +86,10 @@ public class DomainAndServiceTests
         location.IsValid().Should().BeFalse();
     }
 
+    /// <summary>
+    /// Confirms that <see cref="LocationData.IsValid"/> returns <c>false</c>
+    /// when the <c>DeviceId</c> is an empty string.
+    /// </summary>
     [Fact]
     public void LocationData_IsValid_WithEmptyDeviceId_ReturnsFalse()
     {
@@ -82,6 +106,10 @@ public class DomainAndServiceTests
         location.IsValid().Should().BeFalse();
     }
 
+    /// <summary>
+    /// Validates that <see cref="LocationData.IsValid"/> returns <c>false</c>
+    /// when the bearing exceeds 360 degrees.
+    /// </summary>
     [Fact]
     public void LocationData_IsValid_BearingExceedingThreeSixtyDegrees_ReturnsFalse()
     {
@@ -98,6 +126,10 @@ public class DomainAndServiceTests
         location.IsValid().Should().BeFalse();
     }
 
+    /// <summary>
+    /// Asserts that <see cref="LocationData.DistanceTo"/> returns zero when the
+    /// two locations are identical.
+    /// </summary>
     [Fact]
     public void LocationData_DistanceTo_SameLocation_ReturnsZero()
     {
@@ -106,6 +138,10 @@ public class DomainAndServiceTests
         location.DistanceTo(location).Should().BeApproximately(0, 0.0001);
     }
 
+    /// <summary>
+    /// Verifies that the distance calculated between London and Manchester
+    /// falls within the expected range of 250‑280 km.
+    /// </summary>
     [Fact]
     public void LocationData_DistanceTo_LondonToManchester_ReturnsExpectedDistance()
     {
@@ -116,6 +152,10 @@ public class DomainAndServiceTests
         london.DistanceTo(manchester).Should().BeInRange(250, 280);
     }
 
+    /// <summary>
+    /// Checks that <see cref="LocationData.BearingTo"/> returns a bearing of
+    /// zero degrees when the target point lies due north of the origin.
+    /// </summary>
     [Fact]
     public void LocationData_BearingTo_DueNorthPoint_ReturnsZeroDegrees()
     {
@@ -127,6 +167,10 @@ public class DomainAndServiceTests
 
     // ── Device ────────────────────────────────────────────────────────────────
 
+    /// <summary>
+    /// Ensures that <see cref="Device.IsValid"/> returns <c>true</c> when the
+    /// IMEI consists of exactly fifteen numeric digits.
+    /// </summary>
     [Fact]
     public void Device_IsValid_WithFifteenDigitImei_ReturnsTrue()
     {
@@ -135,6 +179,10 @@ public class DomainAndServiceTests
         device.IsValid().Should().BeTrue();
     }
 
+    /// <summary>
+    /// Confirms that <see cref="Device.IsValid"/> returns <c>false</c> when the
+    /// IMEI contains non‑numeric characters.
+    /// </summary>
     [Fact]
     public void Device_IsValid_WithAlphaNumericImei_ReturnsFalse()
     {
@@ -143,6 +191,10 @@ public class DomainAndServiceTests
         device.IsValid().Should().BeFalse();
     }
 
+    /// <summary>
+    /// Verifies that <see cref="Device.IsValid"/> returns <c>false</c> when the
+    /// IMEI length is shorter than the required fifteen digits.
+    /// </summary>
     [Fact]
     public void Device_IsValid_WithTooShortImei_ReturnsFalse()
     {
@@ -151,6 +203,10 @@ public class DomainAndServiceTests
         device.IsValid().Should().BeFalse();
     }
 
+    /// <summary>
+    /// Checks that <see cref="Device.IsValid"/> returns <c>false</c> when the
+    /// device identifier is an empty string.
+    /// </summary>
     [Fact]
     public void Device_IsValid_WithEmptyId_ReturnsFalse()
     {
@@ -159,6 +215,10 @@ public class DomainAndServiceTests
         device.IsValid().Should().BeFalse();
     }
 
+    /// <summary>
+    /// Validates that calling <see cref="Device.UpdateHeartbeat"/> without
+    /// network parameters sets the device status to <see cref="DeviceStatus.Online"/>.
+    /// </summary>
     [Fact]
     public void Device_UpdateHeartbeat_SetsStatusToOnline()
     {
@@ -169,6 +229,10 @@ public class DomainAndServiceTests
         device.Status.Should().Be(DeviceStatus.Online);
     }
 
+    /// <summary>
+    /// Ensures that <see cref="Device.UpdateHeartbeat(string,int)"/> updates the
+    /// device's IP address and port fields with the supplied values.
+    /// </summary>
     [Fact]
     public void Device_UpdateHeartbeat_WithIpAndPort_UpdatesNetworkInfo()
     {
@@ -180,6 +244,11 @@ public class DomainAndServiceTests
         device.Port.Should().Be(5023);
     }
 
+    /// <summary>
+    /// Confirms that <see cref="Device.IsOffline(TimeSpan)"/> returns
+    /// <c>false</c> when the device has a recent heartbeat (i.e., the last
+    /// seen timestamp is within the supplied timeout).
+    /// </summary>
     [Fact]
     public void Device_IsOffline_AfterRecentHeartbeat_ReturnsFalse()
     {
@@ -189,6 +258,11 @@ public class DomainAndServiceTests
         device.IsOffline(TimeSpan.FromMinutes(5)).Should().BeFalse();
     }
 
+    /// <summary>
+    /// Verifies that <see cref="Device.IsOffline(TimeSpan)"/> returns
+    /// <c>true</c> when the <c>LastSeen</c> timestamp is older than the
+    /// specified timeout interval.
+    /// </summary>
     [Fact]
     public void Device_IsOffline_WithStaleLastSeen_ReturnsTrue()
     {
@@ -204,6 +278,10 @@ public class DomainAndServiceTests
 
     // ── GpsFrame ──────────────────────────────────────────────────────────────
 
+    /// <summary>
+    /// Checks that <see cref="GpsFrame.IsValid"/> returns <c>true</c> for a GT06
+    /// frame that meets the minimum length requirement and has a valid checksum.
+    /// </summary>
     [Fact]
     public void GpsFrame_IsValid_ValidGT06FrameWithChecksum_ReturnsTrue()
     {
@@ -217,6 +295,10 @@ public class DomainAndServiceTests
         frame.IsValid().Should().BeTrue();
     }
 
+    /// <summary>
+    /// Ensures that <see cref="GpsFrame.IsValid"/> returns <c>false</c> when a GT06
+    /// frame's raw data length is below the required 15 bytes.
+    /// </summary>
     [Fact]
     public void GpsFrame_IsValid_GT06FrameTooShort_ReturnsFalse()
     {
@@ -230,6 +312,10 @@ public class DomainAndServiceTests
         frame.IsValid().Should().BeFalse();
     }
 
+    /// <summary>
+    /// Verifies that <see cref="GpsFrame.IsValid"/> returns <c>false</c> when the
+    /// raw data array is empty.
+    /// </summary>
     [Fact]
     public void GpsFrame_IsValid_EmptyRawData_ReturnsFalse()
     {
@@ -243,6 +329,10 @@ public class DomainAndServiceTests
         frame.IsValid().Should().BeFalse();
     }
 
+    /// <summary>
+    /// Confirms that <see cref="GpsFrame.IsValid"/> returns <c>false</c> when the
+    /// checksum validation flag is set to <c>false</c>.
+    /// </summary>
     [Fact]
     public void GpsFrame_IsValid_InvalidChecksum_ReturnsFalse()
     {
@@ -256,6 +346,10 @@ public class DomainAndServiceTests
         frame.IsValid().Should().BeFalse();
     }
 
+    /// <summary>
+    /// Tests that <see cref="GpsFrame.ToHex"/> converts a byte array to an
+    /// uppercase hexadecimal string.
+    /// </summary>
     [Fact]
     public void GpsFrame_ToHex_ByteArray_ReturnsUppercaseHexString()
     {
@@ -264,6 +358,10 @@ public class DomainAndServiceTests
         frame.ToHex().Should().Be("78780D");
     }
 
+    /// <summary>
+    /// Validates that <see cref="GpsFrame.ExtractBytes"/> returns the correct
+    /// sub‑range when provided with a valid offset and length.
+    /// </summary>
     [Fact]
     public void GpsFrame_ExtractBytes_ValidOffsetAndLength_ReturnsCorrectRange()
     {
@@ -272,6 +370,11 @@ public class DomainAndServiceTests
         frame.ExtractBytes(1, 3).Should().Equal(new byte[] { 0x02, 0x03, 0x04 });
     }
 
+    /// <summary>
+    /// Ensures that <see cref="GpsFrame.ExtractBytes"/> throws an
+    /// <see cref="ArgumentException"/> when the offset is outside the bounds of
+    /// the raw data array.
+    /// </summary>
     [Fact]
     public void GpsFrame_ExtractBytes_OutOfBoundsOffset_ThrowsArgumentException()
     {
@@ -284,6 +387,11 @@ public class DomainAndServiceTests
 
     // ── GeofenceService ───────────────────────────────────────────────────────
 
+    /// <summary>
+    /// Verifies that <see cref="GeofenceService.IsInsideGeofence"/> returns
+    /// <c>true</c> when the queried point lies exactly at the centre of a
+    /// geofence that has been added to the service.
+    /// </summary>
     [Fact]
     public void GeofenceService_IsInsideGeofence_PointAtExactCenter_ReturnsTrue()
     {
@@ -296,6 +404,11 @@ public class DomainAndServiceTests
         result.Should().BeTrue();
     }
 
+    /// <summary>
+    /// Confirms that <see cref="GeofenceService.IsInsideGeofence"/> returns
+    /// <c>false</c> for a point that is far outside the radius of the specified
+    /// geofence.
+    /// </summary>
     [Fact]
     public void GeofenceService_IsInsideGeofence_PointFarOutside_ReturnsFalse()
     {
@@ -309,6 +422,10 @@ public class DomainAndServiceTests
         result.Should().BeFalse();
     }
 
+    /// <summary>
+    /// Ensures that <see cref="GeofenceService.IsInsideGeofence"/> returns
+    /// <c>false</c> when the supplied geofence identifier does not exist.
+    /// </summary>
     [Fact]
     public void GeofenceService_IsInsideGeofence_UnknownGeofenceId_ReturnsFalse()
     {
@@ -320,6 +437,11 @@ public class DomainAndServiceTests
         result.Should().BeFalse();
     }
 
+    /// <summary>
+    /// Tests that <see cref="GeofenceService.GetNearbyGeofences"/> includes a
+    /// geofence identifier when the search radius plus the geofence's own radius
+    /// encompasses the geofence's centre point.
+    /// </summary>
     [Fact]
     public void GeofenceService_GetNearbyGeofences_SearchRadiusEncompassesGeofence_ReturnsItsId()
     {
@@ -333,6 +455,10 @@ public class DomainAndServiceTests
         nearby.Should().Contain("depot");
     }
 
+    /// <summary>
+    /// Verifies that attempting to add a geofence with invalid latitude or
+    /// longitude values does not result in a geofence that can be queried.
+    /// </summary>
     [Fact]
     public void GeofenceService_AddGeofence_WithInvalidCoordinates_DoesNotAddGeofence()
     {
