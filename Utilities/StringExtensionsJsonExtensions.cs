@@ -4,13 +4,13 @@
 // CTO & Software Architect
 // =============================================================================
 
+using System;
 using System.Text.Json;
 
 namespace GpsTrackerProtocol.Utilities;
 
 /// <summary>
-/// System.Text.Json serialization extensions for string operations.
-/// Provides JSON serialization/deserialization helpers for string utility operations.
+/// Provides JSON serialization and deserialization extensions for string operations.
 /// </summary>
 public static class StringExtensionsJsonExtensions
 {
@@ -21,15 +21,15 @@ public static class StringExtensionsJsonExtensions
     };
 
     /// <summary>
-    /// Serializes string to JSON string.
+    /// Serializes a string to its JSON string representation.
     /// </summary>
-    /// <param name="value">The string to serialize.</param>
+    /// <param name="value">The string to serialize. If <see langword="null"/>, returns <c>"null"</c>.</param>
     /// <param name="indented">Whether to format the JSON with indentation.</param>
-    /// <returns>JSON string representation.</returns>
+    /// <returns>JSON string representation of the input value.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="value"/> is <see langword="null"/>.</exception>
     public static string ToJson(this string value, bool indented = false)
     {
-        if (value is null)
-            return "{}";
+        ArgumentNullException.ThrowIfNull(value);
 
         var options = indented
             ? new JsonSerializerOptions(_jsonOptions) { WriteIndented = true }
@@ -39,37 +39,37 @@ public static class StringExtensionsJsonExtensions
     }
 
     /// <summary>
-    /// Deserializes string from JSON string.
+    /// Deserializes a string from its JSON string representation.
     /// </summary>
     /// <param name="json">JSON string to deserialize.</param>
-    /// <returns>Deserialized string, or null if deserialization fails.</returns>
+    /// <returns>The deserialized string, or <see langword="null"/> if the input is null, empty, or contains only whitespace.</returns>
+    /// <exception cref="JsonException">Thrown when the input is not valid JSON.</exception>
     public static string? FromJson(string json)
     {
         if (string.IsNullOrWhiteSpace(json))
+        {
             return null;
+        }
 
-        try
-        {
-            return JsonSerializer.Deserialize<string>(json, _jsonOptions);
-        }
-        catch (JsonException)
-        {
-            return null;
-        }
+        return JsonSerializer.Deserialize<string>(json, _jsonOptions);
     }
 
     /// <summary>
-    /// Attempts to deserialize string from JSON string.
+    /// Attempts to deserialize a string from its JSON string representation.
     /// </summary>
     /// <param name="json">JSON string to deserialize.</param>
-    /// <param name="value">Output parameter containing deserialized string.</param>
-    /// <returns>True if deserialization succeeds; otherwise, false.</returns>
+    /// <param name="value">When this method returns, contains the deserialized string if successful; otherwise, <see langword="null"/>.</param>
+    /// <returns><see langword="true"/> if the deserialization succeeded; otherwise, <see langword="false"/>.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="json"/> is <see langword="null"/>.</exception>
     public static bool TryFromJson(string json, out string? value)
     {
-        value = null;
+        ArgumentNullException.ThrowIfNull(json);
 
         if (string.IsNullOrWhiteSpace(json))
+        {
+            value = null;
             return false;
+        }
 
         try
         {
@@ -78,6 +78,7 @@ public static class StringExtensionsJsonExtensions
         }
         catch (JsonException)
         {
+            value = null;
             return false;
         }
     }
