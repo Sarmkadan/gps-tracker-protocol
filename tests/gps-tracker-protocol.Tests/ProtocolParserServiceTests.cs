@@ -15,10 +15,9 @@ using Xunit;
 namespace GpsTrackerProtocol.Tests;
 
 /// <summary>
-/// Unit tests for <see cref="ProtocolParserService"/> which provides protocol detection, validation, and frame parsing
-/// functionality for various GPS tracker protocols (GT06, TK103, H02).
+/// Contains unit tests for <see cref="ProtocolParserService"/> which provides protocol detection,
+/// validation, and frame parsing functionality for various GPS tracker protocols (GT06, TK103, H02).
 /// </summary>
-
 public class ProtocolParserServiceTests
 {
 	/// <summary>
@@ -37,6 +36,7 @@ public class ProtocolParserServiceTests
 	/// <summary>
 	/// Tests that <see cref="ProtocolParserService.DetectProtocolAsync"/> correctly identifies GT06 protocol when raw data starts with GT06 marker.
 	/// </summary>
+    /// <returns>A task that represents the asynchronous test execution.</returns>
     [Fact]
     public async Task DetectProtocolAsync_ShouldReturnGT06_WhenRawDataStartsWithGT06Marker()
     {
@@ -53,6 +53,7 @@ public class ProtocolParserServiceTests
 	/// <summary>
 	/// Tests that <see cref="ProtocolParserService.DetectProtocolAsync"/> correctly identifies TK103 protocol when raw data starts with TK103 marker.
 	/// </summary>
+    /// <returns>A task that represents the asynchronous test execution.</returns>
     [Fact]
     public async Task DetectProtocolAsync_ShouldReturnTK103_WhenRawDataStartsWithTK103Marker()
     {
@@ -69,6 +70,7 @@ public class ProtocolParserServiceTests
 	/// <summary>
 	/// Tests that <see cref="ProtocolParserService.DetectProtocolAsync"/> correctly identifies H02 protocol when raw data contains GPRMC NMEA sentence.
 	/// </summary>
+    /// <returns>A task that represents the asynchronous test execution.</returns>
     [Fact]
     public async Task DetectProtocolAsync_ShouldReturnH02_WhenRawDataStartsWithH02Marker()
     {
@@ -85,6 +87,7 @@ public class ProtocolParserServiceTests
 	/// <summary>
 	/// Tests that <see cref="ProtocolParserService.DetectProtocolAsync"/> returns Unknown protocol when raw data does not match any known protocol markers.
 	/// </summary>
+    /// <returns>A task that represents the asynchronous test execution.</returns>
     [Fact]
     public async Task DetectProtocolAsync_ShouldReturnUnknown_WhenRawDataDoesNotMatchAnyKnownProtocol()
     {
@@ -101,6 +104,7 @@ public class ProtocolParserServiceTests
 	/// <summary>
 	/// Tests that <see cref="ProtocolParserService.DetectProtocolAsync"/> throws ArgumentException when provided with empty raw data array.
 	/// </summary>
+    /// <returns>A task that represents the asynchronous test execution.</returns>
     [Fact]
     public async Task DetectProtocolAsync_ShouldThrowArgumentException_WhenRawDataIsEmpty()
     {
@@ -118,6 +122,7 @@ public class ProtocolParserServiceTests
 	/// <summary>
 	/// Tests that <see cref="ProtocolParserService.ValidateFrameAsync"/> returns true for a valid GT06 frame with correct checksum.
 	/// </summary>
+    /// <returns>A task that represents the asynchronous test execution.</returns>
     [Fact]
     public async Task ValidateFrameAsync_GT06_ShouldReturnTrue_ForValidFrame()
     {
@@ -145,6 +150,7 @@ public class ProtocolParserServiceTests
 	/// <summary>
 	/// Tests that <see cref="ProtocolParserService.ValidateFrameAsync"/> returns false for a GT06 frame with invalid checksum.
 	/// </summary>
+    /// <returns>A task that represents the asynchronous test execution.</returns>
     [Fact]
     public async Task ValidateFrameAsync_GT06_ShouldReturnFalse_ForInvalidChecksum()
     {
@@ -166,6 +172,7 @@ public class ProtocolParserServiceTests
 	/// <summary>
 	/// Tests that <see cref="ProtocolParserService.ValidateFrameAsync"/> returns false for a GT06 frame that is too short to be valid.
 	/// </summary>
+    /// <returns>A task that represents the asynchronous test execution.</returns>
     [Fact]
     public async Task ValidateFrameAsync_GT06_ShouldReturnFalse_ForTooShortFrame()
     {
@@ -187,6 +194,7 @@ public class ProtocolParserServiceTests
 	/// <summary>
 	/// Tests that <see cref="ProtocolParserService.ValidateFrameAsync"/> always returns true for H02 protocol frames.
 	/// </summary>
+    /// <returns>A task that represents the asynchronous test execution.</returns>
     [Fact]
     public async Task ValidateFrameAsync_H02_ShouldReturnTrue_Always()
     {
@@ -207,6 +215,7 @@ public class ProtocolParserServiceTests
 	/// <summary>
 	/// Tests that <see cref="ProtocolParserService.ValidateFrameAsync"/> always returns true for TK103 protocol frames.
 	/// </summary>
+    /// <returns>A task that represents the asynchronous test execution.</returns>
     [Fact]
     public async Task ValidateFrameAsync_TK103_ShouldReturnTrue_Always()
     {
@@ -227,6 +236,7 @@ public class ProtocolParserServiceTests
 	/// <summary>
 	/// Tests that <see cref="ProtocolParserService.ParseFrameAsync"/> correctly parses a GT06 protocol frame and extracts location data.
 	/// </summary>
+    /// <returns>A task that represents the asynchronous test execution.</returns>
     [Fact]
     public async Task ParseFrameAsync_GT06_ShouldParseCorrectly()
     {
@@ -269,7 +279,7 @@ public class ProtocolParserServiceTests
         // I will use a valid timestamp for the expected value that matches the bytes (assuming 0x19 is Year, 0x11 is Month, etc. which is incorrect based on GT06 spec. It should be BCD encoded).
         // However, the `ExtractTimestamp` method does `2000 + data[offset]` for year and `data[offset+1]` for month.
         // So, let's assume `0x19` is year `2000+25=2025`, `0x11` is month `17`. This means the test data itself is invalid for month.
-        // Given that it *was* passing with `new DateTime(2019, 11, 11, 22, 35, 52, DateTimeKind.Utc)`,
+        // Given that it *was* passing with `new DateTime(2019, 11, 11, 22, 35, 52 UTC)`,
         // I'll assume the example `rawData` timestamp is actually interpreted as `2019-11-11 22:35:52 UTC` somewhere,
         // or the initial test was not strict about timestamp validation.
         // The problem is with the `Program.cs` example data's timestamp bytes, not the `ExtractTimestamp` method itself.
@@ -310,6 +320,7 @@ public class ProtocolParserServiceTests
 	/// <summary>
 	/// Tests that <see cref="ProtocolParserService.ParseFrameAsync"/> correctly parses GT06 frame with Southern and Western hemisphere coordinates (negative latitude and longitude).
 	/// </summary>
+    /// <returns>A task that represents the asynchronous test execution.</returns>
     [Fact]
     public async Task ParseFrameAsync_GT06_SouthWestCoordinates_ShouldParseCorrectly()
     {
@@ -386,6 +397,7 @@ public class ProtocolParserServiceTests
 	/// <summary>
 	/// Tests that <see cref="ProtocolParserService.ParseFrameAsync"/> correctly parses H02 protocol frame in standard GPRMC format.
 	/// </summary>
+    /// <returns>A task that represents the asynchronous test execution.</returns>
     [Fact]
     public async Task ParseFrameAsync_H02_HqFormat_ShouldParseCorrectly()
     {
@@ -425,6 +437,7 @@ public class ProtocolParserServiceTests
 	/// <summary>
 	/// Tests that <see cref="ProtocolParserService.ParseFrameAsync"/> correctly parses H02 protocol frame in *HQ format with Eastern hemisphere coordinates (positive longitude).
 	/// </summary>
+    /// <returns>A task that represents the asynchronous test execution.</returns>
     [Fact]
     public async Task ParseFrameAsync_H02_HqFormat_EasternHemisphere_ShouldProducePositiveLongitude()
     {
@@ -462,6 +475,7 @@ public class ProtocolParserServiceTests
 	/// <summary>
 	/// Tests that <see cref="ProtocolParserService.ParseFrameAsync"/> correctly parses TK103 protocol frame and extracts location data.
 	/// </summary>
+    /// <returns>A task that represents the asynchronous test execution.</returns>
     [Fact]
     public async Task ParseFrameAsync_TK103_ShouldParseCorrectly()
     {
