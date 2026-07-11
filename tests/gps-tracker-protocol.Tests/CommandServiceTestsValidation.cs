@@ -19,19 +19,41 @@ namespace gps_tracker_protocol.Tests
         /// </summary>
         /// <param name="value">The CommandServiceTests instance to validate.</param>
         /// <returns>A list of validation problems; empty if valid.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="value"/> is <see langword="null"/>.</exception>
         public static IReadOnlyList<string> Validate(this CommandServiceTests value)
         {
+            ArgumentNullException.ThrowIfNull(value);
+
             var problems = new List<string>();
 
-            if (value == null)
-            {
-                problems.Add("CommandServiceTests instance is null");
-                return problems;
-            }
+            // Validate private fields via reflection since they're private
+            var fields = value.GetType().GetFields(System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
 
-            // Validate private fields (these are set in constructor)
-            // _commandRepository and _deviceRepository are mocked via NSubstitute, so we can't validate them deeply
-            // _sut is the CommandService instance under test
+            foreach (var field in fields)
+            {
+                if (field.Name == "_commandRepository")
+                {
+                    if (field.GetValue(value) == null)
+                    {
+                        problems.Add("Command repository (_commandRepository) is null");
+                    }
+                }
+                else if (field.Name == "_deviceRepository")
+                {
+                    if (field.GetValue(value) == null)
+                    {
+                        problems.Add("Device repository (_deviceRepository) is null");
+                    }
+                }
+                else if (field.Name == "_sut")
+                {
+                    var sut = field.GetValue(value);
+                    if (sut == null)
+                    {
+                        problems.Add("System under test (_sut) is null");
+                    }
+                }
+            }
 
             return problems;
         }
@@ -41,15 +63,13 @@ namespace gps_tracker_protocol.Tests
         /// </summary>
         /// <param name="value">The CommandServiceTests instance to check.</param>
         /// <returns>True if valid; otherwise, false.</returns>
-        public static bool IsValid(this CommandServiceTests value)
-        {
-            return Validate(value).Count == 0;
-        }
+        public static bool IsValid(this CommandServiceTests value) => Validate(value).Count == 0;
 
         /// <summary>
         /// Ensures that the CommandServiceTests instance is valid, throwing an exception if not.
         /// </summary>
         /// <param name="value">The CommandServiceTests instance to validate.</param>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="value"/> is <see langword="null"/>.</exception>
         /// <exception cref="ArgumentException">Thrown when the instance is not valid.</exception>
         public static void EnsureValid(this CommandServiceTests value)
         {
