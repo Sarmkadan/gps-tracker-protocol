@@ -8,17 +8,26 @@ using GpsTrackerProtocol.Services;
 using GpsTrackerProtocol.Domain.Models;
 using GpsTrackerProtocol.Domain;
 
+/// <summary>
+/// Tests for the FuelTrackingService class.
+/// </summary>
 public class FuelTrackingServiceTests
 {
     private readonly FuelTrackingService _service;
     private readonly ILogger<FuelTrackingService> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="FuelTrackingServiceTests"/> class.
+    /// </summary>
     public FuelTrackingServiceTests()
     {
         _logger = Substitute.For<ILogger<FuelTrackingService>>();
         _service = new FuelTrackingService(_logger);
     }
 
+    /// <summary>
+    /// Tests that recording a fuel event successfully stores the record.
+    /// </summary>
     [Fact]
     public async Task RecordFuelEventAsync_ShouldStoreRecordSuccessfully()
     {
@@ -34,6 +43,9 @@ public class FuelTrackingServiceTests
         result.FuelAmountLiters.Should().Be(50.0);
     }
 
+    /// <summary>
+    /// Tests that recording a fuel event with a zero or negative fuel amount throws an exception.
+    /// </summary>
     [Fact]
     public async Task RecordFuelEventAsync_ShouldThrowException_WhenFuelAmountIsZeroOrNegative()
     {
@@ -44,6 +56,9 @@ public class FuelTrackingServiceTests
         await Assert.ThrowsAsync<ValidationException>(() => _service.RecordFuelEventAsync(record));
     }
 
+    /// <summary>
+    /// Tests that getting records returns the filtered records.
+    /// </summary>
     [Fact]
     public async Task GetRecordsAsync_ShouldReturnFilteredRecords()
     {
@@ -61,6 +76,9 @@ public class FuelTrackingServiceTests
         records.First().EventType.Should().Be(FuelEventType.Refuel);
     }
 
+    /// <summary>
+    /// Tests that deleting a record returns true when the record exists.
+    /// </summary>
     [Fact]
     public async Task DeleteRecordAsync_ShouldReturnTrue_WhenRecordExists()
     {
@@ -76,6 +94,9 @@ public class FuelTrackingServiceTests
         records.Should().BeEmpty();
     }
 
+    /// <summary>
+    /// Tests that getting a report calculates the correct totals.
+    /// </summary>
     [Fact]
     public async Task GetReportAsync_ShouldCalculateCorrectTotals()
     {
@@ -94,6 +115,9 @@ public class FuelTrackingServiceTests
         report.AverageConsumptionLper100km.Should().Be(15.0); // (15 / 100) * 100
     }
 
+    /// <summary>
+    /// Tests that estimating fuel liters returns zero when the inputs are invalid.
+    /// </summary>
     [Fact]
     public void EstimateFuelLiters_ShouldReturnZero_WhenInputsAreInvalid()
     {
