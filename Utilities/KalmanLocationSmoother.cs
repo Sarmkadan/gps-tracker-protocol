@@ -140,8 +140,16 @@ public class KalmanLocationSmoother
         return R * c;
     }
 
-    private static LocationData CopyLocationData(LocationData original)
+    /// <summary>
+    /// Creates a deep copy of a LocationData instance, including ExtendedData dictionary.
+    /// </summary>
+    /// <param name="original">The original location data to copy.</param>
+    /// <returns>A new LocationData instance with the same values.</returns>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="original"/> is null.</exception>
+    public static LocationData CopyLocationData(LocationData original)
     {
+        ArgumentNullException.ThrowIfNull(original);
+
         return new LocationData
         {
             Id = original.Id,
