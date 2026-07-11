@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Diagnostics.CodeAnalysis;
 
 /// <summary>
 /// Validation helpers for BatchDataImporter to ensure data integrity before import operations.
@@ -14,8 +15,11 @@ public static class BatchDataImporterValidation
     /// </summary>
     /// <param name="filePath">The file path to validate</param>
     /// <returns>List of validation errors, empty if valid</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="filePath"/> is null.</exception>
     public static IReadOnlyList<string> Validate(this string filePath)
     {
+        ArgumentNullException.ThrowIfNull(filePath);
+
         var errors = new List<string>();
 
         if (string.IsNullOrWhiteSpace(filePath))
@@ -41,6 +45,7 @@ public static class BatchDataImporterValidation
     /// <param name="speed">Speed value</param>
     /// <param name="timestamp">Timestamp of location</param>
     /// <returns>List of validation errors, empty if valid</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="deviceId"/> is null.</exception>
     public static IReadOnlyList<string> Validate(
         string deviceId,
         double latitude,
@@ -48,12 +53,9 @@ public static class BatchDataImporterValidation
         double speed,
         DateTime timestamp)
     {
-        var errors = new List<string>();
+        ArgumentNullException.ThrowIfNull(deviceId);
 
-        if (string.IsNullOrWhiteSpace(deviceId))
-        {
-            errors.Add("Device ID cannot be null or empty.");
-        }
+        var errors = new List<string>();
 
         if (latitude < -90.0 || latitude > 90.0)
         {
@@ -74,15 +76,18 @@ public static class BatchDataImporterValidation
         {
             errors.Add("Timestamp cannot be default (Unix epoch).");
         }
-
-        if (timestamp > DateTime.UtcNow.AddHours(1))
+        else
         {
-            errors.Add("Timestamp cannot be in the future.");
-        }
+            var now = DateTime.UtcNow;
+            if (timestamp > now.AddHours(1))
+            {
+                errors.Add("Timestamp cannot be in the future.");
+            }
 
-        if (timestamp < DateTime.UtcNow.AddYears(-1))
-        {
-            errors.Add("Timestamp cannot be more than 1 year in the past.");
+            if (timestamp < now.AddYears(-1))
+            {
+                errors.Add("Timestamp cannot be more than 1 year in the past.");
+            }
         }
 
         return errors;
@@ -95,11 +100,16 @@ public static class BatchDataImporterValidation
     /// <param name="deviceName">Device display name</param>
     /// <param name="protocol">Communication protocol</param>
     /// <returns>List of validation errors, empty if valid</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="imei"/> or <paramref name="deviceName"/> or <paramref name="protocol"/> is null.</exception>
     public static IReadOnlyList<string> Validate(
         string imei,
         string deviceName,
         string protocol)
     {
+        ArgumentNullException.ThrowIfNull(imei);
+        ArgumentNullException.ThrowIfNull(deviceName);
+        ArgumentNullException.ThrowIfNull(protocol);
+
         var errors = new List<string>();
 
         if (string.IsNullOrWhiteSpace(imei))
@@ -129,6 +139,7 @@ public static class BatchDataImporterValidation
     /// </summary>
     /// <param name="filePath">The file path to check</param>
     /// <returns>True if valid, false otherwise</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="filePath"/> is null.</exception>
     public static bool IsValid(this string filePath)
     {
         return filePath.Validate().Count == 0;
@@ -143,6 +154,7 @@ public static class BatchDataImporterValidation
     /// <param name="speed">Speed value</param>
     /// <param name="timestamp">Timestamp of location</param>
     /// <returns>True if valid, false otherwise</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="deviceId"/> is null.</exception>
     public static bool IsValid(
         string deviceId,
         double latitude,
@@ -160,6 +172,7 @@ public static class BatchDataImporterValidation
     /// <param name="deviceName">Device display name</param>
     /// <param name="protocol">Communication protocol</param>
     /// <returns>True if valid, false otherwise</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="imei"/> or <paramref name="deviceName"/> or <paramref name="protocol"/> is null.</exception>
     public static bool IsValid(
         string imei,
         string deviceName,
@@ -173,6 +186,7 @@ public static class BatchDataImporterValidation
     /// </summary>
     /// <param name="filePath">The file path to validate</param>
     /// <exception cref="ArgumentException">Thrown when validation fails</exception>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="filePath"/> is null.</exception>
     public static void EnsureValid(this string filePath)
     {
         var errors = filePath.Validate();
@@ -191,6 +205,7 @@ public static class BatchDataImporterValidation
     /// <param name="speed">Speed value</param>
     /// <param name="timestamp">Timestamp of location</param>
     /// <exception cref="ArgumentException">Thrown when validation fails</exception>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="deviceId"/> is null.</exception>
     public static void EnsureValid(
         string deviceId,
         double latitude,
@@ -212,6 +227,7 @@ public static class BatchDataImporterValidation
     /// <param name="deviceName">Device display name</param>
     /// <param name="protocol">Communication protocol</param>
     /// <exception cref="ArgumentException">Thrown when validation fails</exception>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="imei"/> or <paramref name="deviceName"/> or <paramref name="protocol"/> is null.</exception>
     public static void EnsureValid(
         string imei,
         string deviceName,
