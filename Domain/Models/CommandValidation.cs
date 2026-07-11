@@ -5,6 +5,8 @@
 // CTO & Software Architect
 // =============================================================================
 
+using GpsTrackerProtocol.Domain;
+
 namespace GpsTrackerProtocol.Domain.Models;
 
 /// <summary>
@@ -17,12 +19,10 @@ public static class CommandValidation
     /// </summary>
     /// <param name="value">The command to validate.</param>
     /// <returns>An empty list if valid; otherwise, a list of validation error messages.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="value"/> is null.</exception>
     public static IReadOnlyList<string> Validate(this Command value)
     {
-        if (value is null)
-        {
-            return ["Command cannot be null."];
-        }
+        ArgumentNullException.ThrowIfNull(value);
 
         var errors = new List<string>();
 
@@ -207,18 +207,18 @@ public static class CommandValidation
     /// </summary>
     /// <param name="value">The command to check.</param>
     /// <returns>True if the command is valid; otherwise, false.</returns>
-    public static bool IsValid(this Command value)
-    {
-        return value.Validate().Count == 0;
-    }
+    public static bool IsValid(this Command value) => value.Validate().Count == 0;
 
     /// <summary>
     /// Ensures the command is valid, throwing an exception if it is not.
     /// </summary>
     /// <param name="value">The command to validate.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="value"/> is null.</exception>
     /// <exception cref="ArgumentException">Thrown when the command has validation errors.</exception>
     public static void EnsureValid(this Command value)
     {
+        ArgumentNullException.ThrowIfNull(value);
+
         var errors = value.Validate();
         if (errors.Count > 0)
         {
