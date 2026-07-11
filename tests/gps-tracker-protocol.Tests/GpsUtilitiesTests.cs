@@ -8,10 +8,14 @@ using FluentAssertions;
 using GpsTrackerProtocol.Utilities;
 using Xunit;
 
-namespace GpsTrackerProtocol.Tests;
-
+/// <summary>
+/// Tests for the GpsUtilities class.
+/// </summary>
 public class GpsUtilitiesTests
 {
+    /// <summary>
+    /// Verifies that the CalculateDistanceKm method returns 0 when the start and end coordinates are the same.
+    /// </summary>
     [Fact]
     public void CalculateDistanceKm_SameCoordinates_ReturnsZero()
     {
@@ -20,6 +24,9 @@ public class GpsUtilitiesTests
         distance.Should().Be(0);
     }
 
+    /// <summary>
+    /// Verifies that the CalculateDistanceKm method returns approximately 111.19 km when the start and end coordinates are one degree apart.
+    /// </summary>
     [Fact]
     public void CalculateDistanceKm_OneDegreeLat_ReturnsApproximatelyOneHundredEleven()
     {
@@ -29,6 +36,9 @@ public class GpsUtilitiesTests
         distance.Should().BeApproximately(111.19, 0.1);
     }
 
+    /// <summary>
+    /// Verifies that the CalculateDistanceKm method returns 0 when the start and end coordinates are invalid.
+    /// </summary>
     [Fact]
     public void CalculateDistanceKm_InvalidCoordinates_ReturnsZero()
     {
@@ -37,6 +47,12 @@ public class GpsUtilitiesTests
         distance.Should().Be(0);
     }
 
+    /// <summary>
+    /// Verifies that the IsValidCoordinate method returns the expected result for various input coordinates.
+    /// </summary>
+    /// <param name="lat">The latitude coordinate.</param>
+    /// <param name="lon">The longitude coordinate.</param>
+    /// <param name="expected">The expected result.</param>
     [Theory]
     [InlineData(0, 0, true)]
     [InlineData(90, 180, true)]
@@ -49,6 +65,9 @@ public class GpsUtilitiesTests
         GpsUtilities.IsValidCoordinate(lat, lon).Should().Be(expected);
     }
 
+    /// <summary>
+    /// Verifies that the CalculateBearing method returns 0 degrees when moving due north.
+    /// </summary>
     [Fact]
     public void CalculateBearing_DueNorth_ReturnsZeroDegrees()
     {
@@ -58,6 +77,9 @@ public class GpsUtilitiesTests
         bearing.Should().BeApproximately(0, 0.001);
     }
 
+    /// <summary>
+    /// Verifies that the CalculateBearing method returns 90 degrees when moving due east.
+    /// </summary>
     [Fact]
     public void CalculateBearing_DueEast_ReturnsNinetyDegrees()
     {
@@ -67,6 +89,9 @@ public class GpsUtilitiesTests
         bearing.Should().BeApproximately(90, 0.01);
     }
 
+    /// <summary>
+    /// Verifies that the CalculateBearing method returns 0 degrees when the start and end coordinates are invalid.
+    /// </summary>
     [Fact]
     public void CalculateBearing_InvalidCoordinates_ReturnsZero()
     {
@@ -75,6 +100,9 @@ public class GpsUtilitiesTests
         bearing.Should().Be(0);
     }
 
+    /// <summary>
+    /// Verifies that the DmsToDecimal method returns the correct decimal value for a northern latitude.
+    /// </summary>
     [Fact]
     public void DmsToDecimal_NorthernLatitude_ReturnsPositiveDecimal()
     {
@@ -84,6 +112,9 @@ public class GpsUtilitiesTests
         result.Should().BeApproximately(51.5, 0.0001);
     }
 
+    /// <summary>
+    /// Verifies that the DmsToDecimal method returns the correct decimal value for a southern latitude.
+    /// </summary>
     [Fact]
     public void DmsToDecimal_SouthernLatitude_ReturnsNegativeDecimal()
     {
@@ -92,6 +123,9 @@ public class GpsUtilitiesTests
         result.Should().BeApproximately(-51.5, 0.0001);
     }
 
+    /// <summary>
+    /// Verifies that the DmsToDecimal method returns the correct decimal value for a western longitude.
+    /// </summary>
     [Fact]
     public void DmsToDecimal_WesternLongitude_ReturnsNegativeDecimal()
     {
@@ -101,30 +135,45 @@ public class GpsUtilitiesTests
         result.Should().BeApproximately(-1.5, 0.0001);
     }
 
+    /// <summary>
+    /// Verifies that the KnotsToKmh method returns the correct value for 1 knot.
+    /// </summary>
     [Fact]
     public void KnotsToKmh_OneKnot_ReturnsOnePointEightFiveTwo()
     {
         GpsUtilities.KnotsToKmh(1).Should().BeApproximately(1.852, 0.0001);
     }
 
+    /// <summary>
+    /// Verifies that the KmhToKnots method returns the correct value for 1.852 km/h.
+    /// </summary>
     [Fact]
     public void KmhToKnots_OnePointEightFiveTwoKmh_ReturnsOneKnot()
     {
         GpsUtilities.KmhToKnots(1.852).Should().BeApproximately(1.0, 0.0001);
     }
 
+    /// <summary>
+    /// Verifies that the KmhToMs method returns the correct value for 3.6 km/h.
+    /// </summary>
     [Fact]
     public void KmhToMs_ThreePointSixKmh_ReturnsOneMs()
     {
         GpsUtilities.KmhToMs(3.6).Should().BeApproximately(1.0, 0.0001);
     }
 
+    /// <summary>
+    /// Verifies that the IsWithinBounds method returns true when the point is inside the bounding box.
+    /// </summary>
     [Fact]
     public void IsWithinBounds_PointInsideBoundingBox_ReturnsTrue()
     {
         GpsUtilities.IsWithinBounds(51.5, -0.1, 50.0, 52.0, -1.0, 1.0).Should().BeTrue();
     }
 
+    /// <summary>
+    /// Verifies that the IsWithinBounds method returns false when the point is outside the bounding box.
+    /// </summary>
     [Fact]
     public void IsWithinBounds_PointOutsideBoundingBox_ReturnsFalse()
     {
@@ -132,6 +181,9 @@ public class GpsUtilitiesTests
         GpsUtilities.IsWithinBounds(53.0, -0.1, 50.0, 52.0, -1.0, 1.0).Should().BeFalse();
     }
 
+    /// <summary>
+    /// Verifies that the GetBoundingBoxCenter method returns the midpoint of the bounding box.
+    /// </summary>
     [Fact]
     public void GetBoundingBoxCenter_SymmetricBounds_ReturnsMidpoint()
     {
@@ -141,6 +193,9 @@ public class GpsUtilitiesTests
         lon.Should().Be(5);
     }
 
+    /// <summary>
+    /// Verifies that the CalculateZoomLevel method returns the maximum zoom level when the bounding box is zero.
+    /// </summary>
     [Fact]
     public void CalculateZoomLevel_ZeroBoundingBox_ReturnsMaxZoom()
     {
