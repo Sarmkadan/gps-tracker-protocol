@@ -18,12 +18,10 @@ namespace GpsTrackerProtocol.Utilities
         /// <param name="value">The dictionary to serialize.</param>
         /// <param name="indented">Whether to format the JSON with indentation.</param>
         /// <returns>JSON string representation.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="value"/> is <see langword="null"/>.</exception>
         public static string ToJson(this Dictionary<string, object> value, bool indented = false)
         {
-            if (value == null)
-            {
-                return "{}";
-            }
+            ArgumentNullException.ThrowIfNull(value);
 
             var options = indented
                 ? new JsonSerializerOptions(_jsonOptions) { WriteIndented = true }
@@ -36,13 +34,11 @@ namespace GpsTrackerProtocol.Utilities
         /// Deserializes dictionary from JSON string.
         /// </summary>
         /// <param name="json">JSON string to deserialize.</param>
-        /// <returns>Deserialized dictionary, or null if deserialization fails.</returns>
+        /// <returns>Deserialized dictionary, or <see langword="null"/> if deserialization fails.</returns>
+        /// <exception cref="ArgumentException"><paramref name="json"/> is <see langword="null"/>, empty, or whitespace.</exception>
         public static Dictionary<string, object>? FromJson(string json)
         {
-            if (string.IsNullOrWhiteSpace(json))
-            {
-                return null;
-            }
+            ArgumentException.ThrowIfNullOrWhiteSpace(json);
 
             try
             {
@@ -59,15 +55,11 @@ namespace GpsTrackerProtocol.Utilities
         /// </summary>
         /// <param name="json">JSON string to deserialize.</param>
         /// <param name="value">Output parameter containing deserialized dictionary.</param>
-        /// <returns>True if deserialization succeeds; otherwise, false.</returns>
+        /// <returns><see langword="true"/> if deserialization succeeds; otherwise, <see langword="false"/>.</returns>
+        /// <exception cref="ArgumentException"><paramref name="json"/> is <see langword="null"/>, empty, or whitespace.</exception>
         public static bool TryFromJson(string json, out Dictionary<string, object>? value)
         {
-            value = null;
-
-            if (string.IsNullOrWhiteSpace(json))
-            {
-                return false;
-            }
+            ArgumentException.ThrowIfNullOrWhiteSpace(json);
 
             try
             {
@@ -76,6 +68,7 @@ namespace GpsTrackerProtocol.Utilities
             }
             catch (JsonException)
             {
+                value = null;
                 return false;
             }
         }
