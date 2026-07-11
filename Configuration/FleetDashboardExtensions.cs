@@ -41,11 +41,14 @@ public static class FleetDashboardExtensions
     /// Optional delegate for customising <see cref="FleetDashboardOptions"/>.
     /// When <see langword="null"/>, default option values apply.
     /// </param>
+    /// <exception cref="ArgumentNullException"><paramref name="services"/> is <see langword="null"/>.</exception>
     /// <returns><paramref name="services"/> for fluent method chaining.</returns>
     public static IServiceCollection AddFleetAnalyticsDashboard(
         this IServiceCollection services,
         Action<FleetDashboardOptions>? configure = null)
     {
+        ArgumentNullException.ThrowIfNull(services);
+
         var options = new FleetDashboardOptions();
         configure?.Invoke(options);
 
