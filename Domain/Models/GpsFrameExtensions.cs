@@ -140,14 +140,21 @@ public static class GpsFrameExtensions
         if (frame.RawData.Length < 13)
             return null;
 
-        var year = 2000 + int.Parse(frame.ExtractString(7, 2));
-        var month = int.Parse(frame.ExtractString(9, 2));
-        var day = int.Parse(frame.ExtractString(11, 2));
-        var hour = int.Parse(frame.ExtractString(13, 2));
-        var minute = int.Parse(frame.ExtractString(15, 2));
-        var second = int.Parse(frame.ExtractString(17, 2));
+        try
+        {
+            var year = 2000 + int.Parse(frame.ExtractString(7, 2), NumberStyles.Integer, CultureInfo.InvariantCulture);
+            var month = int.Parse(frame.ExtractString(9, 2), NumberStyles.Integer, CultureInfo.InvariantCulture);
+            var day = int.Parse(frame.ExtractString(11, 2), NumberStyles.Integer, CultureInfo.InvariantCulture);
+            var hour = int.Parse(frame.ExtractString(13, 2), NumberStyles.Integer, CultureInfo.InvariantCulture);
+            var minute = int.Parse(frame.ExtractString(15, 2), NumberStyles.Integer, CultureInfo.InvariantCulture);
+            var second = int.Parse(frame.ExtractString(17, 2), NumberStyles.Integer, CultureInfo.InvariantCulture);
 
-        return new DateTime(year, month, day, hour, minute, second, DateTimeKind.Utc);
+            return new DateTime(year, month, day, hour, minute, second, DateTimeKind.Utc);
+        }
+        catch (Exception ex) when (ex is FormatException or ArgumentOutOfRangeException or OverflowException)
+        {
+            return null;
+        }
     }
 
     private static DateTime? ParseH02Timestamp(GpsFrame frame)
@@ -159,14 +166,21 @@ public static class GpsFrameExtensions
         if (frame.RawData.Length < 22)
             return null;
 
-        var year = int.Parse(frame.ExtractString(16, 4));
-        var month = int.Parse(frame.ExtractString(20, 2));
-        var day = int.Parse(frame.ExtractString(22, 2));
-        var hour = int.Parse(frame.ExtractString(24, 2));
-        var minute = int.Parse(frame.ExtractString(26, 2));
-        var second = int.Parse(frame.ExtractString(28, 2));
+        try
+        {
+            var year = int.Parse(frame.ExtractString(16, 4), NumberStyles.Integer, CultureInfo.InvariantCulture);
+            var month = int.Parse(frame.ExtractString(20, 2), NumberStyles.Integer, CultureInfo.InvariantCulture);
+            var day = int.Parse(frame.ExtractString(22, 2), NumberStyles.Integer, CultureInfo.InvariantCulture);
+            var hour = int.Parse(frame.ExtractString(24, 2), NumberStyles.Integer, CultureInfo.InvariantCulture);
+            var minute = int.Parse(frame.ExtractString(26, 2), NumberStyles.Integer, CultureInfo.InvariantCulture);
+            var second = int.Parse(frame.ExtractString(28, 2), NumberStyles.Integer, CultureInfo.InvariantCulture);
 
-        return new DateTime(year, month, day, hour, minute, second, DateTimeKind.Utc);
+            return new DateTime(year, month, day, hour, minute, second, DateTimeKind.Utc);
+        }
+        catch (Exception ex) when (ex is FormatException or ArgumentOutOfRangeException or OverflowException)
+        {
+            return null;
+        }
     }
 
     private static DateTime? ParseTk103Timestamp(GpsFrame frame)

@@ -7,6 +7,7 @@
 namespace GpsTrackerProtocol.Integration;
 
 using Microsoft.Extensions.Logging;
+using System.Globalization;
 using System.Text.Json.Serialization;
 using GpsTrackerProtocol.Caching;
 
@@ -33,7 +34,7 @@ public class GeocodingService : ExternalApiClient, IGeocodingService
 
     public async Task<GeocodingResult> ReverseGeocodeAsync(double latitude, double longitude)
     {
-        var cacheKey = $"geocoding:{latitude:F6}:{longitude:F6}";
+        var cacheKey = $"geocoding:{latitude.ToString("F6", CultureInfo.InvariantCulture)}:{longitude.ToString("F6", CultureInfo.InvariantCulture)}";
 
         if (_cache.TryGet(cacheKey, out GeocodingResult cached))
             return cached;
@@ -42,8 +43,8 @@ public class GeocodingService : ExternalApiClient, IGeocodingService
         {
             var parameters = new Dictionary<string, string>
             {
-                { "lat", latitude.ToString("F6") },
-                { "lon", longitude.ToString("F6") },
+                { "lat", latitude.ToString("F6", CultureInfo.InvariantCulture) },
+                { "lon", longitude.ToString("F6", CultureInfo.InvariantCulture) },
                 { "format", "json" }
             };
 
