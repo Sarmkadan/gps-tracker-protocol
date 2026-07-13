@@ -1,92 +1,82 @@
 // ... (rest of README.md remains the same)
 
-## DomainAndServiceTestsExtensions
+## GpsUtilitiesTestsValidation
 
-The `DomainAndServiceTestsExtensions` class provides a set of extension methods to create test entities with realistic default values for testing. These methods validate inputs and generate properly initialized objects suitable for unit testing.
+The `GpsUtilitiesTestsValidation` class provides a set of utility methods for validating GPS-related data. It includes methods for checking the validity of coordinates, distance, bearing, speed, zoom level, and bounding box coordinates. These methods can be used to ensure that GPS data is correct and consistent.
 
 Here's an example usage:
 
 ```csharp
 using GpsTrackerProtocol.Tests;
 
-public class MyTest
+public class MyValidator
 {
-    public void TestCreateValidLocation()
+    public void ValidateGpsData()
     {
-        // Arrange
-        var _ = new object(); // Unused parameter for extension method syntax
+        // Validate coordinates
+        var problems = GpsUtilitiesTestsValidation.ValidateCoordinates(37.7749, -122.4194);
+        if (problems.Count > 0)
+        {
+            Console.WriteLine("Invalid coordinates:");
+            foreach (var problem in problems)
+            {
+                Console.WriteLine(problem);
+            }
+        }
 
-        // Act
-        var location = _.CreateValidLocation();
+        // Validate distance
+        problems = GpsUtilitiesTestsValidation.ValidateDistance(10.0);
+        if (problems.Count > 0)
+        {
+            Console.WriteLine("Invalid distance:");
+            foreach (var problem in problems)
+            {
+                Console.WriteLine(problem);
+            }
+        }
 
-        // Assert
-        Assert.NotNull(location);
-        Assert.IsType<LocationData>(location);
-        // Additional assertions on location properties...
-    }
+        // Validate bearing
+        problems = GpsUtilitiesTestsValidation.ValidateBearing(90.0);
+        if (problems.Count > 0)
+        {
+            Console.WriteLine("Invalid bearing:");
+            foreach (var problem in problems)
+            {
+                Console.WriteLine(problem);
+            }
+        }
 
-    public void TestCreateValidDevice()
-    {
-        var _ = new object();
-        var device = _.CreateValidDevice();
-        Assert.NotNull(device);
-        // Additional assertions on device properties...
-    }
+        // Validate speed
+        problems = GpsUtilitiesTestsValidation.ValidateSpeed(50.0);
+        if (problems.Count > 0)
+        {
+            Console.WriteLine("Invalid speed:");
+            foreach (var problem in problems)
+            {
+                Console.WriteLine(problem);
+            }
+        }
 
-    public void TestCreateDeviceWithImei(string imei)
-    {
-        var _ = new object();
-        var device = _.CreateDeviceWithImei(imei);
-        Assert.NotNull(device);
-        // Additional assertions on device properties...
-    }
+        // Validate zoom level
+        problems = GpsUtilitiesTestsValidation.ValidateZoomLevel(15.0);
+        if (problems.Count > 0)
+        {
+            Console.WriteLine("Invalid zoom level:");
+            foreach (var problem in problems)
+            {
+                Console.WriteLine(problem);
+            }
+        }
 
-    public void TestCreateValidGpsFrame()
-    {
-        var _ = new object();
-        var frame = _.CreateValidGpsFrame();
-        Assert.NotNull(frame);
-        // Additional assertions on frame properties...
-    }
-
-    public void TestCreateOfflineDevice(TimeSpan staleThreshold)
-    {
-        var _ = new object();
-        var device = _.CreateOfflineDevice(staleThreshold);
-        Assert.NotNull(device);
-        // Additional assertions on device properties...
-    }
-
-    public void TestCreateInvalidLocation(double latitude, double longitude)
-    {
-        var _ = new object();
-        var location = _.CreateInvalidLocation(latitude, longitude);
-        Assert.NotNull(location);
-        // Additional assertions on location properties...
-    }
-
-    public void TestCreateLocationWithBearing(double bearing)
-    {
-        var _ = new object();
-        var location = _.CreateLocationWithBearing(bearing);
-        Assert.NotNull(location);
-        // Additional assertions on location properties...
-    }
-
-    public void TestCreateLocationWithSpeed(double speed)
-    {
-        var _ = new object();
-        var location = _.CreateLocationWithSpeed(speed);
-        Assert.NotNull(location);
-        // Additional assertions on location properties...
-    }
-
-    public void TestCreateDeviceWithNetworkInfo(string ipAddress, int port)
-    {
-        var _ = new object();
-        var device = _.CreateDeviceWithNetworkInfo(ipAddress, port);
-        Assert.NotNull(device);
-        // Additional assertions on device properties...
+        // Validate bounding box coordinates
+        problems = GpsUtilitiesTestsValidation.ValidateBoundingBox(37.7749, 37.7859, -122.4194, -122.4094);
+        if (problems.Count > 0)
+        {
+            Console.WriteLine("Invalid bounding box coordinates:");
+            foreach (var problem in problems)
+            {
+                Console.WriteLine(problem);
+            }
+        }
     }
 }
-```
