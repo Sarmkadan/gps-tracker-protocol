@@ -1390,6 +1390,77 @@ public class StringExtensionsExample
 }
 ```
 
+## DateTimeExtensions
+
+The `DateTimeExtensions` class provides a comprehensive set of extension methods for DateTime manipulation, timestamp conversion, and formatting. It includes utilities for Unix timestamp conversion, date rounding, time comparisons, human-readable formatting, and date boundary calculations.
+
+Example usage for DateTime operations:
+
+```csharp
+using GpsTrackerProtocol.Utilities;
+
+public class DateTimeExtensionsExample
+{
+    public void ProcessTimestamps()
+    {
+        // Convert DateTime to Unix timestamp
+        var now = DateTime.UtcNow;
+        long unixTimestamp = now.ToUnixTimestamp();
+        Console.WriteLine($"Current Unix timestamp: {unixTimestamp}");
+        
+        // Convert Unix timestamp back to DateTime
+        var convertedBack = DateTimeExtensions.FromUnixTimestamp(unixTimestamp);
+        Console.WriteLine($"Converted back: {convertedBack:u}");
+        
+        // Round down to nearest 5 minutes
+        var roundedDown = now.RoundDown(TimeSpan.FromMinutes(5));
+        Console.WriteLine($"Rounded down to 5-minute interval: {roundedDown:u}");
+        
+        // Round up to nearest 15 minutes
+        var roundedUp = now.RoundUp(TimeSpan.FromMinutes(15));
+        Console.WriteLine($"Rounded up to 15-minute interval: {roundedUp:u}");
+        
+        // Check if within last 30 seconds
+        var recentTime = DateTime.UtcNow.AddSeconds(-15);
+        bool isRecent = recentTime.IsWithinSeconds(30);
+        Console.WriteLine($"Is within 30 seconds: {isRecent}");
+        
+        // Get human-readable relative time
+        var pastTime = DateTime.UtcNow.AddMinutes(-45);
+        string relativeTime = pastTime.ToRelativeTime();
+        Console.WriteLine($"Relative time: {relativeTime}");
+        
+        // Get start/end of day
+        var startOfDay = now.GetStartOfDay();
+        var endOfDay = now.GetEndOfDay();
+        Console.WriteLine($"Start of day: {startOfDay:u}");
+        Console.WriteLine($"End of day: {endOfDay:u}");
+        
+        // Get start/end of month
+        var startOfMonth = now.GetStartOfMonth();
+        var endOfMonth = now.GetEndOfMonth();
+        Console.WriteLine($"Start of month: {startOfMonth:yyyy-MM-dd}");
+        Console.WriteLine($"End of month: {endOfMonth:yyyy-MM-dd}");
+        
+        // Check if same day
+        var sameDay = now.IsSameDay(DateTime.UtcNow);
+        Console.WriteLine($"Is same day: {sameDay}");
+        
+        // Format as ISO 8601
+        string iso8601 = now.ToIso8601String();
+        Console.WriteLine($"ISO 8601 format: {iso8601}");
+    }
+
+    public static void Main(string[] args)
+    {
+        Console.WriteLine("Starting DateTimeExtensions example...");
+        var example = new DateTimeExtensionsExample();
+        example.ProcessTimestamps();
+        Console.WriteLine("DateTimeExtensions example completed!");
+    }
+}
+```
+
 ## CollectionExtensions
 
 The `CollectionExtensions` class provides a set of extension methods for working with collections and sequences in a functional style. It includes utilities for chunking sequences, calculating medians, removing duplicates while preserving order, finding min/max values, calculating percentages, safe indexing, and creating sliding windows of elements.
