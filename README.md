@@ -524,6 +524,54 @@ public class FleetDashboardServiceExample
 }
 ```
 
+## FleetDashboardOptions
+
+The `FleetDashboardOptions` class provides configuration settings for the fleet analytics dashboard feature. It controls route optimization behavior, fuel price assumptions, caching policies, and fleet-wide limits that affect how the dashboard computes KPIs, generates snapshots, and estimates fuel consumption.
+
+Example usage for configuring fleet dashboard options:
+
+```csharp
+using GpsTrackerProtocol.Configuration;
+using GpsTrackerProtocol.Domain.Models;
+using Microsoft.Extensions.DependencyInjection;
+
+public class FleetDashboardOptionsExample
+{
+    public static void ConfigureServices(IServiceCollection services)
+    {
+        // Configure fleet dashboard options with custom settings
+        services.AddFleetAnalyticsDashboard(opts =>
+        {
+            opts.DefaultAlgorithm = RouteOptimizationAlgorithm.GeneticAlgorithm;
+            opts.DefaultFuelPricePerLiter = 1.79;
+            opts.AverageRoadSpeedKmh = 60.0;
+            opts.MaxStopsPerRoute = 150;
+            opts.MaxFleetSize = 50;
+            opts.SnapshotCacheTtl = TimeSpan.FromMinutes(1);
+            opts.EnableDistanceBasedFallback = false;
+            opts.LowFuelThresholdLiters = 15.0;
+        });
+    }
+
+    public static void ConfigureFromAppSettings()
+    {
+        // Alternatively, configure via appsettings.json:
+        // {
+        //   "FleetDashboard": {
+        //     "DefaultAlgorithm": "GeneticAlgorithm",
+        //     "DefaultFuelPricePerLiter": 1.79,
+        //     "AverageRoadSpeedKmh": 60.0,
+        //     "MaxStopsPerRoute": 150,
+        //     "MaxFleetSize": 50,
+        //     "SnapshotCacheTtl": "00:01:00",
+        //     "EnableDistanceBasedFallback": false,
+        //     "LowFuelThresholdLiters": 15.0
+        //   }
+        // }
+    }
+}
+```
+
 ## IJourneyService
 
 Example usage in code:
