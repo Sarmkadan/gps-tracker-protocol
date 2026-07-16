@@ -139,6 +139,106 @@ public class GeoJsonFormatterExample
 }
 ```
 
+## GpsTrackerException
+
+The `GpsTrackerException` class serves as the base exception type for all GPS tracker protocol operations. It provides a unified exception hierarchy for handling errors across protocol parsing, device communication, command execution, and data validation. All specific exception types in the library inherit from this base class, allowing for consistent error handling patterns.
+
+### Public Members
+
+- `GpsTrackerException(string message)` - Initializes a new instance with the specified error message
+- `GpsTrackerException(string message, Exception innerException)` - Initializes a new instance with the specified error message and inner exception
+
+### Inherited Exception Types
+
+The library includes several specialized exception types that inherit from `GpsTrackerException`:
+
+- `ParseException` - Thrown when protocol parsing fails, with optional `RawData` and `Protocol` properties
+- `ChecksumException` - Thrown when frame checksum validation fails, with `ExpectedChecksum` and `ActualChecksum` properties  
+- `DeviceException` - Thrown when device is not found or invalid, with `DeviceId` property
+- `CommandException` - Thrown when command execution fails, with `CommandId` and `ErrorCode` properties
+- `ValidationException` - Thrown when data validation fails, with `FieldName` and `FieldValue` properties
+- `RepositoryException` - Thrown when repository operation fails
+- `TimeoutException` - Thrown when communication with device times out, with `DeviceId` and `Duration` properties
+
+### Usage Example
+
+```csharp
+using GpsTrackerProtocol.Domain;
+using GpsTrackerProtocol.Domain.Exceptions;
+
+public class GpsTrackerExceptionExample
+{
+    private readonly IGpsTrackerProtocolParser _parser;
+    private readonly IDeviceRepository _deviceRepository;
+    
+    public GpsTrackerExceptionExample(IGpsTrackerProtocolParser parser, IDeviceRepository deviceRepository)
+    {
+        _parser = parser;
+        _deviceRepository = deviceRepository;
+    }
+    
+    public async Task HandleDeviceMessageAsync(string deviceId, string rawData)
+    {
+        try
+        {
+            // Validate device exists
+            var device = await _deviceRepository.GetDeviceAsync(deviceId);
+            if (device == null)
+            {
+                throw new DeviceException($"Device {deviceId} not found", deviceId);
+            }
+            
+            // Parse protocol message
+            var message = await _parser.ParseAsync(rawData);
+            
+            // Validate required fields
+            if (string.IsNullOrEmpty(message.Latitude))
+            {
+                throw new ValidationException(
+                    "Latitude is required",
+                    nameof(message.Latitude),
+                    message.Latitude
+                );
+            }
+            
+            // Process command
+            var result = await _deviceRepository.ExecuteCommandAsync(deviceId, message.Command);
+            if (!result.Success)
+            {
+                throw new CommandException(
+                    $"Command {result.CommandId} failed with error code {result.ErrorCode}",
+                    result.CommandId,
+                    result.ErrorCode
+                );
+            }
+        }
+        catch (ChecksumException ex)
+        {
+            // Handle checksum validation failures
+            Console.WriteLine($"Checksum validation failed for device {ex.DeviceId}: expected {ex.ExpectedChecksum}, got {ex.ActualChecksum}");
+            await LogErrorAsync(ex);
+        }
+        catch (ParseException ex)
+        {
+            // Handle parsing errors
+            Console.WriteLine($"Failed to parse protocol {ex.Protocol} data: {ex.RawData}");
+            await LogErrorAsync(ex);
+        }
+        catch (GpsTrackerException ex) when (ex is not DeviceException and not ValidationException and not CommandException and not ChecksumException)
+        {
+            // Handle other GPS tracker exceptions
+            Console.WriteLine($"GPS tracker protocol error: {ex.Message}");
+            await LogErrorAsync(ex);
+        }
+    }
+    
+    private async Task LogErrorAsync(Exception ex)
+    {
+        // Implementation for error logging
+    }
+}
+```
+
 ## IJsonFormatter
 
 The `IJsonFormatter` interface provides methods for serializing and deserializing GPS tracker protocol messages into JSON format. It supports formatting protocol frames, raw data, and device messages for logging, storage, or transmission over APIs.
