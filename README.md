@@ -1461,6 +1461,76 @@ public class DateTimeExtensionsExample
 }
 ```
 
+## IPerformanceMonitor
+
+The `IPerformanceMonitor` interface provides functionality for measuring and tracking the performance of operations within the GPS tracker protocol system. It allows measuring operation execution time, recording metrics, and generating performance reports to identify bottlenecks and optimize system performance.
+
+Example usage for performance monitoring:
+
+```csharp
+using GpsTrackerProtocol.Utilities;
+using System;
+using System.Diagnostics;
+
+public class PerformanceMonitorExample : IDisposable
+{
+    private readonly IPerformanceMonitor _performanceMonitor;
+    private readonly OperationTimer _operationTimer;
+
+    public PerformanceMonitorExample()
+    {
+        // Create a performance monitor for a specific operation
+        _performanceMonitor = new PerformanceMonitor("Database Query");
+        
+        // Start measuring operation time
+        _operationTimer = _performanceMonitor.MeasureOperation();
+    }
+
+    public async Task ProcessDeviceDataAsync()
+    {
+        // Simulate some work
+        await Task.Delay(100);
+        
+        // Record an operation
+        _performanceMonitor.RecordOperation("Data Processing", TimeSpan.FromMilliseconds(150));
+        
+        // Get current metrics
+        var metrics = _performanceMonitor.GetMetrics();
+        Console.WriteLine($"Operation: {metrics.OperationName}");
+        Console.WriteLine($"Count: {metrics.Count}");
+        Console.WriteLine($"Total Duration: {metrics.TotalDuration.TotalMilliseconds} ms");
+        Console.WriteLine($"Average Duration: {metrics.AverageDuration.TotalMilliseconds} ms");
+        Console.WriteLine($"Min Duration: {metrics.MinDuration.TotalMilliseconds} ms");
+        Console.WriteLine($"Max Duration: {metrics.MaxDuration.TotalMilliseconds} ms");
+        Console.WriteLine($"Median Duration: {metrics.MedianDuration.TotalMilliseconds} ms");
+    }
+
+    public void PrintReport()
+    {
+        // Print a formatted performance report
+        _performanceMonitor.PrintReport();
+    }
+
+    public void Dispose()
+    {
+        // Stop the operation timer and dispose the monitor
+        _operationTimer?.Dispose();
+        (_performanceMonitor as IDisposable)?.Dispose();
+    }
+
+    public static async Task Main(string[] args)
+    {
+        Console.WriteLine("Starting performance monitor example...");
+        
+        using var example = new PerformanceMonitorExample();
+        await example.ProcessDeviceDataAsync();
+        
+        example.PrintReport();
+        Console.WriteLine("Performance monitor example completed!");
+    }
+}
+```
+
 ## CollectionExtensions
 
 The `CollectionExtensions` class provides a set of extension methods for working with collections and sequences in a functional style. It includes utilities for chunking sequences, calculating medians, removing duplicates while preserving order, finding min/max values, calculating percentages, safe indexing, and creating sliding windows of elements.
