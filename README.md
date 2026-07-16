@@ -304,6 +304,78 @@ public class JsonFormatterExample
 }
 ```
 
+## DeviceDiagnosticsReport
+
+The `DeviceDiagnosticsReport` class provides comprehensive diagnostic information about a GPS tracking device's status, connectivity, and operational metrics. It tracks device health indicators including battery level, signal strength, online status, packet reception, location data collection, and self-test results to enable proactive monitoring and troubleshooting of fleet devices.
+
+### Usage Example
+
+```csharp
+using System;
+using GpsTrackerProtocol.Domain.Models;
+
+public class DeviceDiagnosticsReportExample
+{
+    public void GenerateDeviceDiagnosticsReport()
+    {
+        // Create a diagnostics report for a device
+        var report = new DeviceDiagnosticsReport
+        {
+            DeviceId = "TRK-001",
+            DeviceName = "Vehicle GPS Tracker",
+            Imei = "123456789012345",
+            Protocol = ProtocolType.GT06,
+            Status = DeviceStatus.Active,
+            IsOnline = true,
+            LastSeen = DateTime.UtcNow.AddMinutes(-2),
+            TotalPacketsReceived = 1528,
+            IpAddress = "192.168.1.100",
+            BatteryLevel = 78,
+            SignalStrength = -67,
+            SignalQuality = "Good",
+            TotalLocationPoints = 452,
+            TotalDistanceKm = 1245.8,
+            TotalJourneys = 8,
+            ActiveJourneys = 2,
+            GeneratedAt = DateTime.UtcNow
+        };
+
+        // Calculate time since last contact
+        report.TimeSinceLastContact = DateTime.UtcNow - report.LastSeen;
+
+        // Set last location
+        report.LastLocation = new LocationData
+        {
+            Latitude = 51.5074,
+            Longitude = -0.1278,
+            Speed = 45.5,
+            Bearing = 90,
+            Timestamp = DateTime.UtcNow.AddSeconds(-30),
+            Altitude = 120.5
+        };
+
+        // Set self-test result
+        report.SelfTest = new DeviceSelfTestResult
+        {
+            TestTimestamp = DateTime.UtcNow.AddHours(-1),
+            GpsModule = true,
+            BatterySensor = true,
+            CellularModule = true,
+            MemoryStatus = "OK",
+            Result = DeviceTestResult.Success
+        };
+
+        // Access report properties
+        Console.WriteLine($"Device: {report.DeviceId} - {report.DeviceName}");
+        Console.WriteLine($"Status: {report.Status}, Online: {report.IsOnline}");
+        Console.WriteLine($"Battery: {report.BatteryLevel}%, Signal: {report.SignalStrength}dBm ({report.SignalQuality})");
+        Console.WriteLine($"Last seen: {report.LastSeen:yyyy-MM-dd HH:mm:ss}, Time since contact: {report.TimeSinceLastContact.TotalSeconds:F0}s");
+        Console.WriteLine($"Location points: {report.TotalLocationPoints}, Distance: {report.TotalDistanceKm:F1}km");
+        Console.WriteLine($"Active journeys: {report.ActiveJourneys}/{report.TotalJourneys}");
+    }
+}
+```
+
 ## Command
 
 The `Command` class represents a specific instruction or request intended for a GPS tracking device, managing its lifecycle from creation to execution and potential retries. It encapsulates all necessary metadata, parameters, and state information, including tracking acknowledgment and transmission status, to ensure reliable delivery of commands to remote hardware.
