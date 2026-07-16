@@ -718,6 +718,54 @@ public class GpsFrameExample
 }
 ```
 
+## FleetVehicle
+
+The `FleetVehicle` record represents a fleet vehicle linked to a GPS tracking device. It extends basic device telemetry with vehicle-specific fuel consumption metrics, registration details, and manufacturer specifications. This type is central to fleet management operations, enabling fuel tracking, consumption modelling, and vehicle identification across the GPS tracking system.
+
+Example usage for creating and managing fleet vehicles:
+
+```csharp
+using GpsTrackerProtocol.Domain.Models;
+
+public class FleetVehicleExample
+{
+    public void RegisterFleetVehicle()
+    {
+        // Create a new fleet vehicle record for a diesel truck
+        var vehicle = new FleetVehicle
+        {
+            Id = "FLEET-001",
+            DeviceId = "TRK-DIESEL-001",
+            RegistrationNumber = "ABC-123-XY",
+            Make = "Volvo",
+            Model = "FH16",
+            Year = 2022,
+            FuelType = FuelType.Diesel,
+            TankCapacityLiters = 500.0,
+            BaseConsumptionLper100km = 28.5,
+            RegisteredAt = new DateTime(2024, 03, 15),
+            Metadata = new Dictionary<string, object>
+            {
+                { "driver_id", "DRV-42" },
+                { "cost_centre", "LOGISTICS" },
+                { "vehicle_class", "Heavy Truck" },
+                { "maintenance_due", new DateTime(2024, 08, 15) }
+            }
+        };
+
+        // Access vehicle properties
+        Console.WriteLine($"Vehicle: {vehicle.Make} {vehicle.Model} ({vehicle.Year})");
+        Console.WriteLine($"Registration: {vehicle.RegistrationNumber}");
+        Console.WriteLine($"Device: {vehicle.DeviceId}");
+        Console.WriteLine($"Fuel type: {vehicle.FuelType}");
+        Console.WriteLine($"Tank capacity: {vehicle.TankCapacityLiters} L");
+        Console.WriteLine($"Base consumption: {vehicle.BaseConsumptionLper100km} L/100km");
+        Console.WriteLine($"Registered: {vehicle.RegisteredAt:yyyy-MM-dd}");
+        Console.WriteLine($"Metadata: {string.Join(", ", vehicle.Metadata.Select(kvp => $"{kvp.Key}={kvp.Value}")}");
+    }
+}
+```
+
 ## ReplayOptions
 
 The `ReplayOptions` class provides configuration for replaying recorded GPS tracker route data. It allows customization of replay behavior including speed adjustments, time rebasing, frame selection, and tracking metadata preservation. This is useful for testing, debugging, and demonstrating route playback scenarios.
