@@ -81,3 +81,60 @@ public class ProtocolBenchmarksExample
     }
 }
 ```
+
+## IGeoJsonFormatter
+
+The `IGeoJsonFormatter` interface defines a contract for formatting GPS tracker location data into GeoJSON format, enabling interoperability with mapping applications and geospatial analysis tools. It provides methods to format individual locations, location collections, and tracks as valid GeoJSON objects.
+
+Example usage for formatting location data:
+
+```csharp
+using GpsTrackerProtocol.Formatting;
+using GpsTrackerProtocol.Domain.Models;
+
+public class GeoJsonFormatterExample
+{
+    private readonly IGeoJsonFormatter _formatter;
+
+    public GeoJsonFormatterExample(IGeoJsonFormatter formatter)
+    {
+        _formatter = formatter;
+    }
+
+    public void FormatSampleLocation()
+    {
+        // Create a sample location
+        var location = new Location
+        {
+            DeviceId = "device-001",
+            Latitude = 52.5200,
+            Longitude = 13.4050,
+            Speed = 35.2,
+            Bearing = 45,
+            Timestamp = DateTime.UtcNow,
+            Altitude = 120.5,
+            Satellites = 8,
+            HDOP = 1.2
+        };
+
+        // Format as GeoJSON location
+        var locationJson = _formatter.FormatLocation(location);
+        Console.WriteLine(locationJson);
+
+        // Format as GeoJSON location collection
+        var locations = new List<Location> { location };
+        var collectionJson = _formatter.FormatLocationCollection(locations);
+        Console.WriteLine(collectionJson);
+
+        // Format a track as GeoJSON
+        var track = new Track
+        {
+            DeviceId = "device-001",
+            Name = "Berlin to Potsdam",
+            Points = new List<Location> { location }
+        };
+        var trackJson = _formatter.FormatTrack(track);
+        Console.WriteLine(trackJson);
+    }
+}
+```
