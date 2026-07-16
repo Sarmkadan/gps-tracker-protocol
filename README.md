@@ -317,6 +317,120 @@ public class AnalyticsServiceExample
 
 The `IJourneyService` interface provides functionality for managing GPS device journeys and tracking trips. It allows starting new journeys, adding waypoints during journeys, completing journeys, and retrieving journey history. The service also provides utility methods for calculating total distance traveled and cleaning up old journey records.
 
+## IFleetDashboardService
+
+The `IFleetDashboardService` interface provides functionality for managing a fleet of vehicles and generating real-time analytics dashboards. It allows registering vehicles, tracking their status, computing optimized routes, and generating fleet-wide KPI metrics by aggregating data from GPS devices, location history, and fuel tracking services.
+
+Example usage in code:
+
+```csharp
+using GpsTrackerProtocol.Services;
+using GpsTrackerProtocol.Domain.Models;
+using Microsoft.Extensions.Logging;
+
+public class FleetDashboardServiceExample
+{
+    private readonly IFleetDashboardService _fleetDashboardService;
+
+    public FleetDashboardServiceExample(IFleetDashboardService fleetDashboardService)
+    {
+        _fleetDashboardService = fleetDashboardService;
+    }
+
+    public async Task ManageFleetAsync()
+    {
+        // Register a new vehicle in the fleet
+        var newVehicle = new FleetVehicle
+        {
+            RegistrationNumber = "ABC-123",
+            DeviceId = "gps-device-001",
+            Make = "Toyota",
+            Model = "Hilux",
+            Year = 2022,
+            FuelType = FuelType.Diesel,
+            TankCapacityLiters = 80.0,
+            BaseConsumptionLper100km = 7.5
+        };
+
+        var registeredVehicle = await _fleetDashboardService.RegisterVehicleAsync(newVehicle);
+        Console.WriteLine($"Registered vehicle: {registeredVehicle.RegistrationNumber} (ID: {registeredVehicle.Id})");
+
+        // Get a specific vehicle
+        var vehicle = await _fleetDashboardService.GetVehicleAsync(registeredVehicle.Id);
+        Console.WriteLine($"Vehicle found: {vehicle?.RegistrationNumber}");
+
+        // Get all vehicles in fleet
+        var allVehicles = await _fleetDashboardService.GetAllVehiclesAsync();
+        Console.WriteLine($"Total fleet size: {allVehicles.Count()}");
+
+        // Update vehicle information
+        vehicle.FuelType = FuelType.Petrol;
+        var updatedVehicle = await _fleetDashboardService.UpdateVehicleAsync(vehicle);
+        Console.WriteLine($"Updated vehicle fuel type to: {updatedVehicle.FuelType}");
+
+        // Get vehicle status
+        var status = await _fleetDashboardService.GetVehicleStatusAsync(registeredVehicle.Id);
+        Console.WriteLine($"Vehicle status: {status.Status}, Current location: ({status.CurrentLatitude}, {status.CurrentLongitude})");
+
+        // Generate dashboard snapshot
+        var dashboard = await _fleetDashboardService.GetDashboardSnapshotAsync();
+        Console.WriteLine($"Dashboard generated at {dashboard.GeneratedAt:u}");
+        Console.WriteLine($"Total vehicles: {dashboard.TotalVehicles}");
+        Console.WriteLine($"Active vehicles: {dashboard.ActiveVehicles}");
+        Console.WriteLine($"Total fleet distance: {dashboard.TotalFleetDistanceKm} km");
+
+        // Compute fleet KPIs for a specific period
+        var from = DateTime.UtcNow.AddDays(-7);
+        var to = DateTime.UtcNow;
+        var kpis = await _fleetDashboardService.ComputeFleetKpisAsync(from, to);
+        Console.WriteLine($"Average fleet efficiency: {kpis["fleet.avg_consumption_l_per_100km"]} L/100km");
+
+        // Optimize a route for the vehicle
+        var routeStops = new List<RouteStop>
+        {
+            new RouteStop { Name = "Warehouse A", Latitude = 40.7128, Longitude = -74.0060, Order = 1 },
+            new RouteStop { Name = "Customer 1", Latitude = 40.7306, Longitude = -73.9352, Order = 2 },
+            new RouteStop { Name = "Customer 2", Latitude = 40.7589, Longitude = -73.9851, Order = 3 }
+        };
+
+        var optimizedRoute = await _fleetDashboardService.OptimizeRouteAsync(
+            registeredVehicle.Id, 
+            routeStops,
+            RouteOptimizationAlgorithm.GeneticAlgorithm
+        );
+        Console.WriteLine($"Optimized route distance: {optimizedRoute.TotalDistanceKm} km");
+        Console.WriteLine($"Estimated route duration: {optimizedRoute.EstimatedDuration.TotalMinutes} minutes");
+
+        // Remove vehicle from fleet
+        var removed = await _fleetDashboardService.RemoveVehicleAsync(registeredVehicle.Id);
+        Console.WriteLine("Vehicle removed: {removed}");
+    }
+
+    public static async Task Main(string[] args)
+    {
+        // Example with direct service instantiation
+        var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+        var unitOfWork = new UnitOfWork();
+        var fleetDashboardService = new FleetDashboardService(
+            new DeviceService(unitOfWork),
+            new LocationDataService(unitOfWork),
+            new FuelTrackingService(loggerFactory.CreateLogger<FuelTrackingService>()),
+            new RouteOptimizationEngine(),
+            new FleetDashboardOptions { MaxFleetSize = 100 },
+            loggerFactory.CreateLogger<FleetDashboardService>()
+        );
+
+        Console.WriteLine("Starting fleet dashboard service example...");
+        var example = new FleetDashboardServiceExample(fleetDashboardService);
+        await example.ManageFleetAsync();
+
+        Console.WriteLine("Fleet dashboard service example completed!");
+    }
+}
+```
+
+## IJourneyService
+
 Example usage in code:
 
 ## IFuelTrackingService
