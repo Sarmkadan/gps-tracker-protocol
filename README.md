@@ -1243,6 +1243,87 @@ public class LocationRepositoryExample
 }
 ```
 
+## CollectionExtensions
+
+The `CollectionExtensions` class provides a set of extension methods for working with collections and sequences in a functional style. It includes utilities for chunking sequences, calculating medians, removing duplicates while preserving order, finding min/max values, calculating percentages, safe indexing, and creating sliding windows of elements.
+
+Example usage for collection operations:
+
+```csharp
+using GpsTrackerProtocol.Utilities;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+public class CollectionExtensionsExample
+{
+    public void ProcessGpsData()
+    {
+        // Sample GPS location readings
+        var gpsReadings = new List<(double Latitude, double Longitude, double Speed)>
+        {
+            (40.7128, -74.0060, 65.5),
+            (40.7306, -73.9352, 55.0),
+            (40.7589, -73.9851, 72.3),
+            (40.7128, -74.0060, 68.1),
+            (40.7306, -73.9352, 45.7),
+            (40.7749, -73.9712, 80.2)
+        };
+
+        // Chunk GPS readings into batches of 2 for batch processing
+        var readingBatches = gpsReadings.Chunk(2);
+        foreach (var batch in readingBatches)
+        {
+            Console.WriteLine($"Processing batch with {batch.Count()} readings...");
+            foreach (var reading in batch)
+            {
+                Console.WriteLine($"  Location: ({reading.Latitude:F4}, {reading.Longitude:F4}), Speed: {reading.Speed:F1} km/h");
+            }
+        }
+
+        // Calculate median speed from all readings
+        var medianSpeed = gpsReadings.Select(r => r.Speed).Median(x => x);
+        Console.WriteLine($"Median speed across all readings: {medianSpeed:F1} km/h");
+
+        // Remove duplicate locations while preserving order
+        var uniqueLocations = gpsReadings
+            .Select(r => r.Latitude)
+            .DistinctByOrder(lat => lat);
+        Console.WriteLine($"Unique latitudes: {string.Join(", ", uniqueLocations)}");
+
+        // Find minimum and maximum speeds
+        var (minSpeed, maxSpeed) = gpsReadings.Select(r => r.Speed).MinMax();
+        Console.WriteLine($"Speed range: {minSpeed:F1} km/h to {maxSpeed:F1} km/h");
+
+        // Calculate percentage of high-speed readings (> 70 km/h)
+        var highSpeedPercentage = gpsReadings.PercentageWhere(r => r.Speed > 70);
+        Console.WriteLine($"High speed readings (>70 km/h): {highSpeedPercentage:F1}%");
+
+        // Safely get a reading at a specific index
+        var readingsList = gpsReadings.ToList();
+        var safeReading = readingsList.SafeGet(10, (0.0, 0.0, 0.0));
+        Console.WriteLine($"Safe get at index 10: ({safeReading.Latitude}, {safeReading.Longitude})");
+
+        // Create sliding windows of 3 consecutive readings
+        var windows = gpsReadings.SlidingWindow(3);
+        foreach (var window in windows)
+        {
+            var windowList = window.ToList();
+            var avgSpeed = windowList.Average(r => r.Speed);
+            Console.WriteLine($"Window average speed: {avgSpeed:F1} km/h");
+        }
+    }
+
+    public static void Main(string[] args)
+    {
+        Console.WriteLine("Starting collection extensions example...");
+        var example = new CollectionExtensionsExample();
+        example.ProcessGpsData();
+        Console.WriteLine("Collection extensions example completed!");
+    }
+}
+```
+
 ## ICachingService
 
 The `ICachingService` interface provides an in-memory caching layer for GPS tracker protocol data, reducing database queries and improving response times. It supports storing, retrieving, and managing cached values with optional time-to-live expiration. The service is thread-safe and designed for high-performance scenarios where frequent access to device information, location data, and other entities is required.
