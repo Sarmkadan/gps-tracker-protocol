@@ -1461,6 +1461,78 @@ public class DateTimeExtensionsExample
 }
 ```
 
+## GpsUtilities
+
+The `GpsUtilities` class provides utility methods for GPS coordinate calculations and conversions. It includes functionality for calculating distances between coordinates using the Haversine formula, determining bearings (azimuths) between points, validating coordinate ranges, converting between coordinate formats, and working with speed units.
+
+Example usage for GPS coordinate calculations:
+
+```csharp
+using GpsTrackerProtocol.Utilities;
+
+public class GpsUtilitiesExample
+{
+    public void ProcessGpsCoordinates()
+    {
+        // Coordinates for New York City
+        double nycLat = 40.7128;
+        double nycLon = -74.0060;
+
+        // Coordinates for Los Angeles
+        double laLat = 34.0522;
+        double laLon = -118.2437;
+
+        // Calculate distance between two cities in kilometers
+        double distanceKm = GpsUtilities.CalculateDistanceKm(nycLat, nycLon, laLat, laLon);
+        Console.WriteLine($"Distance between NYC and LA: {distanceKm:F2} km");
+
+        // Calculate bearing from NYC to LA
+        double bearing = GpsUtilities.CalculateBearing(nycLat, nycLon, laLat, laLon);
+        Console.WriteLine($"Bearing from NYC to LA: {bearing:F2}°");
+
+        // Validate coordinates
+        bool isValidNyc = GpsUtilities.IsValidCoordinate(nycLat, nycLon);
+        bool isValidInvalid = GpsUtilities.IsValidCoordinate(200, 300);
+        Console.WriteLine($"NYC coordinates valid: {isValidNyc}");
+        Console.WriteLine($"Invalid coordinates valid: {isValidInvalid}");
+
+        // Check if coordinate is within bounds
+        bool isWithinUs = GpsUtilities.IsWithinBounds(nycLat, nycLon, -90, 90, -180, -60);
+        Console.WriteLine($"NYC within US bounds: {isWithinUs}");
+
+        // Convert DMS to decimal degrees
+        double decimalDegrees = GpsUtilities.DmsToDecimal(4030.5000, "N");
+        Console.WriteLine($"DMS 4030.5000 N = {decimalDegrees:F6} decimal degrees");
+
+        // Convert decimal degrees to DMS
+        var (degrees, minutes, seconds) = GpsUtilities.DecimalToDms(40.5083);
+        Console.WriteLine($"Decimal 40.5083 = {degrees}° {minutes}' {seconds:F3}\"");
+
+        // Speed conversions
+        double speedKnots = 25.0;
+        double speedKmh = GpsUtilities.KnotsToKmh(speedKnots);
+        double speedMs = GpsUtilities.KmhToMs(speedKmh);
+        Console.WriteLine($"{speedKnots} knots = {speedKmh:F2} km/h = {speedMs:F2} m/s");
+
+        // Calculate zoom level for bounding box
+        int zoomLevel = GpsUtilities.CalculateZoomLevel(40.0, 41.0, -75.0, -74.0);
+        Console.WriteLine($"Zoom level for bounding box: {zoomLevel}");
+
+        // Get center of bounding box
+        var (centerLat, centerLon) = GpsUtilities.GetBoundingBoxCenter(40.0, 41.0, -75.0, -74.0);
+        Console.WriteLine($"Bounding box center: ({centerLat:F4}, {centerLon:F4})");
+    }
+
+    public static void Main(string[] args)
+    {
+        Console.WriteLine("Starting GpsUtilities example...");
+        var example = new GpsUtilitiesExample();
+        example.ProcessGpsCoordinates();
+        Console.WriteLine("GpsUtilities example completed!");
+    }
+}
+```
+
 ## IPerformanceMonitor
 
 The `IPerformanceMonitor` interface provides functionality for measuring and tracking the performance of operations within the GPS tracker protocol system. It allows measuring operation execution time, recording metrics, and generating performance reports to identify bottlenecks and optimize system performance.
