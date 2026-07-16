@@ -1243,6 +1243,74 @@ public class LocationRepositoryExample
 }
 ```
 
+## ICachingService
+
+The `ICachingService` interface provides an in-memory caching layer for GPS tracker protocol data, reducing database queries and improving response times. It supports storing, retrieving, and managing cached values with optional time-to-live expiration. The service is thread-safe and designed for high-performance scenarios where frequent access to device information, location data, and other entities is required.
+
+Example usage for caching GPS tracker data:
+
+```csharp
+using GpsTrackerProtocol.Caching;
+using GpsTrackerProtocol.Domain.Models;
+
+public class CachingServiceExample
+{
+    private readonly ICachingService _cachingService;
+
+    public CachingServiceExample(ICachingService cachingService)
+    {
+        _cachingService = cachingService;
+    }
+
+    public void ManageCache()
+    {
+        // Cache a device object with 5-minute TTL
+        var device = new Device
+        {
+            Id = "device-001",
+            Imei = "123456789012345",
+            Name = "Truck GPS Unit #1",
+            Status = DeviceStatus.Active
+        };
+
+        _cachingService.Set("device:device-001", device, TimeSpan.FromMinutes(5));
+
+        // Try to retrieve cached device
+        if (_cachingService.TryGet<Device>("device:device-001", out var cachedDevice))
+        {
+            Console.WriteLine($"Retrieved device from cache: {cachedDevice.Name}");
+        }
+
+        // Cache a list of all devices
+        var deviceList = new List<Device> { device };
+        _cachingService.Set("devices:all", deviceList);
+
+        // Get all cache keys
+        var allKeys = _cachingService.GetAllKeys();
+        Console.WriteLine($"Total cache entries: {allKeys.Count()}");
+
+        // Remove a specific cache entry
+        _cachingService.Remove("device:device-001");
+
+        // Clear the entire cache
+        _cachingService.Clear();
+    }
+
+    public static void Main(string[] args)
+    {
+        // Example with direct service instantiation
+        var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+        var cachingService = new CachingService(loggerFactory.CreateLogger<CachingService>());
+
+        Console.WriteLine("Starting caching service example...");
+        var example = new CachingServiceExample(cachingService);
+        example.ManageCache();
+
+        Console.WriteLine("Caching service example completed!");
+    }
+}
+```
+
 ## ICommandService
 
 The `ICommandService` interface provides functionality for managing device commands in the GPS tracker system. It allows creating commands, retrieving command history, executing commands, handling command failures, and cleaning up old command records. The service supports both modern repository pattern and legacy repository implementations.
