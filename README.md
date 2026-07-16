@@ -640,6 +640,62 @@ public class DeviceExample
 }
 ```
 
+## ReplayOptions
+
+The `ReplayOptions` class provides configuration for replaying recorded GPS tracker route data. It allows customization of replay behavior including speed adjustments, time rebasing, frame selection, and tracking metadata preservation. This is useful for testing, debugging, and demonstrating route playback scenarios.
+
+### Usage Example
+
+```csharp
+using System;
+using GpsTrackerProtocol.Domain.Models;
+
+public class ReplayOptionsExample
+{
+public void ConfigureRouteReplay()
+{
+// Create replay options for a vehicle journey
+var options = new ReplayOptions
+{
+SpeedMultiplier = 2.0, // Play at 2x speed
+StartIndex = 0, // Start from first frame
+EndIndex = 100, // Play first 100 frames
+RebaseToUtc = DateTime.UtcNow, // Align replay to current time
+Index = 42, // Current frame index
+Location = new LocationData
+{
+DeviceId = "TRK-001",
+Latitude = 51.5074,
+Longitude = -0.1278,
+Speed = 45.5,
+Bearing = 90,
+Timestamp = DateTime.UtcNow
+},
+ReplayTimestamp = DateTime.UtcNow,
+ElapsedReplay = TimeSpan.FromMinutes(30), // 30 minutes of replay time
+CumulativeDistanceKm = 15.25, // Total distance covered
+JourneyId = "JOURNEY-2024-07-16-001",
+DeviceId = "TRK-001",
+Options = new ReplayOptions(), // Additional nested options
+Frames = new List<ReplayFrame>(), // Frames to replay
+TotalDistanceKm = 45.8, // Total journey distance
+OriginalDuration = TimeSpan.FromHours(2), // Original journey duration
+ReplayDuration = TimeSpan.FromMinutes(60), // Replay duration
+GeneratedAt = DateTime.UtcNow
+};
+
+// Access replay properties
+Console.WriteLine($"Journey: {options.JourneyId}");
+Console.WriteLine($"Device: {options.DeviceId}");
+Console.WriteLine($"Speed multiplier: {options.SpeedMultiplier}x");
+Console.WriteLine($"Total distance: {options.TotalDistanceKm:F1} km");
+Console.WriteLine($"Original duration: {options.OriginalDuration.TotalMinutes} minutes");
+Console.WriteLine($"Replay duration: {options.ReplayDuration.TotalMinutes} minutes");
+Console.WriteLine($"Frames to replay: {options.Frames.Count}");
+}
+}
+```
+
 ## Command
 
 The `Command` class represents a specific instruction or request intended for a GPS tracking device, managing its lifecycle from creation to execution and potential retries. It encapsulates all necessary metadata, parameters, and state information, including tracking acknowledgment and transmission status, to ensure reliable delivery of commands to remote hardware.
