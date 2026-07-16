@@ -319,6 +319,119 @@ The `IJourneyService` interface provides functionality for managing GPS device j
 
 Example usage in code:
 
+## IFuelTrackingService
+
+The `IFuelTrackingService` interface provides functionality for recording and reporting fuel events for fleet vehicles. It supports explicit event recording (consumption, refuel, drain) as well as distance-based consumption estimation. The service allows tracking fuel consumption over specific time periods, calculating average fuel efficiency, and estimating fuel requirements for planned trips.
+
+Example usage in code:
+
+```csharp
+using GpsTrackerProtocol.Services;
+using GpsTrackerProtocol.Domain.Models;
+using Microsoft.Extensions.Logging;
+
+public class FuelTrackingServiceExample
+{
+    private readonly IFuelTrackingService _fuelTrackingService;
+
+    public FuelTrackingServiceExample(IFuelTrackingService fuelTrackingService)
+    {
+        _fuelTrackingService = fuelTrackingService;
+    }
+
+    public async Task ManageFuelTrackingAsync(string vehicleId, string deviceId)
+    {
+        // Record a fuel consumption event
+        var consumptionEvent = new FuelRecord
+        {
+            VehicleId = vehicleId,
+            DeviceId = deviceId,
+            EventType = FuelEventType.Consumption,
+            FuelAmountLiters = 45.5,
+            OdometerKm = 12500.0,
+            Timestamp = DateTime.UtcNow,
+            TotalCost = 72.80,
+            Location = new LocationData
+            {
+                Latitude = 40.7128,
+                Longitude = -74.0060,
+                Timestamp = DateTime.UtcNow
+            }
+        };
+
+        var recordedConsumption = await _fuelTrackingService.RecordFuelEventAsync(consumptionEvent);
+        Console.WriteLine($"Recorded fuel consumption: {recordedConsumption.FuelAmountLiters:F2} L");
+
+        // Record a refuel event
+        var refuelEvent = new FuelRecord
+        {
+            VehicleId = vehicleId,
+            DeviceId = deviceId,
+            EventType = FuelEventType.Refuel,
+            FuelAmountLiters = 60.0,
+            OdometerKm = 12545.5,
+            Timestamp = DateTime.UtcNow.AddMinutes(30),
+            TotalCost = 96.00,
+            Location = new LocationData
+            {
+                Latitude = 40.7306,
+                Longitude = -73.9352,
+                Timestamp = DateTime.UtcNow.AddMinutes(30)
+            }
+        };
+
+        var recordedRefuel = await _fuelTrackingService.RecordFuelEventAsync(refuelEvent);
+        Console.WriteLine($"Recorded refuel: {recordedRefuel.FuelAmountLiters:F2} L");
+
+        // Get all fuel records for the vehicle
+        var allRecords = await _fuelTrackingService.GetRecordsAsync(vehicleId);
+        Console.WriteLine($"Total fuel records: {allRecords.Count()}");
+
+        // Get consumption records only
+        var consumptionRecords = await _fuelTrackingService.GetRecordsAsync(vehicleId, FuelEventType.Consumption);
+        Console.WriteLine($"Consumption events: {consumptionRecords.Count()}");
+
+        // Generate a fuel consumption report for the last 7 days
+        var report = await _fuelTrackingService.GetReportAsync(
+            vehicleId,
+            DateTime.UtcNow.AddDays(-7),
+            DateTime.UtcNow
+        );
+
+        Console.WriteLine($"Fuel Report for {report.VehicleId}:");
+        Console.WriteLine($"  Period: {report.PeriodStart:d} to {report.PeriodEnd:d}");
+        Console.WriteLine($"  Total Distance: {report.TotalDistanceKm:F2} km");
+        Console.WriteLine($"  Fuel Consumed: {report.TotalFuelConsumedLiters:F2} L");
+        Console.WriteLine($"  Average Consumption: {report.AverageConsumptionLper100km:F2} L/100km");
+        Console.WriteLine($"  Total Cost: ${report.TotalCost:F2}");
+        Console.WriteLine($"  Refuel Count: {report.RefuelCount}");
+
+        // Estimate fuel needed for a planned trip
+        var tripDistance = 320.0; // km
+        var consumptionRate = 8.5; // L/100km
+        var estimatedFuel = _fuelTrackingService.EstimateFuelLiters(tripDistance, consumptionRate);
+        Console.WriteLine($"Estimated fuel for {tripDistance} km trip: {estimatedFuel:F2} L");
+
+        // Delete a specific record (e.g., if it was entered in error)
+        var deleteSuccess = await _fuelTrackingService.DeleteRecordAsync(recordedConsumption.Id);
+        Console.WriteLine($"Record deletion successful: {deleteSuccess}");
+    }
+
+    public static async Task Main(string[] args)
+    {
+        // Example with direct service instantiation
+        var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+        var fuelTrackingService = new FuelTrackingService(loggerFactory.CreateLogger<FuelTrackingService>());
+
+        Console.WriteLine("Starting fuel tracking example...");
+        var example = new FuelTrackingServiceExample(fuelTrackingService);
+        await example.ManageFuelTrackingAsync("truck-001", "device-gps-001");
+
+        Console.WriteLine("Fuel tracking example completed!");
+    }
+}
+```
+
 ## IGeofenceService
 
 The `IGeofenceService` interface provides functionality for managing geographic boundary zones (geofences) and detecting when GPS devices enter or exit these zones. It allows adding circular geofences with specified centers and radii, checking if a location is inside a geofence, and finding nearby geofences for a given location.
