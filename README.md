@@ -1542,6 +1542,98 @@ public class CollectionExtensionsExample
 }
 ```
 
+## DictionaryExtensions
+
+The `DictionaryExtensions` class provides extension methods for safe and convenient access to dictionary values. It includes utilities for getting values with default fallbacks, parsing values to specific types, merging dictionaries, flattening nested dictionaries, and converting dictionaries to query string format.
+
+Example usage for dictionary operations:
+
+```csharp
+using GpsTrackerProtocol.Utilities;
+using System;
+using System.Collections.Generic;
+
+public class DictionaryExtensionsExample
+{
+    public void ProcessDeviceConfiguration()
+    {
+        // Create a dictionary with device configuration
+        var deviceConfig = new Dictionary<string, object>
+        {
+            { "deviceId", "TRK-001-ABC" },
+            { "protocol", "GT06" },
+            { "enabled", true },
+            { "maxSpeedKmh", 120.5 },
+            { "timeoutSeconds", 30 },
+            { "coordinates", new Dictionary<string, object>
+                {
+                    { "latitude", 40.7128 },
+                    { "longitude", -74.0060 },
+                    { "accuracy", 8.2 }
+                }
+            }
+        };
+
+        // Safely get values with default fallbacks
+        string deviceId = deviceConfig.GetStringOrEmpty("deviceId");
+        Console.WriteLine($"Device ID: {deviceId}");
+
+        bool isEnabled = deviceConfig.GetBoolOrDefault("enabled");
+        Console.WriteLine($"Device enabled: {isEnabled}");
+
+        double maxSpeed = deviceConfig.GetDoubleOrDefault("maxSpeedKmh", 100.0);
+        Console.WriteLine($"Max speed: {maxSpeed} km/h");
+
+        int timeout = deviceConfig.GetIntOrDefault("timeoutSeconds");
+        Console.WriteLine($"Timeout: {timeout} seconds");
+
+        // Get value with default (returns null if not found)
+        int missingValue = deviceConfig.GetIntOrDefault("missingKey", 42);
+        Console.WriteLine($"Missing key default: {missingValue}");
+
+        // Safely get nested values
+        if (deviceConfig.TryGetValue("coordinates", out var coords) && 
+            coords is Dictionary<string, object> coordsDict)
+        {
+            double lat = coordsDict.GetDoubleOrDefault("latitude");
+            double lon = coordsDict.GetDoubleOrDefault("longitude");
+            Console.WriteLine($"Coordinates: ({lat:F4}, {lon:F4})");
+        }
+
+        // Merge another dictionary
+        var additionalConfig = new Dictionary<string, object>
+        {
+            { "timeoutSeconds", 60 },
+            { "retryCount", 3 },
+            { "debugMode", false }
+        };
+
+        deviceConfig.Merge(additionalConfig);
+        Console.WriteLine($"Merged config - timeout now: {deviceConfig.GetIntOrDefault("timeoutSeconds")}");
+
+        // Flatten nested dictionary
+        var flattened = deviceConfig.Flatten();
+        Console.WriteLine($"Flattened dictionary has {flattened.Count} entries");
+        foreach (var kvp in flattened)
+        {
+            Console.WriteLine($"  {kvp.Key}: {kvp.Value}");
+        }
+
+        // Convert to query string
+        string queryString = deviceConfig.ToQueryString();
+        Console.WriteLine($"Query string: {queryString}");
+    }
+
+    public static void Main(string[] args)
+    {
+        Console.WriteLine("Starting DictionaryExtensions example...");
+        var example = new DictionaryExtensionsExample();
+        example.ProcessDeviceConfiguration();
+        Console.WriteLine("DictionaryExtensions example completed!");
+    }
+}
+```
+
 ## ICachingService
 
 The `ICachingService` interface provides an in-memory caching layer for GPS tracker protocol data, reducing database queries and improving response times. It supports storing, retrieving, and managing cached values with optional time-to-live expiration. The service is thread-safe and designed for high-performance scenarios where frequent access to device information, location data, and other entities is required.
