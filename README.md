@@ -1034,6 +1034,167 @@ public class ProtocolHandlerExample
 
 ```
 
+## InMemoryRepository
+
+The `InMemoryRepository<T>` class provides a thread-safe, in-memory repository implementation designed for testing, prototyping, and demonstration purposes. It implements the core `IRepository<T>` interface with basic CRUD operations and includes additional specialized methods for location data management when used with `LocationData` entities.
+
+This repository uses a `Dictionary<string, T>` as its backing store with a `ReaderWriterLockSlim` to ensure thread-safe concurrent access. All operations are asynchronous and include proper locking to prevent race conditions.
+
+Example usage for basic repository operations:
+
+```csharp
+using GpsTrackerProtocol.Data;
+using GpsTrackerProtocol.Domain.Models;
+
+public class InMemoryRepositoryExample
+{
+    public async Task ManageEntitiesAsync()
+    {
+        // Create repository instance
+        var repository = new InMemoryRepository<LocationData>();
+        
+        // Create and store entities
+        var location1 = new LocationData
+        {
+            Id = "loc-001",
+            DeviceId = "device-001",
+            Latitude = 40.7128,
+            Longitude = -74.0060,
+            Timestamp = DateTime.UtcNow,
+            Speed = 65.5,
+            Altitude = 100.0,
+            Satellites = 8,
+            HDOP = 1.2
+        };
+        
+        var location2 = new LocationData
+        {
+            Id = "loc-002",
+            DeviceId = "device-001",
+            Latitude = 40.7306,
+            Longitude = -73.9352,
+            Timestamp = DateTime.UtcNow.AddMinutes(-30),
+            Speed = 55.0,
+            Altitude = 120.0,
+            Satellites = 7,
+            HDOP = 1.5
+        };
+        
+        await repository.CreateAsync(location1);
+        await repository.CreateAsync(location2);
+        
+        Console.WriteLine("Created 2 location entities");
+        
+        // Retrieve entities
+        var allLocations = await repository.GetAllAsync();
+        Console.WriteLine($"Total entities: {allLocations.Count()}");
+        
+        var byId = await repository.GetByIdAsync("loc-001");
+        Console.WriteLine($"Retrieved entity: {byId?.Id}");
+        
+        // Update entity
+        location1.Speed = 70.2;
+        var updated = await repository.UpdateAsync(location1);
+        Console.WriteLine($"Updated entity speed to: {updated.Speed}");
+        
+        // Check existence
+        var exists = await repository.ExistsAsync("loc-001");
+        Console.WriteLine($"Entity exists: {exists}");
+        
+        // Delete entity
+        var deleteSuccess = await repository.DeleteAsync("loc-002");
+        Console.WriteLine($"Delete successful: {deleteSuccess}");
+        
+        // Get remaining entities
+        var remaining = await repository.GetAllAsync();
+        Console.WriteLine($"Remaining entities: {remaining.Count()}");
+    }
+    
+    public static async Task Main(string[] args)
+    {
+        Console.WriteLine("Starting in-memory repository example...");
+        var example = new InMemoryRepositoryExample();
+        await example.ManageEntitiesAsync();
+        Console.WriteLine("In-memory repository example completed!");
+    }
+}
+```
+
+Example usage for location-specific operations with `InMemoryLocationDataRepository`:
+
+```csharp
+using GpsTrackerProtocol.Data;
+using GpsTrackerProtocol.Domain.Models;
+
+public class LocationRepositoryExample
+{
+    public async Task QueryLocationDataAsync()
+    {
+        // Create location-specific repository
+        var locationRepo = new InMemoryLocationDataRepository();
+        
+        // Add some location data
+        var deviceId = "truck-gps-001";
+        
+        for (int i = 0; i < 10; i++)
+        {
+            await locationRepo.CreateAsync(new LocationData
+            {
+                Id = $"loc-{i:D3}",
+                DeviceId = deviceId,
+                Latitude = 40.7128 + (Random.Shared.NextDouble() * 0.1 - 0.05),
+                Longitude = -74.0060 + (Random.Shared.NextDouble() * 0.1 - 0.05),
+                Timestamp = DateTime.UtcNow.AddHours(-i),
+                Speed = Random.Shared.Next(40, 80),
+                Satellites = Random.Shared.Next(6, 12)
+            });
+        }
+        
+        // Query by device ID
+        var deviceLocations = await locationRepo.GetByDeviceIdAsync(deviceId);
+        Console.WriteLine($"Locations for device {deviceId}: {deviceLocations.Count()}");
+        
+        // Get latest location
+        var latest = await locationRepo.GetLatestByDeviceIdAsync(deviceId);
+        Console.WriteLine($"Latest location: Lat={latest?.Latitude:F4}, Lon={latest?.Longitude:F4}");
+        
+        // Query by time range
+        var startTime = DateTime.UtcNow.AddHours(-5);
+        var endTime = DateTime.UtcNow;
+        var timeRangeLocations = await locationRepo.GetByTimeRangeAsync(startTime, endTime);
+        Console.WriteLine($"Locations in time range: {timeRangeLocations.Count()}");
+        
+        // Query by device and time range
+        var deviceAndTimeRange = await locationRepo.GetByDeviceAndTimeRangeAsync(
+            deviceId, 
+            DateTime.UtcNow.AddHours(-2),
+            DateTime.UtcNow
+        );
+        Console.WriteLine($"Device locations in time range: {deviceAndTimeRange.Count()}");
+        
+        // Get locations within radius
+        var nearby = await locationRepo.GetWithinRadiusAsync(
+            latitude: 40.7128,
+            longitude: -74.0060,
+            radiusKm: 10.0
+        );
+        Console.WriteLine($"Locations within 10km radius: {nearby.Count()}");
+        
+        // Delete old data
+        var deletedCount = await locationRepo.DeleteOlderThanAsync(DateTime.UtcNow.AddDays(-30));
+        Console.WriteLine($"Deleted {deletedCount} old location records");
+    }
+    
+    public static async Task Main(string[] args)
+    {
+        Console.WriteLine("Starting location repository example...");
+        var example = new LocationRepositoryExample();
+        await example.QueryLocationDataAsync();
+        Console.WriteLine("Location repository example completed!");
+    }
+}
+```
+
 ## ICommandService
 
 The `ICommandService` interface provides functionality for managing device commands in the GPS tracker system. It allows creating commands, retrieving command history, executing commands, handling command failures, and cleaning up old command records. The service supports both modern repository pattern and legacy repository implementations.
