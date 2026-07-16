@@ -528,6 +528,115 @@ public class FleetDashboardServiceExample
 
 Example usage in code:
 
+## IGeofenceEventProcessor
+
+The `IGeofenceEventProcessor` interface processes GPS device location updates to detect geofence boundary crossings (entering or exiting geographic zones). It maintains device state, tracks dwell times within geofences, and can notify subscribers via webhooks or internal event bus when boundary transitions occur.
+
+Example usage in code:
+
+```csharp
+using GpsTrackerProtocol.Services;
+using GpsTrackerProtocol.Domain.Models;
+using Microsoft.Extensions.Logging;
+
+public class GeofenceEventProcessorExample
+{
+    private readonly IGeofenceEventProcessor _geofenceEventProcessor;
+    private readonly IGeofenceService _geofenceService;
+
+    public GeofenceEventProcessorExample(
+        IGeofenceEventProcessor geofenceEventProcessor,
+        IGeofenceService geofenceService)
+    {
+        _geofenceEventProcessor = geofenceEventProcessor;
+        _geofenceService = geofenceService;
+    }
+
+    public void SetupGeofencesAndWebhooks()
+    {
+        // Create geofences for important areas
+        _geofenceService.AddGeofence(
+            id: "warehouse-nyc",
+            centerLat: 40.7128,
+            centerLon: -74.0060,
+            radiusKm: 2.5);
+
+        _geofenceService.AddGeofence(
+            id: "restricted-zone",
+            centerLat: 40.7306,
+            centerLon: -73.9352,
+            radiusKm: 1.0);
+
+        // Register a webhook for a device to receive geofence events
+        _geofenceEventProcessor.RegisterWebhook(
+            deviceId: "truck-001",
+            webhookUrl: "https://api.example.com/webhooks/gps-events");
+    }
+
+    public async Task ProcessDeviceLocationAsync(string deviceId, double latitude, double longitude)
+    {
+        // Process a location update to detect geofence transitions
+        var location = new LocationData
+        {
+            DeviceId = deviceId,
+            Latitude = latitude,
+            Longitude = longitude,
+            Timestamp = DateTime.UtcNow,
+            Speed = 65.5,
+            Satellites = 8
+        };
+
+        await _geofenceEventProcessor.ProcessLocationAsync(location);
+
+        // Get current geofences for the device
+        var currentGeofences = _geofenceEventProcessor.GetCurrentGeofences(deviceId);
+        Console.WriteLine($"Device {deviceId} is currently inside {currentGeofences.Count} geofence(s)");
+
+        foreach (var geofenceId in currentGeofences)
+        {
+            Console.WriteLine($"  - {geofenceId}");
+        }
+    }
+
+    public void UnregisterDevice(string deviceId)
+    {
+        // Remove webhook subscription when device is no longer tracked
+        _geofenceEventProcessor.UnregisterWebhook(deviceId);
+    }
+
+    public static async Task Main(string[] args)
+    {
+        // Setup example with direct service instantiation
+        var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+        var geofenceService = new GeofenceService(loggerFactory.CreateLogger<GeofenceService>());
+        var webhookClient = new WebhookClient();
+        var eventPublisher = new EventPublisher();
+        var notificationService = new NotificationService();
+        var geofenceEventProcessor = new GeofenceEventProcessor(
+            geofenceService,
+            webhookClient,
+            eventPublisher,
+            notificationService,
+            loggerFactory.CreateLogger<GeofenceEventProcessor>());
+
+        Console.WriteLine("Starting geofence event processor example...");
+        var example = new GeofenceEventProcessorExample(geofenceEventProcessor, geofenceService);
+
+        example.SetupGeofencesAndWebhooks();
+        
+        // Process location updates for a device
+        await example.ProcessDeviceLocationAsync("truck-001", 40.7150, -74.0075);
+        await example.ProcessDeviceLocationAsync("truck-001", 40.7350, -73.9400);
+
+        // Check current geofences
+        var current = geofenceEventProcessor.GetCurrentGeofences("truck-001");
+        Console.WriteLine($"Final state: {current.Count} geofences");
+
+        Console.WriteLine("Geofence event processor example completed!");
+    }
+}
+```
+
 ## IFuelTrackingService
 
 The `IFuelTrackingService` interface provides functionality for recording and reporting fuel events for fleet vehicles. It supports explicit event recording (consumption, refuel, drain) as well as distance-based consumption estimation. The service allows tracking fuel consumption over specific time periods, calculating average fuel efficiency, and estimating fuel requirements for planned trips.
