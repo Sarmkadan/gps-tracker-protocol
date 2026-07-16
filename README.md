@@ -512,6 +512,79 @@ public class GeofenceAlertRuleExample
 }
 ```
 
+## LocationData
+
+The `LocationData` class represents a GPS location data point from a tracking device, containing comprehensive telemetry information including coordinates, speed, bearing, altitude, accuracy metrics, and protocol-specific details. It provides utility methods for calculating distances between locations, bearing calculations, validity checks, and string representation for logging and debugging purposes.
+
+Example usage for creating and working with location data:
+
+```csharp
+using GpsTrackerProtocol.Domain.Models;
+using System;
+using System.Collections.Generic;
+
+public class LocationDataExample
+{
+    public void ProcessLocationData()
+    {
+        // Create a new location data point from a GPS tracker device
+        var location = new LocationData
+        {
+            Id = Guid.NewGuid().ToString(),
+            DeviceId = "TRK-001",
+            Latitude = 51.5074,
+            Longitude = -0.1278,
+            Altitude = 120.5,
+            Speed = 45.5, // km/h
+            Bearing = 90, // degrees
+            Timestamp = DateTime.UtcNow,
+            Accuracy = 5.8, // meters
+            SatelliteCount = 12,
+            Protocol = ProtocolType.GT06,
+            ExtendedData = new Dictionary<string, object>
+            {
+                { "hdop", 1.2 },
+                { "vdop", 1.5 },
+                { "fix_type", "3D" },
+                { "protocol_version", "2.1" }
+            },
+            IsValid = true
+        };
+
+        // Calculate distance to another location
+        var otherLocation = new LocationData
+        {
+            Latitude = 51.5150,
+            Longitude = -0.1300,
+            Altitude = 110.0
+        };
+
+        double distance = location.DistanceTo(otherLocation);
+        Console.WriteLine($"Distance between locations: {distance:F2} meters");
+
+        // Calculate bearing to another location
+        double bearing = location.BearingTo(otherLocation);
+        Console.WriteLine($"Bearing to destination: {bearing:F1} degrees");
+
+        // Access location information
+        Console.WriteLine($"Location for device {location.DeviceId} at {location.Timestamp:yyyy-MM-dd HH:mm:ss}");
+        Console.WriteLine($"Coordinates: {location.Latitude:F6}, {location.Longitude:F6}");
+        Console.WriteLine($"Speed: {location.Speed:F1} km/h, Bearing: {location.Bearing:F1}°");
+        Console.WriteLine($"Altitude: {location.Altitude:F1} m, Accuracy: {location.Accuracy:F1} m");
+        Console.WriteLine($"Satellites: {location.SatelliteCount}, Protocol: {location.Protocol}");
+
+        // Check location validity
+        if (location.IsValid)
+        {
+            Console.WriteLine("Location data is valid and ready for processing");
+        }
+
+        // String representation
+        Console.WriteLine($"Location: {location}");
+    }
+}
+```
+
 ## Device
 
 The `Device` class represents a GPS tracking device that sends location data and status updates to the tracking system. It manages device identification, connection state, battery levels, signal strength, and metadata for fleet monitoring and management.
