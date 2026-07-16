@@ -137,3 +137,85 @@ dotnet run -- analyze device-001
 dotnet run -- simulate device-001 20
 dotnet run -- fleet
 ```
+
+## IJourneyService
+
+The `IJourneyService` interface provides functionality for managing GPS device journeys and tracking trips. It allows starting new journeys, adding waypoints during journeys, completing journeys, and retrieving journey history. The service also provides utility methods for calculating total distance traveled and cleaning up old journey records.
+
+Example usage in code:
+```csharp
+using GpsTrackerProtocol.Services;
+using GpsTrackerProtocol.Domain.Models;
+
+public class JourneyServiceExample
+{
+    private readonly IJourneyService _journeyService;
+
+    public JourneyServiceExample(IJourneyService journeyService)
+    {
+        _journeyService = journeyService;
+    }
+
+    public async Task ManageDeviceJourneysAsync(string deviceId)
+    {
+        // Start a new journey for a device
+        var journey = await _journeyService.StartJourneyAsync(deviceId);
+        Console.WriteLine($"Started journey {journey.Id} at {journey.StartTime}");
+
+        // Add waypoints to the ongoing journey
+        var location1 = new LocationData
+        {
+            Latitude = 40.7128,
+            Longitude = -74.0060,
+            Timestamp = DateTime.UtcNow,
+            Speed = 65.5
+        };
+        
+        var location2 = new LocationData
+        {
+            Latitude = 40.7306,
+            Longitude = -73.9352,
+            Timestamp = DateTime.UtcNow.AddMinutes(15),
+            Speed = 55.0
+        };
+
+        bool waypointAdded = await _journeyService.AddWaypointAsync(journey.Id, location1);
+        Console.WriteLine($"Waypoint added: {waypointAdded}");
+
+        waypointAdded = await _journeyService.AddWaypointAsync(journey.Id, location2);
+        Console.WriteLine($"Waypoint added: {waypointAdded}");
+
+        // Check ongoing journey
+        var ongoingJourney = await _journeyService.GetOngoingJourneyAsync(deviceId);
+        Console.WriteLine($"Ongoing journey: {ongoingJourney?.Id}");
+
+        // Complete the journey
+        var completedJourney = await _journeyService.CompleteJourneyAsync(journey.Id);
+        Console.WriteLine($"Completed journey {completedJourney.Id} with {completedJourney.Waypoints.Count} waypoints");
+
+        // Get journey history
+        var journeyHistory = await _journeyService.GetJourneyHistoryAsync(deviceId);
+        Console.WriteLine($"Total journeys: {journeyHistory.Count()}");
+
+        // Calculate total distance traveled
+        var totalDistance = await _journeyService.GetTotalDistanceAsync(deviceId);
+        Console.WriteLine($"Total distance: {totalDistance:F2} km");
+
+        // Get a specific journey
+        var specificJourney = await _journeyService.GetJourneyAsync(journey.Id);
+        Console.WriteLine($"Retrieved journey: {specificJourney?.DeviceId}");
+    }
+
+    public static async Task Main(string[] args)
+    {
+        // Example with direct service instantiation
+        var journeyService = new JourneyService(new UnitOfWork());
+        
+        Console.WriteLine("Starting journey management example...");
+        var example = new JourneyServiceExample(journeyService);
+        await example.ManageDeviceJourneysAsync("device-001");
+        
+        Console.WriteLine("Journey management example completed!");
+    }
+}
+```
