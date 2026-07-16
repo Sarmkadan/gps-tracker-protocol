@@ -65,3 +65,47 @@ dotnet run -- csv gps_data.csv
 dotnet run -- json locations.json
 dotnet run -- devices devices.csv
 ```
+
+## DataExporter
+
+The `DataExporter` class provides functionality for exporting GPS location data to JSON, CSV, and GeoJSON formats. It supports exporting location history for specific devices or all devices, making it ideal for data analysis, reporting, and integration with mapping applications.
+
+Example usage for exporting GPS tracker data:
+```csharp
+using GpsTrackerProtocol.Services;
+
+public class DataExporterExample
+{
+public async Task ExportSampleDataAsync()
+{
+// Create exporter instance
+var exporter = new DataExporter();
+
+// Export locations to JSON format
+await exporter.ExportToJsonAsync("device-001", "locations.json");
+
+// Export locations to CSV format
+await exporter.ExportToCsvAsync("device-002", "track.csv");
+
+// Export locations to GeoJSON format (suitable for mapping libraries)
+await exporter.ExportToGeoJsonAsync("device-003", "map.geojson");
+
+// Export all devices to JSON
+await exporter.ExportDevicesToJsonAsync("devices.json");
+}
+
+public static async Task Main(string[] args)
+{
+Console.WriteLine("Starting data export...");
+var exporter = new DataExporter();
+
+// Export device locations to JSON
+await exporter.ExportToJsonAsync("device-001", "output.json");
+
+Console.WriteLine("Data export completed successfully!");
+}
+}
+```
+
+To run the exporter from command line:
+```bash
