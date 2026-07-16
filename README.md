@@ -512,6 +512,61 @@ public class GeofenceAlertRuleExample
 }
 ```
 
+## Device
+
+The `Device` class represents a GPS tracking device that sends location data and status updates to the tracking system. It manages device identification, connection state, battery levels, signal strength, and metadata for fleet monitoring and management.
+
+Example usage for device management:
+
+```csharp
+using GpsTrackerProtocol.Domain.Models;
+
+public class DeviceExample
+{
+    public void ManageDevice()
+    {
+        // Create a new GPS tracking device
+        var device = new Device
+        {
+            Id = "TRK-001",
+            Imei = "123456789012345",
+            DeviceName = "Vehicle GPS Tracker",
+            Protocol = ProtocolType.GT06,
+            Status = DeviceStatus.Active,
+            LastSeen = DateTime.UtcNow.AddMinutes(-2),
+            IpAddress = "192.168.1.100",
+            Port = 5000,
+            IsActive = true,
+            BatteryLevel = 78,
+            SignalStrength = -67,
+            ConnectionCount = 1528,
+            Metadata = new Dictionary<string, string>
+            {
+                { "model", "GT06" },
+                { "firmware", "v2.1.4" },
+                { "vehicle", "Truck-001" }
+            },
+            RegistrationDate = new DateTime(2024, 01, 15)
+        };
+
+        // Update device heartbeat
+        device.UpdateHeartbeat("192.168.1.101", 5001);
+        Console.WriteLine($"Device updated: {device}");
+        Console.WriteLine($"Battery: {device.BatteryLevel}%, Signal: {device.SignalStrength}dBm");
+
+        // Validate device configuration
+        if (device.IsValid())
+        {
+            Console.WriteLine($"Device {device.Id} is valid and ready for tracking");
+        }
+
+        // Check if device is offline
+        var isOffline = device.IsOffline(TimeSpan.FromMinutes(5));
+        Console.WriteLine($"Device offline status: {isOffline}");
+    }
+}
+```
+
 ## Command
 
 The `Command` class represents a specific instruction or request intended for a GPS tracking device, managing its lifecycle from creation to execution and potential retries. It encapsulates all necessary metadata, parameters, and state information, including tracking acknowledgment and transmission status, to ensure reliable delivery of commands to remote hardware.
