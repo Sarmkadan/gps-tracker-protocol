@@ -230,6 +230,85 @@ public class AnalyticsServiceExample
 The `IJourneyService` interface provides functionality for managing GPS device journeys and tracking trips. It allows starting new journeys, adding waypoints during journeys, completing journeys, and retrieving journey history. The service also provides utility methods for calculating total distance traveled and cleaning up old journey records.
 
 Example usage in code:
+
+## ICommandService
+
+The `ICommandService` interface provides functionality for managing device commands in the GPS tracker system. It allows creating commands, retrieving command history, executing commands, handling command failures, and cleaning up old command records. The service supports both modern repository pattern and legacy repository implementations.
+
+Example usage in code:
+
+```csharp
+using GpsTrackerProtocol.Services;
+using GpsTrackerProtocol.Domain.Models;
+
+public class CommandServiceExample
+{
+    private readonly ICommandService _commandService;
+
+    public CommandServiceExample(ICommandService commandService)
+    {
+        _commandService = commandService;
+    }
+
+    public async Task ManageDeviceCommandsAsync(string deviceId)
+    {
+        // Create a new command for a device
+        var command = new Command
+        {
+            DeviceId = deviceId,
+            CommandType = "REBOOT",
+            Payload = "{}",
+            Priority = CommandPriority.High
+        };
+
+        var createdCommand = await _commandService.CreateCommandAsync(command);
+        Console.WriteLine($"Created command {createdCommand.Id} of type {createdCommand.CommandType}");
+
+        // Get pending commands
+        var pendingCommands = await _commandService.GetPendingCommandsAsync();
+        Console.WriteLine($"Pending commands count: {pendingCommands.Count()}");
+
+        // Get command history for device
+        var commandHistory = await _commandService.GetCommandHistoryAsync(deviceId);
+        Console.WriteLine($"Command history count: {commandHistory.Count()}");
+
+        // Execute a command
+        var executed = await _commandService.ExecuteCommandAsync(createdCommand.Id);
+        Console.WriteLine($"Command executed: {executed}");
+
+        // Mark command as failed (for retry logic)
+        var markedAsFailed = await _commandService.MarkCommandAsFailedAsync(createdCommand.Id);
+        Console.WriteLine($"Command marked as failed: {markedAsFailed}");
+
+        // Retry failed commands
+        var retryCount = await _commandService.RetryFailedCommandsAsync();
+        Console.WriteLine($"Retry count: {retryCount}");
+
+        // Cleanup old commands
+        var cleanupCount = await _commandService.CleanupOldCommandsAsync(DateTime.UtcNow.AddDays(-30));
+        Console.WriteLine($"Cleanup count: {cleanupCount}");
+    }
+
+    public static async Task Main(string[] args)
+    {
+        // Example with direct service instantiation
+        var commandService = new CommandService(new UnitOfWork());
+
+        Console.WriteLine("Starting command management example...");
+        var example = new CommandServiceExample(commandService);
+        await example.ManageDeviceCommandsAsync("device-001");
+
+        Console.WriteLine("Command management example completed!");
+    }
+}
+```
+
+## IAnalyticsService
+
+The `IAnalyticsService` interface provides functionality for computing analytics and statistics for GPS tracker devices and fleets. It aggregates location data, journey information, and device metrics to generate comprehensive reports including device-specific analytics, fleet-wide statistics, and route analysis.
+
+Example usage in code:
+
 ```csharp
 using GpsTrackerProtocol.Services;
 using GpsTrackerProtocol.Domain.Models;
