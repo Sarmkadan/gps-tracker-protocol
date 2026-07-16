@@ -1243,6 +1243,83 @@ public class LocationRepositoryExample
 }
 ```
 
+## KalmanLocationSmoother
+
+The `KalmanLocationSmoother` class implements a Kalman filter to smooth noisy GPS location data and reject physically impossible jumps. It maintains per-device state to track location variance and applies filtering to each new location fix. The filter grows uncertainty over time based on process noise and uses measurement accuracy to update its state estimate.
+
+Example usage for smoothing GPS tracker data:
+
+```csharp
+using GpsTrackerProtocol.Domain.Models;
+using GpsTrackerProtocol.Utilities;
+
+public class KalmanLocationSmootherExample
+{
+    private readonly KalmanLocationSmoother _smoother = new KalmanLocationSmoother
+    {
+        ProcessNoiseMetersPerSecond = 2.5,    // Expected device speed variation
+        MaxPlausibleSpeedKmh = 250.0,       // Maximum acceptable speed
+        DefaultAccuracyMeters = 10.0          // Default accuracy for fixes without accuracy data
+    };
+
+    public void ProcessGpsFixes()
+    {
+        // Create a location fix from a GPS device
+        var rawFix = new LocationData
+        {
+            DeviceId = "truck-gps-001",
+            Latitude = 40.7128,
+            Longitude = -74.0060,
+            Timestamp = DateTime.UtcNow,
+            Speed = 65.5,
+            Accuracy = 8.2,  // meters
+            Altitude = 125.0,
+            SatelliteCount = 9,
+            Protocol = "GT06"
+        };
+
+        // Apply Kalman smoothing
+        var smoothedLocation = _smoother.Smooth(rawFix);
+
+        if (smoothedLocation != null)
+        {
+            Console.WriteLine($"Raw: ({rawFix.Latitude:F6}, {rawFix.Longitude:F6}) " +
+                            $"Smoothed: ({smoothedLocation.Latitude:F6}, {smoothedLocation.Longitude:F6})");
+            
+            // Access raw values from ExtendedData
+            var rawLat = (double)smoothedLocation.ExtendedData["kalman.rawLat"];
+            var rawLon = (double)smoothedLocation.ExtendedData["kalman.rawLon"];
+            Console.WriteLine($"Raw coordinates stored in ExtendedData: ({rawLat:F6}, {rawLon:F6})");
+        }
+        else
+        {
+            Console.WriteLine("Location fix rejected as outlier");
+        }
+
+        // Reset filter state for a device (e.g., after long offline period)
+        _smoother.Reset("truck-gps-001");
+
+        // Reset all filter states
+        _smoother.ResetAll();
+
+        // Calculate distance between two coordinates
+        var distance = KalmanLocationSmoother.DistanceMeters(
+            40.7128, -74.0060,
+            40.7306, -73.9352
+        );
+        Console.WriteLine($"Distance between points: {distance:F2} meters");
+    }
+
+    public static void Main(string[] args)
+    {
+        Console.WriteLine("Starting Kalman location smoother example...");
+        var example = new KalmanLocationSmootherExample();
+        example.ProcessGpsFixes();
+        Console.WriteLine("Kalman location smoother example completed!");
+    }
+}
+```
+
 ## CollectionExtensions
 
 The `CollectionExtensions` class provides a set of extension methods for working with collections and sequences in a functional style. It includes utilities for chunking sequences, calculating medians, removing duplicates while preserving order, finding min/max values, calculating percentages, safe indexing, and creating sliding windows of elements.
