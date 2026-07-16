@@ -1531,6 +1531,63 @@ public class PerformanceMonitorExample : IDisposable
 }
 ```
 
+## ByteExtensions
+
+The `ByteExtensions` class provides extension methods for byte array operations commonly used in GPS tracker protocol parsing. It includes utilities for converting byte arrays to hexadecimal strings, parsing big-endian integers, calculating checksums, converting ASCII strings, and searching for byte sequences.
+
+Example usage for byte array operations:
+
+```csharp
+using GpsTrackerProtocol.Utilities;
+
+public class ByteExtensionsExample
+{
+    public void ProcessProtocolData()
+    {
+        // Sample GPS protocol frame data
+        byte[] protocolData = new byte[] { 0x78, 0x78, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06 };
+        
+        // Convert to hexadecimal string
+        string hexString = protocolData.ToHexString();
+        Console.WriteLine($"Hex representation: {hexString}");
+        
+        // Convert to hexadecimal string with spaces
+        string hexWithSpaces = protocolData.ToHexString(addSpaces: true);
+        Console.WriteLine($"Hex with spaces: {hexWithSpaces}");
+        
+        // Parse 16-bit unsigned integer from big-endian bytes
+        ushort value16 = protocolData.ToUInt16BigEndian(offset: 2);
+        Console.WriteLine($"16-bit value at offset 2: {value16}");
+        
+        // Parse 32-bit unsigned integer from big-endian bytes
+        uint value32 = protocolData.ToUInt32BigEndian(offset: 2);
+        Console.WriteLine($"32-bit value at offset 2: {value32}");
+        
+        // Calculate XOR checksum for validation
+        byte checksum = protocolData.CalculateXorChecksum(startIndex: 2, length: 4);
+        Console.WriteLine($"XOR checksum for bytes 2-5: 0x{checksum:X2}");
+        
+        // Convert ASCII bytes to string
+        byte[] asciiData = new byte[] { 0x48, 0x65, 0x6C, 0x6C, 0x6F };
+        string asciiString = asciiData.ToAsciiString(startIndex: 0, length: 5);
+        Console.WriteLine($"ASCII string: {asciiString}");
+        
+        // Check if data starts with marker bytes
+        bool startsWithMarker = protocolData.StartsWithMarker(0x78, 0x78);
+        Console.WriteLine($"Starts with marker (0x78, 0x78): {startsWithMarker}");
+        
+        // Find index of byte sequence
+        byte[] searchSequence = new byte[] { 0x03, 0x04 };
+        int sequenceIndex = protocolData.IndexOfSequence(searchSequence);
+        Console.WriteLine($"Sequence found at index: {sequenceIndex}");
+        
+        // Copy range of bytes
+        byte[] copiedRange = protocolData.CopyRange(startIndex: 2, length: 4);
+        Console.WriteLine($"Copied range length: {copiedRange.Length}");
+    }
+}
+```
+
 ## CollectionExtensions
 
 The `CollectionExtensions` class provides a set of extension methods for working with collections and sequences in a functional style. It includes utilities for chunking sequences, calculating medians, removing duplicates while preserving order, finding min/max values, calculating percentages, safe indexing, and creating sliding windows of elements.
