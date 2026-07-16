@@ -841,6 +841,60 @@ public class LocationAggregationWorkerExample
 }
 ```
 
+## JourneyAnalyticsWorker
+
+The `JourneyAnalyticsWorker` background service analyzes completed journeys to extract key performance metrics and insights. It calculates total distance traveled, average speed, speeding incidents, and idle time percentage for each GPS tracking device, enabling fleet managers to monitor driver behavior and vehicle efficiency.
+
+This worker runs periodically in the background and stores analytics results in the cache for quick access by other system components.
+
+### Public Members
+
+- `DeviceId` - The identifier of the GPS tracking device
+- `AnalysisTime` - When the analysis was performed
+- `TotalJourneys` - Total number of completed journeys analyzed
+- `TotalDistanceKm` - Total distance traveled across all journeys (in kilometers)
+- `TotalDurationHours` - Total duration of all journeys (in hours)
+- `AverageSpeedKmh` - Average speed across all journeys (in km/h)
+- `SpeedingIncidents` - Number of speeding incidents detected
+- `IdleTimePercentage` - Percentage of time the vehicle was idle
+
+### Usage Example
+
+```csharp
+using GpsTrackerProtocol.BackgroundWorkers;
+using GpsTrackerProtocol.Domain.Models;
+using System;
+
+public class JourneyAnalyticsWorkerExample
+{
+    public void AnalyzeJourneyData()
+    {
+        // Create journey analytics worker
+        var analytics = new JourneyAnalytics
+        {
+            DeviceId = "TRK-001",
+            AnalysisTime = DateTime.UtcNow,
+            TotalJourneys = 15,
+            TotalDistanceKm = 425.8,
+            TotalDurationHours = 8.5,
+            AverageSpeedKmh = 49.8,
+            SpeedingIncidents = 3,
+            IdleTimePercentage = 12.5
+        };
+
+        // Access analytics results
+        Console.WriteLine($"Device: {analytics.DeviceId}");
+        Console.WriteLine($"Analysis time: {analytics.AnalysisTime:yyyy-MM-dd HH:mm:ss}");
+        Console.WriteLine($"Total journeys: {analytics.TotalJourneys}");
+        Console.WriteLine($"Total distance: {analytics.TotalDistanceKm:F1} km");
+        Console.WriteLine($"Total duration: {analytics.TotalDurationHours:F1} hours");
+        Console.WriteLine($"Average speed: {analytics.AverageSpeedKmh:F1} km/h");
+        Console.WriteLine($"Speeding incidents: {analytics.SpeedingIncidents}");
+        Console.WriteLine($"Idle time: {analytics.IdleTimePercentage:F1}%");
+    }
+}
+```
+
 ## IBackgroundWorker
 
 The `IBackgroundWorker` interface defines a contract for background task execution in the GPS tracker protocol system. It provides a standardized way to manage asynchronous background operations with proper lifecycle handling through start and stop methods, enabling reliable task execution in long-running applications.
