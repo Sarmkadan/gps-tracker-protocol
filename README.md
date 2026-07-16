@@ -138,6 +138,93 @@ dotnet run -- simulate device-001 20
 dotnet run -- fleet
 ```
 
+## IAnalyticsService
+
+The `IAnalyticsService` interface provides functionality for computing analytics and statistics for GPS tracker devices and fleets. It aggregates location data, journey information, and device metrics to generate comprehensive reports including device-specific analytics, fleet-wide statistics, and route analysis.
+
+Example usage in code:
+```csharp
+using GpsTrackerProtocol.Services;
+using GpsTrackerProtocol.Domain.Models;
+
+public class AnalyticsServiceExample
+{
+    private readonly IAnalyticsService _analyticsService;
+
+    public AnalyticsServiceExample(IAnalyticsService analyticsService)
+    {
+        _analyticsService = analyticsService;
+    }
+
+    public async Task ComputeDeviceAnalyticsAsync(string deviceId)
+    {
+        // Get analytics for a specific device
+        var deviceAnalytics = await _analyticsService.GetDeviceAnalyticsAsync(deviceId);
+        
+        Console.WriteLine($"Device Analytics for {deviceAnalytics.DeviceId}:");
+        Console.WriteLine($"  Total Journeys: {deviceAnalytics.TotalJourneys}");
+        Console.WriteLine($"  Total Distance: {deviceAnalytics.TotalDistance:F2} km");
+        Console.WriteLine($"  Total Duration: {deviceAnalytics.TotalDurationHours:F2} hours");
+        Console.WriteLine($"  Average Speed: {deviceAnalytics.AverageSpeed:F2} km/h");
+        Console.WriteLine($"  Max Speed: {deviceAnalytics.MaxSpeed:F2} km/h");
+        Console.WriteLine($"  Min Speed: {deviceAnalytics.MinSpeed:F2} km/h");
+        Console.WriteLine($"  Total Location Points: {deviceAnalytics.TotalLocationPoints}");
+        Console.WriteLine($"  Average Satellites: {deviceAnalytics.AverageSatellites:F1}");
+        Console.WriteLine($"  Computed At: {deviceAnalytics.ComputedAt:u}");
+    }
+
+    public async Task ComputeFleetAnalyticsAsync()
+    {
+        // Get analytics for the entire fleet
+        var fleetAnalytics = await _analyticsService.GetFleetAnalyticsAsync();
+        
+        Console.WriteLine("Fleet Analytics:");
+        Console.WriteLine($"  Total Devices: {fleetAnalytics.TotalDevices}");
+        Console.WriteLine($"  Active Devices: {fleetAnalytics.ActiveDevices}");
+        Console.WriteLine($"  Total Distance: {fleetAnalytics.TotalDistance:F2} km");
+        Console.WriteLine($"  Total Locations: {fleetAnalytics.TotalLocations}");
+        Console.WriteLine($"  Average Fleet Speed: {fleetAnalytics.AverageFleetSpeed:F2} km/h");
+        Console.WriteLine($"  Computed At: {fleetAnalytics.ComputedAt:u}");
+        Console.WriteLine($"  Device Analytics Count: {fleetAnalytics.DeviceAnalytics.Count}");
+    }
+
+    public async Task ComputeRouteAnalyticsAsync(string journeyId)
+    {
+        // Get analytics for a specific route/journey
+        var routeAnalytics = await _analyticsService.GetRouteAnalyticsAsync(journeyId);
+        
+        Console.WriteLine($"Route Analytics for Journey {routeAnalytics.JourneyId}:");
+        Console.WriteLine($"  Device: {routeAnalytics.DeviceId}");
+        Console.WriteLine($"  Duration: {routeAnalytics.Duration.TotalMinutes:F0} minutes");
+        Console.WriteLine($"  Distance: {routeAnalytics.TotalDistance:F2} km");
+        Console.WriteLine($"  Waypoints: {routeAnalytics.WaypointCount}");
+        Console.WriteLine($"  Average Speed: {routeAnalytics.AverageSpeed:F2} km/h");
+        Console.WriteLine($"  Max Speed: {routeAnalytics.MaxSpeed:F2} km/h");
+        Console.WriteLine($"  Min Speed: {routeAnalytics.MinSpeed:F2} km/h");
+        Console.WriteLine($"  Altitude Range: {routeAnalytics.MinAltitude:F0}m - {routeAnalytics.MaxAltitude:F0}m");
+    }
+
+    public static async Task Main(string[] args)
+    {
+        // Example with direct service instantiation
+        var analyticsService = new AnalyticsService(
+            new LocationDataService(new UnitOfWork()),
+            new JourneyService(new UnitOfWork()),
+            new DeviceService(new UnitOfWork()),
+            new Logger<AnalyticsService>(new LoggerFactory())
+        );
+
+        Console.WriteLine("Starting analytics example...");
+        var example = new AnalyticsServiceExample(analyticsService);
+        
+        await example.ComputeDeviceAnalyticsAsync("device-001");
+        await example.ComputeFleetAnalyticsAsync();
+        
+        Console.WriteLine("Analytics example completed!");
+    }
+}
+```
+
 ## IJourneyService
 
 The `IJourneyService` interface provides functionality for managing GPS device journeys and tracking trips. It allows starting new journeys, adding waypoints during journeys, completing journeys, and retrieving journey history. The service also provides utility methods for calculating total distance traveled and cleaning up old journey records.
