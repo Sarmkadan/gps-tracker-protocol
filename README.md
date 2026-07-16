@@ -841,6 +841,126 @@ public class LocationAggregationWorkerExample
 }
 ```
 
+## IBackgroundWorker
+
+The `IBackgroundWorker` interface defines a contract for background task execution in the GPS tracker protocol system. It provides a standardized way to manage asynchronous background operations with proper lifecycle handling through start and stop methods, enabling reliable task execution in long-running applications.
+
+Background workers are used for periodic tasks such as data aggregation, cleanup operations, health monitoring, and other recurring jobs that need to run without blocking the main application flow.
+
+### Public Members
+
+- `Task StartAsync(CancellationToken cancellationToken)` - Starts the background worker execution
+- `Task StopAsync()` - Gracefully stops the background worker
+- `string WorkerName { get; }` - Gets the name/identifier of the worker
+
+### Usage Example
+
+```csharp
+using GpsTrackerProtocol.BackgroundWorkers;
+using Microsoft.Extensions.Logging;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
+
+public class SampleBackgroundWorker : IBackgroundWorker
+{
+    private readonly ILogger<SampleBackgroundWorker> _logger;
+    private CancellationTokenSource _cancellationTokenSource;
+    private Task _executionTask;
+
+    public SampleBackgroundWorker(ILogger<SampleBackgroundWorker> logger)
+    {
+        _logger = logger;
+        WorkerName = "SampleDataProcessor";
+    }
+
+    public string WorkerName { get; }
+
+    public Task StartAsync(CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("Starting background worker: {WorkerName}", WorkerName);
+        
+        _cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        _executionTask = ExecuteWorkAsync(_cancellationTokenSource.Token);
+        
+        return Task.CompletedTask;
+    }
+
+    public async Task StopAsync()
+    {
+        _logger.LogInformation("Stopping background worker: {WorkerName}", WorkerName);
+        
+        _cancellationTokenSource?.Cancel();
+        if (_executionTask != null)
+        {
+            await _executionTask.ConfigureAwait(false);
+        }
+    }
+
+    private async Task ExecuteWorkAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                // Perform background work here
+                _logger.LogInformation("Worker {WorkerName} is processing data...", WorkerName);
+                
+                // Simulate work
+                await Task.Delay(TimeSpan.FromSeconds(30), cancellationToken).ConfigureAwait(false);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            _logger.LogInformation("Worker {WorkerName} was cancelled", WorkerName);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in worker {WorkerName}", WorkerName);
+        }
+    }
+}
+
+// Usage with BackgroundProcessingService
+public class WorkerManagementExample
+{
+    private readonly IBackgroundProcessingService _backgroundService;
+    private readonly ILoggerFactory _loggerFactory;
+
+    public WorkerManagementExample(IBackgroundProcessingService backgroundService, ILoggerFactory loggerFactory)
+    {
+        _backgroundService = backgroundService;
+        _loggerFactory = loggerFactory;
+    }
+
+    public void SetupBackgroundWorkers()
+    {
+        // Create and register workers
+        var sampleWorker = new SampleBackgroundWorker(_loggerFactory.CreateLogger<SampleBackgroundWorker>());
+        var anotherWorker = new AnotherWorker(_loggerFactory.CreateLogger<AnotherWorker>());
+        
+        _backgroundService.RegisterWorker(sampleWorker);
+        _backgroundService.RegisterWorker(anotherWorker);
+        
+        Console.WriteLine("Registered workers:");
+        Console.WriteLine($"- {sampleWorker.WorkerName}");
+        Console.WriteLine($"- {anotherWorker.WorkerName}");
+    }
+
+    public async Task StartBackgroundProcessingAsync()
+    {
+        // Start all registered workers
+        await _backgroundService.StartAllWorkersAsync(CancellationToken.None);
+    }
+
+    public async Task StopBackgroundProcessingAsync()
+    {
+        // Gracefully stop all workers
+        await _backgroundService.StopAllWorkersAsync();
+    }
+}
+```
+
 ## ReplayOptions
 
 The `ReplayOptions` class provides configuration for replaying recorded GPS tracker route data. It allows customization of replay behavior including speed adjustments, time rebasing, frame selection, and tracking metadata preservation. This is useful for testing, debugging, and demonstrating route playback scenarios.
