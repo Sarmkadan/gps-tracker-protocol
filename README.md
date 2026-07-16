@@ -66,6 +66,94 @@ dotnet run -- json locations.json
 dotnet run -- devices devices.csv
 ```
 
+## ILocationDataService
+
+The `ILocationDataService` interface provides functionality for storing, retrieving, and analyzing GPS location data from tracking devices. It handles operations such as storing new location points, retrieving historical data, finding nearby locations, calculating travel distances, and cleaning up old data records.
+
+Example usage in code:
+
+```csharp
+using GpsTrackerProtocol.Domain.Models;
+using GpsTrackerProtocol.Services;
+
+public class LocationDataServiceExample
+{
+    private readonly ILocationDataService _locationDataService;
+
+    public LocationDataServiceExample(ILocationDataService locationDataService)
+    {
+        _locationDataService = locationDataService;
+    }
+
+    public async Task ManageLocationDataAsync(string deviceId)
+    {
+        // Store a new location
+        var currentLocation = new LocationData
+        {
+            DeviceId = deviceId,
+            Latitude = 40.7128,
+            Longitude = -74.0060,
+            Timestamp = DateTime.UtcNow,
+            Speed = 65.5,
+            Altitude = 100.0,
+            Satellites = 8,
+            HDOP = 1.2
+        };
+
+        var storedLocation = await _locationDataService.StoreLocationAsync(currentLocation);
+        Console.WriteLine($"Stored location at {storedLocation.Timestamp:u}");
+
+        // Get the latest location for a device
+        var latestLocation = await _locationDataService.GetLatestLocationAsync(deviceId);
+        Console.WriteLine(latestLocation != null
+            ? $"Latest location: Lat={latestLocation.Latitude:F4}, Lon={latestLocation.Longitude:F4}"
+            : "No location data found");
+
+        // Get location history with limit
+        var locationHistory = await _locationDataService.GetLocationHistoryAsync(deviceId, limit: 50);
+        Console.WriteLine($"Retrieved {locationHistory.Count()} historical locations");
+
+        // Get locations within a time range
+        var startTime = DateTime.UtcNow.AddHours(-24);
+        var endTime = DateTime.UtcNow;
+        var timeRangeLocations = await _locationDataService.GetLocationsByTimeRangeAsync(deviceId, startTime, endTime);
+        Console.WriteLine($"Locations in time range: {timeRangeLocations.Count()} points");
+
+        // Get locations nearby a specific point
+        var nearbyLocations = await _locationDataService.GetLocationsNearbyAsync(
+            latitude: 40.7128,
+            longitude: -74.0060,
+            radiusKm: 5.0);
+        Console.WriteLine($"Nearby locations (5km radius): {nearbyLocations.Count()} points");
+
+        // Calculate travel distance for a time period
+        var distanceKm = await _locationDataService.CalculateTravelDistanceAsync(
+            deviceId: deviceId,
+            start: DateTime.UtcNow.AddDays(-7),
+            end: DateTime.UtcNow);
+        Console.WriteLine($"Total travel distance: {distanceKm:F2} km");
+
+        // Cleanup old data
+        var cleanupCount = await _locationDataService.CleanupOldDataAsync(
+            olderThan: DateTime.UtcNow.AddDays(-90));
+        Console.WriteLine($"Cleaned up {cleanupCount} old location records");
+    }
+
+    public static async Task Main(string[] args)
+    {
+        // Example with direct service instantiation
+        var unitOfWork = new UnitOfWork();
+        var locationDataService = new LocationDataService(unitOfWork);
+
+        Console.WriteLine("Starting location data service example...");
+        var example = new LocationDataServiceExample(locationDataService);
+        await example.ManageLocationDataAsync("device-001");
+
+        Console.WriteLine("Location data service example completed!");
+    }
+}
+```
+
 ## DataExporter
 
 The `DataExporter` class provides functionality for exporting GPS location data to JSON, CSV, and GeoJSON formats. It supports exporting location history for specific devices or all devices, making it ideal for data analysis, reporting, and integration with mapping applications.
