@@ -78,34 +78,62 @@ public class DataExporterExample
 {
 public async Task ExportSampleDataAsync()
 {
-// Create exporter instance
-var exporter = new DataExporter();
+    // Create exporter instance
+    var exporter = new DataExporter();
 
-// Export locations to JSON format
-await exporter.ExportToJsonAsync("device-001", "locations.json");
+    // Export locations to JSON format
+    await exporter.ExportToJsonAsync("device-001", "locations.json");
 
-// Export locations to CSV format
-await exporter.ExportToCsvAsync("device-002", "track.csv");
+    // Export locations to CSV format
+    await exporter.ExportToCsvAsync("device-002", "track.csv");
 
-// Export locations to GeoJSON format (suitable for mapping libraries)
-await exporter.ExportToGeoJsonAsync("device-003", "map.geojson");
+    // Export locations to GeoJSON format (suitable for mapping libraries)
+    await exporter.ExportToGeoJsonAsync("device-003", "map.geojson");
 
-// Export all devices to JSON
-await exporter.ExportDevicesToJsonAsync("devices.json");
+    // Export all devices to JSON
+    await exporter.ExportDevicesToJsonAsync("devices.json");
 }
 
 public static async Task Main(string[] args)
 {
-Console.WriteLine("Starting data export...");
-var exporter = new DataExporter();
+    Console.WriteLine("Starting data export...");
+    var exporter = new DataExporter();
 
-// Export device locations to JSON
-await exporter.ExportToJsonAsync("device-001", "output.json");
+    // Export device locations to JSON
+    await exporter.ExportToJsonAsync("device-001", "output.json");
 
-Console.WriteLine("Data export completed successfully!");
+    Console.WriteLine("Data export completed successfully!");
 }
 }
 ```
 
 To run the exporter from command line:
 ```bash
+```
+
+## JourneyAnalyzer
+
+The `JourneyAnalyzer` class is a command‑line tool that analyzes device journeys, simulates new journeys, and generates fleet‑wide reports. It leverages the GPS tracker services to retrieve device data, compute distances, durations, and speeds, and logs detailed summaries.
+
+Example usage in code:
+```csharp
+using GpsTrackerProtocol.Services;
+
+var analyzer = new JourneyAnalyzer();
+
+// Analyze a single device
+await analyzer.AnalyzeDeviceAsync("device-001");
+
+// Simulate a journey with 15 waypoints
+await analyzer.SimulateJourneyAsync("device-001", 15);
+
+// Generate a fleet report for all devices
+await analyzer.GenerateFleetReportAsync();
+```
+
+Example usage from the command line (the `Main` method parses arguments):
+```bash
+dotnet run -- analyze device-001
+dotnet run -- simulate device-001 20
+dotnet run -- fleet
+```
