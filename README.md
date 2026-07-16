@@ -444,6 +444,72 @@ public class DeviceDiagnosticsReportExample
         Console.WriteLine($"Active journeys: {report.ActiveJourneys}/{report.TotalJourneys}");
     }
 }
+
+## GeofenceAlertRule
+
+The `GeofenceAlertRule` class defines rules that trigger alerts when GPS tracking devices cross geofence boundaries. Rules are evaluated against each incoming location update to determine if an alert should be raised based on the specified boundary crossing type (entry, exit, or both). Each rule includes configurable properties such as cooldown periods to prevent alert spam, enabling/disabling rules, and descriptive metadata for operational clarity.
+
+### Usage Example
+
+```csharp
+using System;
+using GpsTrackerProtocol.Domain.Models;
+
+public class GeofenceAlertRuleExample
+{
+    public void ConfigureGeofenceAlertRules()
+    {
+        // Create a rule for monitoring entry into a restricted geofence
+        var entryRule = new GeofenceAlertRule
+        {
+            DeviceId = "TRK-001",
+            GeofenceId = "restricted-zone-alpha",
+            AlertType = GeofenceAlertType.Entered,
+            Cooldown = TimeSpan.FromMinutes(10),
+            IsEnabled = true,
+            Description = "Alert when vehicle enters restricted zone Alpha",
+            CreatedAt = DateTime.UtcNow
+        };
+
+        // Create a rule for monitoring exit from a secure perimeter
+        var exitRule = new GeofenceAlertRule
+        {
+            DeviceId = "TRK-002",
+            GeofenceId = "secure-perimeter-zone",
+            AlertType = GeofenceAlertType.Exited,
+            Cooldown = TimeSpan.FromMinutes(5),
+            IsEnabled = true,
+            Description = "Alert when vehicle exits secure perimeter",
+            CreatedAt = DateTime.UtcNow
+        };
+
+        // Create a rule that monitors both entry and exit
+        var boundaryRule = new GeofenceAlertRule
+        {
+            DeviceId = "TRK-003",
+            GeofenceId = "construction-zone",
+            AlertType = GeofenceAlertType.Entered | GeofenceAlertType.Exited,
+            Cooldown = TimeSpan.FromMinutes(15),
+            IsEnabled = true,
+            Description = "Alert on both entry and exit from construction zone",
+            CreatedAt = DateTime.UtcNow
+        };
+
+        // Disable a rule temporarily
+        var temporaryRule = new GeofenceAlertRule
+        {
+            DeviceId = "TRK-004",
+            GeofenceId = "maintenance-yard",
+            AlertType = GeofenceAlertType.Entered,
+            IsEnabled = false, // Rule is currently disabled
+            Description = "Temporarily disabled maintenance yard monitoring"
+        };
+
+        Console.WriteLine($"Created rule {entryRule.Id} for device {entryRule.DeviceId}");
+        Console.WriteLine($"Rule description: {entryRule.Description}");
+        Console.WriteLine($"Cooldown period: {entryRule.Cooldown.TotalMinutes} minutes");
+    }
+}
 ```
 
 ## Command
