@@ -942,6 +942,98 @@ public class GeofenceServiceExample
 }
 ```
 
+## IProtocolHandler
+
+The `IProtocolHandler` interface defines the contract for parsing and processing GPS tracker protocol data. Each protocol handler is responsible for:
+
+- Identifying its supported protocol type via the `Protocol` property
+- Determining if incoming data matches the protocol signature using `CanHandle(byte[] preamble)`
+- Parsing raw device data into structured `GpsFrame` objects via `CreateFrameAsync(byte[] data, string sourceAddress)`
+
+Protocol handlers are registered with the `ProtocolAutoDetector` service, which uses the `CanHandle` method to route incoming data to the appropriate handler based on protocol signatures.
+
+Example usage in code:
+
+```csharp
+using GpsTrackerProtocol.Domain;
+using GpsTrackerProtocol.Domain.Models;
+using GpsTrackerProtocol.Services;
+using Microsoft.Extensions.Logging;
+
+public class ProtocolHandlerExample
+{
+    private readonly IProtocolAutoDetector _protocolAutoDetector;
+    private readonly ILogger<ProtocolHandlerExample> _logger;
+
+    public ProtocolHandlerExample(IProtocolAutoDetector protocolAutoDetector, ILogger<ProtocolHandlerExample> logger)
+    {
+        _protocolAutoDetector = protocolAutoDetector;
+        _logger = logger;
+    }
+
+    public async Task ProcessIncomingDataAsync(byte[] rawData, string sourceAddress)
+    {
+        // Detect the protocol from the first few bytes
+        var detectedProtocol = _protocolAutoDetector.Detect(rawData);
+        _logger.LogInformation("Detected protocol: {Protocol}", detectedProtocol);
+
+        // Get the appropriate handler for this protocol
+        var handler = _protocolAutoDetector.GetHandler(rawData);
+        
+        if (handler != null)
+        {
+            // Create a structured GPS frame from the raw data
+            var gpsFrame = await handler.CreateFrameAsync(rawData, sourceAddress);
+            
+            _logger.LogInformation("Created GPS frame for protocol {Protocol} from {Source}", 
+                gpsFrame.Protocol, gpsFrame.SourceAddress);
+            _logger.LogInformation("Frame contains {DataLength} bytes received at {ReceivedAt}",
+                gpsFrame.RawData.Length, gpsFrame.ReceivedAt);
+        }
+        else
+        {
+            _logger.LogWarning("No handler found for protocol type: {Protocol}", detectedProtocol);
+        }
+    }
+
+    public static async Task Main(string[] args)
+    {
+        // Setup example with direct service instantiation
+        var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+        var logger = loggerFactory.CreateLogger<ProtocolHandlerExample>();
+        
+        // Create protocol handlers for supported protocols
+        var gt06Handler = new GT06ProtocolHandler();
+        var h02Handler = new H02ProtocolHandler();
+        var tk103Handler = new TK103ProtocolHandler();
+        
+        // Create the protocol auto-detector with registered handlers
+        var protocolAutoDetector = new ProtocolAutoDetector(
+            new List<IProtocolHandler> { gt06Handler, h02Handler, tk103Handler },
+            loggerFactory.CreateLogger<ProtocolAutoDetector>(),
+            ProtocolType.GT06 // Default protocol if no match found
+        );
+
+        var example = new ProtocolHandlerExample(protocolAutoDetector, logger);
+        
+        // Example 1: GT06 protocol data (starts with 0x78 0x78)
+        var gt06Data = new byte[] { 0x78, 0x78, 0x01, 0x02, 0x03, 0x04 };
+        await example.ProcessIncomingDataAsync(gt06Data, "192.168.1.100:5000");
+        
+        // Example 2: H02 protocol data (starts with *HQ)
+        var h02Data = System.Text.Encoding.ASCII.GetBytes("*HQ,123456,1234,123456,0,1,1,110129.083211,A,3642.7718,N,13929.8534,E,0.000,0.00,0,120312,FFFFFBFF,1,25,2,1,1,1,1,1,1,1,1*3B");
+        await example.ProcessIncomingDataAsync(h02Data, "192.168.1.101:5001");
+        
+        // Example 3: TK103 protocol data (starts with '(')
+        var tk103Data = System.Text.Encoding.ASCII.GetBytes("(123456789012345,GPRMC,120312,083211,A,3642.7718,N,13929.8534,E,0.000,0.00,0,120312,0,0,0*7D");
+        await example.ProcessIncomingDataAsync(tk103Data, "192.168.1.102:5002");
+        
+        Console.WriteLine("Protocol handler example completed!");
+    }
+}
+
+```
+
 ## ICommandService
 
 The `ICommandService` interface provides functionality for managing device commands in the GPS tracker system. It allows creating commands, retrieving command history, executing commands, handling command failures, and cleaning up old command records. The service supports both modern repository pattern and legacy repository implementations.
