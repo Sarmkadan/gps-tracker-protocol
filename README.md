@@ -319,6 +319,73 @@ The `IJourneyService` interface provides functionality for managing GPS device j
 
 Example usage in code:
 
+## IGeofenceService
+
+The `IGeofenceService` interface provides functionality for managing geographic boundary zones (geofences) and detecting when GPS devices enter or exit these zones. It allows adding circular geofences with specified centers and radii, checking if a location is inside a geofence, and finding nearby geofences for a given location.
+
+Example usage in code:
+
+```csharp
+using GpsTrackerProtocol.Services;
+using Microsoft.Extensions.Logging;
+
+public class GeofenceServiceExample
+{
+    private readonly IGeofenceService _geofenceService;
+
+    public GeofenceServiceExample(IGeofenceService geofenceService)
+    {
+        _geofenceService = geofenceService;
+    }
+
+    public void ManageGeofences()
+    {
+        // Add a geofence for a warehouse location
+        _geofenceService.AddGeofence(
+            id: "warehouse-nyc",
+            centerLat: 40.7128,
+            centerLon: -74.0060,
+            radiusKm: 2.5);
+
+        // Add another geofence for a delivery zone
+        _geofenceService.AddGeofence(
+            id: "delivery-zone",
+            centerLat: 40.7306,
+            centerLon: -73.9352,
+            radiusKm: 5.0);
+
+        // Check if a device is inside a specific geofence
+        bool isInside = _geofenceService.IsInsideGeofence(
+            geofenceId: "warehouse-nyc",
+            latitude: 40.7150,
+            longitude: -74.0075);
+        
+        Console.WriteLine($"Device is inside warehouse geofence: {isInside}");
+
+        // Get all geofences within a search radius of a location
+        var nearbyGeofences = _geofenceService.GetNearbyGeofences(
+            latitude: 40.7200,
+            longitude: -73.9900,
+            searchRadiusKm: 10.0);
+
+        Console.WriteLine($"Nearby geofences: {string.Join(", ", nearbyGeofences)}");
+    }
+
+    public static void Main(string[] args)
+    {
+        // Example with direct service instantiation
+        var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+        var geofenceService = new GeofenceService(loggerFactory.CreateLogger<GeofenceService>());
+
+        Console.WriteLine("Starting geofence service example...");
+        var example = new GeofenceServiceExample(geofenceService);
+        example.ManageGeofences();
+
+        Console.WriteLine("Geofence service example completed!");
+    }
+}
+```
+
 ## ICommandService
 
 The `ICommandService` interface provides functionality for managing device commands in the GPS tracker system. It allows creating commands, retrieving command history, executing commands, handling command failures, and cleaning up old command records. The service supports both modern repository pattern and legacy repository implementations.
