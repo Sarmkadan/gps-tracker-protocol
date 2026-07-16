@@ -439,6 +439,131 @@ The `IGeofenceService` interface provides functionality for managing geographic 
 Example usage in code:
 
 ```csharp
+
+## IGeofenceAlertingService
+
+The `IGeofenceAlertingService` interface manages geofence alert rules and the alerts they produce. It allows creating alert rules that trigger when devices cross geofence boundaries, retrieving active and historical alerts, and acknowledging alerts once they've been addressed.
+
+Example usage in code:
+
+```csharp
+using GpsTrackerProtocol.Services;
+using GpsTrackerProtocol.Domain.Models;
+using GpsTrackerProtocol.Events;
+using Microsoft.Extensions.Logging;
+
+public class GeofenceAlertingServiceExample
+{
+    private readonly IGeofenceAlertingService _geofenceAlertingService;
+    private readonly IGeofenceService _geofenceService;
+    private readonly IEventPublisher _eventPublisher;
+
+    public GeofenceAlertingServiceExample(
+        IGeofenceAlertingService geofenceAlertingService,
+        IGeofenceService geofenceService,
+        IEventPublisher eventPublisher)
+    {
+        _geofenceAlertingService = geofenceAlertingService;
+        _geofenceService = geofenceService;
+        _eventPublisher = eventPublisher;
+    }
+
+    public void SetupAlertRules()
+    {
+        // Create a geofence for a restricted area
+        _geofenceService.AddGeofence(
+            id: "restricted-zone",
+            centerLat: 40.7128,
+            centerLon: -74.0060,
+            radiusKm: 1.0);
+
+        // Create an alert rule for when device enters the restricted zone
+        var enterRule = _geofenceAlertingService.CreateAlertRule(
+            deviceId: "truck-001",
+            geofenceId: "restricted-zone",
+            alertType: GeofenceAlertType.Enter,
+            cooldown: TimeSpan.FromMinutes(10),
+            description: "Alert when truck enters restricted zone");
+
+        Console.WriteLine($"Created enter alert rule: {enterRule.Id}");
+
+        // Create an alert rule for when device exits the restricted zone
+        var exitRule = _geofenceAlertingService.CreateAlertRule(
+            deviceId: "truck-001",
+            geofenceId: "restricted-zone",
+            alertType: GeofenceAlertType.Exit,
+            cooldown: TimeSpan.FromMinutes(10),
+            description: "Alert when truck exits restricted zone");
+
+        Console.WriteLine($"Created exit alert rule: {exitRule.Id}");
+    }
+
+    public void CheckActiveAlerts(string deviceId)
+    {
+        // Get all active alerts for a device
+        var activeAlerts = _geofenceAlertingService.GetActiveAlerts(deviceId);
+        Console.WriteLine($"Active alerts for {deviceId}: {activeAlerts.Count}");
+
+        foreach (var alert in activeAlerts)
+        {
+            Console.WriteLine($"  Alert {alert.Id}: {alert.AlertType} at {alert.FiredAt:u}");
+        }
+    }
+
+    public void CheckAlertHistory(string deviceId)
+    {
+        // Get recent alert history
+        var alertHistory = _geofenceAlertingService.GetAlertHistory(deviceId, limit: 10);
+        Console.WriteLine($"Alert history for {deviceId}: {alertHistory.Count} entries");
+
+        foreach (var alert in alertHistory)
+        {
+            Console.WriteLine($"  {alert.FiredAt:u}: {alert.AlertType} - {alert.Status}");
+        }
+    }
+
+    public void AcknowledgeAlert(string alertId)
+    {
+        // Acknowledge an alert once it's been addressed
+        bool acknowledged = _geofenceAlertingService.AcknowledgeAlert(
+            alertId: alertId,
+            notes: "False alarm - driver had permission to enter");
+        
+        Console.WriteLine($"Alert {alertId} acknowledged: {acknowledged}");
+    }
+
+    public void DeleteAlertRuleExample(string ruleId)
+    {
+        // Remove an alert rule
+        _geofenceAlertingService.DeleteAlertRule(ruleId);
+        Console.WriteLine($"Alert rule {ruleId} deleted");
+    }
+
+    public static void Main(string[] args)
+    {
+        // Setup example with direct service instantiation
+        var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+        var eventPublisher = new EventPublisher();
+        var geofenceService = new GeofenceService(loggerFactory.CreateLogger<GeofenceService>());
+        var geofenceAlertingService = new GeofenceAlertingService(eventPublisher, 
+            loggerFactory.CreateLogger<GeofenceAlertingService>());
+
+        Console.WriteLine("Starting geofence alerting service example...");
+        var example = new GeofenceAlertingServiceExample(
+            geofenceAlertingService, 
+            geofenceService, 
+            eventPublisher);
+        
+        example.SetupAlertRules();
+        example.CheckActiveAlerts("truck-001");
+        example.CheckAlertHistory("truck-001");
+
+        Console.WriteLine("Geofence alerting service example completed!");
+    }
+}
+```
+
+## IGeofenceService
 using GpsTrackerProtocol.Services;
 using Microsoft.Extensions.Logging;
 
