@@ -1349,3 +1349,123 @@ public class JourneyServiceExample
     }
 }
 ```
+
+## InMemoryDeviceRepository
+
+The `InMemoryDeviceRepository` class provides an in-memory implementation of the `IDeviceRepository` interface, designed for testing, prototyping, and demonstration purposes. It extends the base `InMemoryRepository<Device>` class with device-specific query methods that allow filtering devices by IMEI, status, protocol type, and active state.
+
+This repository uses thread-safe operations with `ReaderWriterLockSlim` for concurrent access and supports all standard CRUD operations along with specialized device management methods.
+
+Example usage for device management:
+
+```csharp
+using GpsTrackerProtocol.Data;
+using GpsTrackerProtocol.Domain.Models;
+
+public class InMemoryDeviceRepositoryExample
+{
+public async Task ManageDevicesAsync()
+{
+// Create repository instance
+var deviceRepository = new InMemoryDeviceRepository();
+
+// Register devices with different protocols and statuses
+var gpsDevice1 = new Device
+{
+Id = "device-001",
+Imei = "123456789012345",
+Name = "Truck GPS Unit #1",
+Model = "GT06",
+Protocol = ProtocolType.GT06,
+PhoneNumber = "+1234567890",
+Status = DeviceStatus.Active,
+LastHeartbeat = DateTime.UtcNow.AddMinutes(-5),
+CreatedAt = DateTime.UtcNow
+};
+
+var gpsDevice2 = new Device
+{
+Id = "device-002",
+Imei = "234567890123456",
+Name = "Van GPS Unit #2",
+Model = "H02",
+Protocol = ProtocolType.H02,
+PhoneNumber = "+1987654321",
+Status = DeviceStatus.Maintenance,
+LastHeartbeat = DateTime.UtcNow.AddHours(-2),
+CreatedAt = DateTime.UtcNow
+};
+
+var tk103Device = new Device
+{
+Id = "device-003",
+Imei = "345678901234567",
+Name = "Car GPS Tracker",
+Model = "TK103",
+Protocol = ProtocolType.TK103,
+PhoneNumber = "+15551234567",
+Status = DeviceStatus.Active,
+LastHeartbeat = DateTime.UtcNow.AddMinutes(-15),
+CreatedAt = DateTime.UtcNow
+};
+
+await deviceRepository.CreateAsync(gpsDevice1);
+await deviceRepository.CreateAsync(gpsDevice2);
+await deviceRepository.CreateAsync(tk103Device);
+
+Console.WriteLine("Created 3 GPS devices");
+
+// Retrieve devices by IMEI
+var deviceByImei = await deviceRepository.GetByImeiAsync("123456789012345");
+Console.WriteLine($"Device found by IMEI: {deviceByImei?.Name}");
+
+// Get all devices by status
+var activeDevices = await deviceRepository.GetByStatusAsync(DeviceStatus.Active);
+Console.WriteLine($"Active devices: {activeDevices.Count()}");
+
+var maintenanceDevices = await deviceRepository.GetByStatusAsync(DeviceStatus.Maintenance);
+Console.WriteLine($"Maintenance devices: {maintenanceDevices.Count()}");
+
+// Get devices by protocol type
+var gt06Devices = await deviceRepository.GetByProtocolAsync(ProtocolType.GT06);
+Console.WriteLine($"GT06 devices: {gt06Devices.Count()}");
+
+var h02Devices = await deviceRepository.GetByProtocolAsync(ProtocolType.H02);
+Console.WriteLine($"H02 devices: {h02Devices.Count()}");
+
+// Get active devices
+var activeOnlyDevices = await deviceRepository.GetActiveDevicesAsync();
+Console.WriteLine($"Active devices (IsActive): {activeOnlyDevices.Count()}");
+
+// Get total device count
+var totalCount = await deviceRepository.GetTotalCountAsync();
+Console.WriteLine($"Total devices in repository: {totalCount}");
+
+// Get offline devices (not seen for more than 1 hour)
+var offlineDevices = await deviceRepository.GetOfflineDevicesAsync(TimeSpan.FromHours(1));
+Console.WriteLine($"Offline devices: {offlineDevices.Count()}");
+
+// Update device status
+var deviceToUpdate = activeDevices.First();
+deviceToUpdate.Status = DeviceStatus.Maintenance;
+var updated = await deviceRepository.UpdateAsync(deviceToUpdate);
+Console.WriteLine($"Updated device {updated.Name} status to: {updated.Status}");
+
+// Delete a device
+var deleteSuccess = await deviceRepository.DeleteAsync("device-003");
+Console.WriteLine($"Device deletion successful: {deleteSuccess}");
+
+// Get remaining devices
+var remainingDevices = await deviceRepository.GetAllAsync();
+Console.WriteLine($"Remaining devices: {remainingDevices.Count()}");
+}
+
+public static async Task Main(string[] args)
+{
+Console.WriteLine("Starting InMemoryDeviceRepository example...");
+var example = new InMemoryDeviceRepositoryExample();
+await example.ManageDevicesAsync();
+Console.WriteLine("InMemoryDeviceRepository example completed!");
+}
+}
+```
