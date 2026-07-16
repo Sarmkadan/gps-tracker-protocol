@@ -1,5 +1,4 @@
 
-
 ## ProtocolBenchmarks
 
 The `ProtocolBenchmarks` class provides comprehensive benchmarking and performance testing capabilities for GPS tracker protocol parsing and processing. It includes methods for setting up test environments, parsing various protocol frames (GT06, H02, TK103), protocol detection, frame validation, location data storage and retrieval, batch processing, and generating analytics reports for device and fleet performance.
@@ -301,6 +300,52 @@ public class JsonFormatterExample
 
         ProtocolMessage deserialized = _formatter.Deserialize<ProtocolMessage>(jsonInput);
         Console.WriteLine($"Deserialized device: {deserialized.DeviceId}");
+    }
+}
+```
+
+## Command
+
+The `Command` class represents a specific instruction or request intended for a GPS tracking device, managing its lifecycle from creation to execution and potential retries. It encapsulates all necessary metadata, parameters, and state information, including tracking acknowledgment and transmission status, to ensure reliable delivery of commands to remote hardware.
+
+### Usage Example
+
+```csharp
+using System;
+using System.Collections.Generic;
+using GpsTrackerProtocol.Domain.Models;
+
+public class CommandExample
+{
+    public void ManageDeviceCommand()
+    {
+        // Create a new command
+        var command = new Command
+        {
+            DeviceId = "device-001",
+            Type = GpsTrackerProtocol.Domain.CommandType.RequestLocation,
+            Parameters = new Dictionary<string, object>(),
+            Priority = 1,
+            MaxRetries = 3
+        };
+
+        // Validate command structure
+        if (command.IsValid())
+        {
+            // Execute the command
+            command.Execute();
+            Console.WriteLine($"Command Executed: {command.Id} at {command.ExecutedAt}");
+            
+            // Format command for transmission
+            string formatted = command.ToFormattedCommand();
+            Console.WriteLine($"Formatted Command for Device: {formatted}");
+        }
+
+        // Handle retries
+        if (!command.IsAcknowledged && command.CanRetry())
+        {
+            Console.WriteLine($"Retrying command. Current retry count: {command.RetryCount}");
+        }
     }
 }
 ```
