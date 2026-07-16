@@ -766,6 +766,81 @@ public class FleetVehicleExample
 }
 ```
 
+## LocationAggregationWorker
+
+The `LocationAggregationWorker` class processes and aggregates GPS location data from tracking devices over specified time periods. It collects location points, calculates key metrics such as speed statistics and total distance traveled, and provides comprehensive aggregation results for fleet management and analytics purposes.
+
+This worker is essential for generating periodic reports and insights from raw GPS data streams.
+
+### Usage Example
+
+```csharp
+using GpsTrackerProtocol.BackgroundWorkers;
+using GpsTrackerProtocol.Domain.Models;
+using System;
+
+public class LocationAggregationWorkerExample
+{
+    public void AggregateLocationData()
+    {
+        // Create a location aggregation worker for a specific device and time period
+        var worker = new LocationAggregationWorker
+        {
+            DeviceId = "TRK-001",
+            AggregationTime = DateTime.UtcNow,
+            TimeSpan = TimeSpan.FromHours(1)
+        };
+
+        // Add location data points to aggregate
+        worker.AddLocation(new LocationData
+        {
+            DeviceId = "TRK-001",
+            Latitude = 51.5074,
+            Longitude = -0.1278,
+            Speed = 45.5,
+            Bearing = 90,
+            Timestamp = DateTime.UtcNow.AddMinutes(-55),
+            Altitude = 120.5
+        });
+
+        worker.AddLocation(new LocationData
+        {
+            DeviceId = "TRK-001",
+            Latitude = 51.5150,
+            Longitude = -0.1300,
+            Speed = 52.3,
+            Bearing = 120,
+            Timestamp = DateTime.UtcNow.AddMinutes(-50),
+            Altitude = 115.0
+        });
+
+        worker.AddLocation(new LocationData
+        {
+            DeviceId = "TRK-001",
+            Latitude = 51.5220,
+            Longitude = -0.1250,
+            Speed = 38.7,
+            Bearing = 150,
+            Timestamp = DateTime.UtcNow.AddMinutes(-45),
+            Altitude = 118.0
+        });
+
+        // Calculate aggregation metrics
+        worker.CalculateMetrics();
+
+        // Access aggregated results
+        Console.WriteLine($"Device: {worker.DeviceId}");
+        Console.WriteLine($"Aggregation time: {worker.AggregationTime}");
+        Console.WriteLine($"Time span: {worker.TimeSpan}");
+        Console.WriteLine($"Location count: {worker.LocationCount}");
+        Console.WriteLine($"Max speed: {worker.MaxSpeed:F1} km/h");
+        Console.WriteLine($"Min speed: {worker.MinSpeed:F1} km/h");
+        Console.WriteLine($"Average speed: {worker.AverageSpeed:F1} km/h");
+        Console.WriteLine($"Total distance: {worker.TotalDistance:F2} km");
+    }
+}
+```
+
 ## ReplayOptions
 
 The `ReplayOptions` class provides configuration for replaying recorded GPS tracker route data. It allows customization of replay behavior including speed adjustments, time rebasing, frame selection, and tracking metadata preservation. This is useful for testing, debugging, and demonstrating route playback scenarios.
