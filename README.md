@@ -640,6 +640,84 @@ public class DeviceExample
 }
 ```
 
+## GpsFrame
+
+The `GpsFrame` class represents a raw GPS protocol frame before parsing, capturing the complete data packet received from a GPS tracking device. It stores the original binary data along with metadata such as protocol type, source information, and checksum validation status. This class is essential for protocol parsing pipelines and debugging scenarios where raw frame inspection is required.
+
+### Public Members
+
+- `string FrameId` - Unique identifier for the frame
+- `ProtocolType Protocol` - GPS protocol type (GT06, H02, TK103, etc.)
+- `byte[] RawData` - Raw binary data received from the device
+- `DateTime ReceivedAt` - When the frame was received
+- `string SourceAddress` - IP address or identifier of the source device
+- `int SourcePort` - Port number where frame was received
+- `bool IsValidChecksum` - Whether frame checksum validation passed
+- `string? ChecksumValue` - The extracted checksum value
+- `Dictionary<string, string> Headers` - Additional frame headers/metadata
+- `bool IsValid()` - Validates frame structure and integrity
+- `string ToHex()` - Gets hex representation of raw data
+- `byte[] ExtractBytes(int offset, int length)` - Extracts bytes from raw data
+- `string ExtractString(int offset, int length, bool reverseBytes = false)` - Extracts string from raw data
+- `override string ToString()` - String representation
+
+### Usage Example
+
+```csharp
+using GpsTrackerProtocol.Domain.Models;
+using System;
+
+public class GpsFrameExample
+{
+    public void ProcessGpsFrame()
+    {
+        // Create a GPS frame from raw device data
+        var frame = new GpsFrame
+        {
+            FrameId = "GT06-20240716-001",
+            Protocol = ProtocolType.GT06,
+            RawData = new byte[] { 0x78, 0x78, 0x0D, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C },
+            ReceivedAt = DateTime.UtcNow,
+            SourceAddress = "192.168.1.100",
+            SourcePort = 5000,
+            IsValidChecksum = true,
+            ChecksumValue = "A1B2",
+            Headers = new Dictionary<string, string>
+            {
+                { "device_id", "TRK-001" },
+                { "protocol_version", "2.1" },
+                { "packet_type", "location_update" }
+            }
+        };
+
+        // Validate frame structure
+        bool isValid = frame.IsValid();
+        Console.WriteLine($"Frame validation: {isValid}");
+
+        // Get hex representation of raw data
+        string hexData = frame.ToHex();
+        Console.WriteLine($"Raw data (hex): {hexData}");
+
+        // Extract specific bytes from the frame
+        byte[] extractedBytes = frame.ExtractBytes(3, 4);
+        Console.WriteLine($"Extracted bytes: [{string.Join(", ", extractedBytes)}]");
+
+        // Extract string data
+        string deviceId = frame.ExtractString(3, 4);
+        Console.WriteLine($"Device ID: {deviceId}");
+
+        // Access frame properties
+        Console.WriteLine($"Frame received from {frame.SourceAddress}:{frame.SourcePort}");
+        Console.WriteLine($"Protocol: {frame.Protocol}");
+        Console.WriteLine($"Frame size: {frame.RawData.Length} bytes");
+        Console.WriteLine($"Checksum valid: {frame.IsValidChecksum}");
+
+        // String representation
+        Console.WriteLine($"Frame info: {frame}");
+    }
+}
+```
+
 ## ReplayOptions
 
 The `ReplayOptions` class provides configuration for replaying recorded GPS tracker route data. It allows customization of replay behavior including speed adjustments, time rebasing, frame selection, and tracking metadata preservation. This is useful for testing, debugging, and demonstrating route playback scenarios.
