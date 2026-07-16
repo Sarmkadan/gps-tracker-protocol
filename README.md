@@ -138,3 +138,69 @@ public class GeoJsonFormatterExample
     }
 }
 ```
+
+## IJsonFormatter
+
+The `IJsonFormatter` interface provides methods for serializing and deserializing GPS tracker protocol messages into JSON format. It supports formatting protocol frames, raw data, and device messages for logging, storage, or transmission over APIs.
+
+Example usage for JSON formatting and parsing:
+
+```csharp
+using GpsTrackerProtocol.Formatting;
+using GpsTrackerProtocol.Domain.Models;
+
+public class JsonFormatterExample
+{
+    private readonly IJsonFormatter _formatter;
+
+    public JsonFormatterExample(IJsonFormatter formatter)
+    {
+        _formatter = formatter;
+    }
+
+    public void FormatProtocolMessage()
+    {
+        // Create a protocol message with location data
+        var message = new ProtocolMessage
+        {
+            DeviceId = "TRK-001",
+            Timestamp = DateTime.UtcNow.ToString("o"),
+            Latitude = 40.7128,
+            Longitude = -74.0060,
+            Speed = 25.5,
+            Bearing = 180,
+            Altitude = 10.2,
+            Accuracy = 5.8,
+            SatelliteCount = 12,
+            Protocol = "GT06",
+            FrameId = "GT06-20240716-001",
+            RawDataHex = "78780D010203040506070809",
+            ReceivedAt = DateTime.UtcNow.ToString("o")
+        };
+
+        // Serialize to JSON
+        string jsonOutput = _formatter.Format(message);
+        Console.WriteLine(jsonOutput);
+
+        // Deserialize back from JSON
+        string jsonInput = @"{
+            \"DeviceId\": \"TRK-001\",
+            \"Timestamp\": \"2024-07-16T14:30:00.0000000Z\",
+            \"Latitude\": 40.7128,
+            \"Longitude\": -74.0060,
+            \"Speed\": 25.5,
+            \"Bearing\": 180,
+            \"Altitude\": 10.2,
+            \"Accuracy\": 5.8,
+            \"SatelliteCount\": 12,
+            \"Protocol\": \"GT06\",
+            \"FrameId\": \"GT06-20240716-001\",
+            \"RawDataHex\": \"78780D010203040506070809\",
+            \"ReceivedAt\": \"2024-07-16T14:30:00.0000000Z\"
+        }";
+
+        ProtocolMessage deserialized = _formatter.Deserialize<ProtocolMessage>(jsonInput);
+        Console.WriteLine($"Deserialized device: {deserialized.DeviceId}");
+    }
+}
+```
