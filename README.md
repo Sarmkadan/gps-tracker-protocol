@@ -741,3 +741,101 @@ public class CommandExample
     }
 }
 ```
+
+## Journey
+
+The `Journey` class represents a trip or journey containing multiple location data points collected from a GPS tracking device. It tracks the complete lifecycle of a vehicle's movement from start to finish, including waypoints, timing information, and calculated metrics like distance traveled, average speed, and duration. Journeys are useful for route analysis, fleet management, and historical reporting.
+
+### Public Members
+
+- `string Id` - Unique identifier for the journey
+- `string DeviceId` - Identifier of the GPS device
+- `DateTime StartTime` - When the journey started
+- `DateTime? EndTime` - When the journey ended (null if ongoing)
+- `List<LocationData> Waypoints` - Collection of location points in the journey
+- `int Status` - Journey status (0: ongoing, 1: completed, 2: abandoned)
+- `Dictionary<string, object> Metadata` - Additional custom data storage
+- `void AddWaypoint(LocationData location)` - Adds a location to the journey
+- `double GetTotalDistance()` - Calculates total distance traveled in kilometers
+- `double GetAverageSpeed()` - Calculates average speed in km/h
+- `double GetMaxSpeed()` - Gets maximum speed recorded in km/h
+- `TimeSpan GetDuration()` - Gets journey duration
+- `void Complete()` - Marks journey as completed and calculates metrics
+- `override string ToString()` - String representation
+
+### Usage Example
+
+```csharp
+using System;
+using GpsTrackerProtocol.Domain.Models;
+
+public class JourneyExample
+{
+  public void TrackVehicleJourney()
+  {
+    // Create a new journey for a vehicle
+    var journey = new Journey
+    {
+      DeviceId = "TRK-001",
+      StartTime = DateTime.UtcNow.AddMinutes(-30),
+      Status = 0 // ongoing
+    };
+
+    // Add waypoints to the journey
+    journey.AddWaypoint(new LocationData
+    {
+      DeviceId = "TRK-001",
+      Latitude = 51.5074,
+      Longitude = -0.1278,
+      Speed = 45.5,
+      Bearing = 90,
+      Timestamp = DateTime.UtcNow.AddMinutes(-25),
+      Altitude = 120.5,
+      Accuracy = 5.8,
+      SatelliteCount = 12,
+      IsValid = true
+    });
+
+    journey.AddWaypoint(new LocationData
+    {
+      DeviceId = "TRK-001",
+      Latitude = 51.5150,
+      Longitude = -0.1300,
+      Speed = 52.3,
+      Bearing = 120,
+      Timestamp = DateTime.UtcNow.AddMinutes(-20),
+      Altitude = 115.0,
+      Accuracy = 4.2,
+      SatelliteCount = 14,
+      IsValid = true
+    });
+
+    journey.AddWaypoint(new LocationData
+    {
+      DeviceId = "TRK-001",
+      Latitude = 51.5220,
+      Longitude = -0.1250,
+      Speed = 0.0, // stopped
+      Bearing = 0,
+      Timestamp = DateTime.UtcNow.AddMinutes(-15),
+      Altitude = 118.0,
+      Accuracy = 3.5,
+      SatelliteCount = 13,
+      IsValid = true
+    });
+
+    // Calculate journey metrics
+    Console.WriteLine($"Journey: {journey}");
+    Console.WriteLine($"Total distance: {journey.GetTotalDistance():F2} km");
+    Console.WriteLine($"Average speed: {journey.GetAverageSpeed():F1} km/h");
+    Console.WriteLine($"Max speed: {journey.GetMaxSpeed():F1} km/h");
+    Console.WriteLine($"Duration: {journey.GetDuration().TotalMinutes:F1} minutes");
+
+    // Complete the journey
+    journey.Complete();
+    Console.WriteLine($"Journey completed at: {journey.EndTime}");
+    Console.WriteLine($"Journey status: {journey.Status}");
+    Console.WriteLine($"Metadata: {string.Join(", ", journey.Metadata.Select(kvp => $"{kvp.Key}={kvp.Value}"))}");
+  }
+}
+```
