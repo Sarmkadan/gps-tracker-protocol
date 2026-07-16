@@ -304,6 +304,76 @@ public class JsonFormatterExample
 }
 ```
 
+## ResponseMessage
+
+The `ResponseMessage` class represents a response from a GPS tracking device, encapsulating acknowledgment messages, error responses, location updates, and status reports. It provides structured data parsing capabilities through the `Parse()` method which extracts relevant information based on the message type, and includes validation through the `IsValid()` method.
+
+### Usage Example
+
+```csharp
+using System;
+using System.Collections.Generic;
+using GpsTrackerProtocol.Domain.Models;
+
+public class ResponseMessageExample
+{
+  public void ProcessDeviceResponse()
+  {
+    // Create a successful acknowledgment response
+    var ackResponse = new ResponseMessage
+    {
+      DeviceId = "TRK-001",
+      Type = MessageType.Ack,
+      IsSuccess = true,
+      Content = "ACK,12345"
+    };
+
+    ackResponse.Parse();
+    Console.WriteLine($"Ack Response: {ackResponse}");
+    Console.WriteLine($"Parsed sequence: {ackResponse.ParsedData.GetValueOrDefault("sequence")}");
+
+    // Create a location update response
+    var locationResponse = new ResponseMessage
+    {
+      DeviceId = "TRK-002",
+      Type = MessageType.LocationUpdate,
+      IsSuccess = true,
+      Content = "LAT,51.5074,LON,-0.1278,SPE,45.5,BRG,90,ALT,120.5"
+    };
+
+    locationResponse.Parse();
+    Console.WriteLine($"Location Response: {locationResponse}");
+    Console.WriteLine($"Parsed coordinates: Latitude={locationResponse.ParsedData["latitude"]}, Longitude={locationResponse.ParsedData["longitude"]}");
+
+    // Create an error response
+    var errorResponse = new ResponseMessage
+    {
+      DeviceId = "TRK-003",
+      Type = MessageType.Error,
+      IsSuccess = false,
+      Content = "ERR,2"
+    };
+
+    errorResponse.Parse();
+    Console.WriteLine($"Error Response: {errorResponse}");
+    Console.WriteLine($"Error Code: {errorResponse.ErrorCode}, Message: {errorResponse.ErrorMessage}");
+
+    // Create a status response
+    var statusResponse = new ResponseMessage
+    {
+      DeviceId = "TRK-004",
+      Type = MessageType.Status,
+      IsSuccess = true,
+      Content = "STA,78,-67,8"
+    };
+
+    statusResponse.Parse();
+    Console.WriteLine($"Status Response: {statusResponse}");
+    Console.WriteLine($"Battery: {statusResponse.ParsedData["battery"]}%, Signal: {statusResponse.ParsedData["signal"]}dBm, Satellites: {statusResponse.ParsedData["satellites"]}");
+  }
+}
+```
+
 ## DeviceDiagnosticsReport
 
 The `DeviceDiagnosticsReport` class provides comprehensive diagnostic information about a GPS tracking device's status, connectivity, and operational metrics. It tracks device health indicators including battery level, signal strength, online status, packet reception, location data collection, and self-test results to enable proactive monitoring and troubleshooting of fleet devices.
