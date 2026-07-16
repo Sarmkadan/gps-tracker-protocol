@@ -317,6 +317,101 @@ public class AnalyticsServiceExample
 
 The `IJourneyService` interface provides functionality for managing GPS device journeys and tracking trips. It allows starting new journeys, adding waypoints during journeys, completing journeys, and retrieving journey history. The service also provides utility methods for calculating total distance traveled and cleaning up old journey records.
 
+## IDeviceService
+
+The `IDeviceService` interface provides functionality for managing GPS tracking devices in the system. It handles device registration, status updates, heartbeat monitoring, and device lifecycle management including registration, deregistration, and status queries.
+
+Example usage in code:
+
+```csharp
+using GpsTrackerProtocol.Domain.Models;
+using GpsTrackerProtocol.Services;
+using Microsoft.Extensions.Logging;
+
+public class DeviceServiceExample
+{
+    private readonly IDeviceService _deviceService;
+
+    public DeviceServiceExample(IDeviceService deviceService)
+    {
+        _deviceService = deviceService;
+    }
+
+    public async Task ManageDevicesAsync()
+    {
+        // Register a new GPS device
+        var newDevice = new Device
+        {
+            Imei = "123456789012345",
+            Name = "Truck GPS Unit #1",
+            Model = "GT06",
+            PhoneNumber = "+1234567890",
+            Status = DeviceStatus.Active,
+            LastHeartbeat = DateTime.UtcNow.AddMinutes(-5),
+            CreatedAt = DateTime.UtcNow
+        };
+
+        var registeredDevice = await _deviceService.RegisterDeviceAsync(newDevice);
+        Console.WriteLine($"Registered device: {registeredDevice.Name} (IMEI: {registeredDevice.Imei})");
+
+        // Get device by ID
+        var deviceById = await _deviceService.GetDeviceByIdAsync(registeredDevice.Id);
+        Console.WriteLine($"Device found by ID: {deviceById?.Name}");
+
+        // Get device by IMEI
+        var deviceByImei = await _deviceService.GetDeviceByImeiAsync("123456789012345");
+        Console.WriteLine($"Device found by IMEI: {deviceByImei?.Name}");
+
+        // Get all devices
+        var allDevices = await _deviceService.GetAllDevicesAsync();
+        Console.WriteLine($"Total devices in system: {allDevices.Count()}");
+
+        // Get online devices
+        var onlineDevices = await _deviceService.GetOnlineDevicesAsync();
+        Console.WriteLine($"Online devices: {onlineDevices.Count()}");
+
+        // Update device status
+        await _deviceService.UpdateDeviceStatusAsync(registeredDevice.Id, DeviceStatus.Maintenance);
+        Console.WriteLine("Device status updated to Maintenance");
+
+        // Update device heartbeat
+        await _deviceService.UpdateDeviceHeartbeatAsync(registeredDevice.Id);
+        Console.WriteLine("Device heartbeat updated");
+
+        // Get device status DTO
+        var deviceStatus = await _deviceService.GetDeviceStatusAsync(registeredDevice.Id);
+        Console.WriteLine($"Device status: {deviceStatus?.Status}, Last seen: {deviceStatus?.LastSeen:u}");
+
+        // Get all device statuses
+        var allStatuses = await _deviceService.GetAllDeviceStatusesAsync();
+        Console.WriteLine($"Total device statuses: {allStatuses.Count()}");
+
+        // Update device information
+        deviceById.Name = "Truck GPS Unit #1 - Updated";
+        var updateSuccess = await _deviceService.UpdateDeviceAsync(deviceById);
+        Console.WriteLine($"Device update successful: {updateSuccess}");
+
+        // Deregister device
+        var deregisterSuccess = await _deviceService.DeregisterDeviceAsync(registeredDevice.Id);
+        Console.WriteLine($"Device deregistered: {deregisterSuccess}");
+    }
+
+    public static async Task Main(string[] args)
+    {
+        // Example with direct service instantiation
+        var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+        var unitOfWork = new UnitOfWork();
+        var deviceService = new DeviceService(unitOfWork, loggerFactory.CreateLogger<DeviceService>());
+
+        Console.WriteLine("Starting device service example...");
+        var example = new DeviceServiceExample(deviceService);
+        await example.ManageDevicesAsync();
+
+        Console.WriteLine("Device service example completed!");
+    }
+}
+```
+
 ## IFleetDashboardService
 
 The `IFleetDashboardService` interface provides functionality for managing a fleet of vehicles and generating real-time analytics dashboards. It allows registering vehicles, tracking their status, computing optimized routes, and generating fleet-wide KPI metrics by aggregating data from GPS devices, location history, and fuel tracking services.
