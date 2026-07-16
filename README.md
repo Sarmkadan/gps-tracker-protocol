@@ -1320,6 +1320,76 @@ public class KalmanLocationSmootherExample
 }
 ```
 
+## StringExtensions
+
+The `StringExtensions` class provides various extension methods for string manipulation and validation commonly used in GPS tracker protocol processing.
+
+Example usage:
+```csharp
+using GpsTrackerProtocol.Utilities;
+
+public class StringExtensionsExample
+{
+    public void ProcessDeviceData()
+    {
+        // Parse device ID from a string
+        string deviceId = "TRK-001-ABC";
+        bool isValid = deviceId.IsValidDeviceId();
+        Console.WriteLine($"Device ID '{deviceId}' is valid: {isValid}");
+
+        // Parse IMEI
+        string imei = "123456789012345";
+        bool validImei = imei.IsValidImei();
+        Console.WriteLine($"IMEI '{imei}' is valid: {validImei}");
+
+        // Convert string to double with default fallback
+        string speedValue = "65.5";
+        double speed = speedValue.ToDoubleOrDefault(0.0);
+        Console.WriteLine($"Parsed speed: {speed} km/h");
+
+        // Convert string to int with default fallback
+        string countValue = "5";
+        int count = countValue.ToIntOrDefault(0);
+        Console.WriteLine($"Parsed count: {count}");
+
+        // Split NMEA sentence
+        string nmeaSentence = "$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47";
+        string[] nmeaParts = nmeaSentence.SplitNmea();
+        Console.WriteLine($"NMEA sentence split into {nmeaParts.Length} parts");
+
+        // Get and validate NMEA checksum
+        string nmeaWithChecksum = "$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47";
+        string checksum = nmeaWithChecksum.GetNmeaChecksum();
+        bool validChecksum = nmeaWithChecksum.IsValidNmeaChecksum();
+        Console.WriteLine($"NMEA checksum: {checksum}, Valid: {validChecksum}");
+
+        // Remove checksum from NMEA sentence
+        string sentenceWithoutChecksum = nmeaWithChecksum.RemoveNmeaChecksum();
+        Console.WriteLine($"Sentence without checksum: {sentenceWithoutChecksum}");
+
+        // Convert hex string to byte array
+        string hexString = "A1B2C3D4";
+        byte[] hexBytes = hexString.HexToByteArray();
+        Console.WriteLine($"Hex string converted to {hexBytes.Length} bytes");
+
+        // Sanitize device ID
+        string rawDeviceId = "  TRK-001-ABC  ";
+        string sanitized = rawDeviceId.SanitizeDeviceId();
+        Console.WriteLine($"Sanitized device ID: '{sanitized}'");
+
+        // Truncate string
+        string longString = "This is a very long device identifier that needs to be shortened";
+        string truncated = longString.Truncate(20);
+        Console.WriteLine($"Truncated string: '{truncated}'");
+
+        // Validate hex color
+        string color = "#FF5733";
+        bool isValidColor = color.IsValidHexColor();
+        Console.WriteLine($"Color '{color}' is valid hex color: {isValidColor}");
+    }
+}
+```
+
 ## CollectionExtensions
 
 The `CollectionExtensions` class provides a set of extension methods for working with collections and sequences in a functional style. It includes utilities for chunking sequences, calculating medians, removing duplicates while preserving order, finding min/max values, calculating percentages, safe indexing, and creating sliding windows of elements.
