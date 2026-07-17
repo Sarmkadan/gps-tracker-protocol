@@ -889,6 +889,88 @@ public class CommandServiceTestsExample
 }
 ```
 
+## InMemoryRepositoryValidation
+
+The `InMemoryRepositoryValidation` class provides validation extension methods for `InMemoryRepository<T>` and derived classes, specifically for `InMemoryLocationDataRepository`. It includes methods for validating repository state, individual location data entities, and method parameters to ensure data integrity before operations. The validation methods return detailed error lists, while the `IsValidAsync` methods provide boolean checks, and `EnsureValidAsync` methods throw exceptions when validation fails.
+
+Example usage for validating in-memory repositories and location data:
+
+```csharp
+using GpsTrackerProtocol.Data;
+using GpsTrackerProtocol.Domain.Models;
+
+public class InMemoryRepositoryValidationExample
+{
+    public async Task ValidateRepositoryAsync()
+    {
+        // Create an in-memory repository
+        var repository = new InMemoryLocationDataRepository();
+
+        // Add some valid location data
+        await repository.CreateAsync(new LocationData
+        {
+            Id = Guid.NewGuid().ToString(),
+            DeviceId = "device-001",
+            Latitude = 40.7128,
+            Longitude = -74.0060,
+            Timestamp = DateTime.UtcNow,
+            Speed = 65.5,
+            Altitude = 100.0,
+            SatelliteCount = 8,
+            Protocol = ProtocolType.GT06
+        });
+
+        // Validate the repository state
+        var validationErrors = await repository.ValidateAsync();
+        Console.WriteLine($"Repository validation errors: {validationErrors.Count}");
+
+        // Check if repository is valid
+        bool isValid = await repository.IsValidAsync();
+        Console.WriteLine($"Repository is valid: {isValid}");
+
+        // Validate a single LocationData entity
+        var location = new LocationData
+        {
+            Id = Guid.NewGuid().ToString(),
+            DeviceId = "device-002",
+            Latitude = 40.7306,
+            Longitude = -73.9352,
+            Timestamp = DateTime.UtcNow.AddMinutes(-30),
+            Speed = 55.0,
+            Altitude = 120.0,
+            SatelliteCount = 7,
+            Protocol = ProtocolType.H02
+        };
+
+        var locationErrors = InMemoryRepositoryValidation.ValidateLocationData(location);
+        Console.WriteLine($"Location validation errors: {locationErrors.Count}");
+
+        // Ensure valid repository (throws if invalid)
+        try
+        {
+            await repository.EnsureValidAsync();
+            Console.WriteLine("Repository passed validation");
+        }
+        catch (ArgumentException ex)
+        {
+            Console.WriteLine($"Validation failed: {ex.Message}");
+        }
+
+        // Validate method parameters
+        var paramErrors = InMemoryRepositoryValidation.ValidateParameters("device-001");
+        Console.WriteLine($"Parameter validation errors: {paramErrors.Count}");
+    }
+
+    public static async Task Main(string[] args)
+    {
+        Console.WriteLine("Starting InMemoryRepositoryValidation example...");
+        var example = new InMemoryRepositoryValidationExample();
+        await example.ValidateRepositoryAsync();
+        Console.WriteLine("InMemoryRepositoryValidation example completed!");
+    }
+}
+```
+
 ## IJourneyService
 
 Example usage in code:
