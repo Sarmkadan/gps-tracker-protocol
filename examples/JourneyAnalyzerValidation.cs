@@ -12,7 +12,7 @@ using GpsTrackerProtocol.Domain.Models;
 /// <summary>
 /// Validation helpers for JourneyAnalyzer to ensure data integrity before analysis operations.
 /// </summary>
-public static class JourneyAnalyzerValidation
+public sealed static class JourneyAnalyzerValidation
 {
     /// <summary>
     /// Validates device identifier for journey analysis operations.
@@ -21,6 +21,8 @@ public static class JourneyAnalyzerValidation
     /// <returns>List of validation errors, empty if valid</returns>
     public static IReadOnlyList<string> Validate(this string deviceId)
     {
+        ArgumentNullException.ThrowIfNull(deviceId);
+
         var errors = new List<string>();
 
         if (string.IsNullOrWhiteSpace(deviceId))
@@ -43,10 +45,13 @@ public static class JourneyAnalyzerValidation
     /// <param name="deviceId">Device identifier</param>
     /// <param name="waypointCount">Number of waypoints to simulate</param>
     /// <returns>List of validation errors, empty if valid</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="deviceId"/> is null.</exception>
     public static IReadOnlyList<string> Validate(
         string deviceId,
         int waypointCount)
     {
+        ArgumentNullException.ThrowIfNull(deviceId);
+
         var errors = new List<string>();
 
         var deviceErrors = deviceId.Validate();
@@ -72,6 +77,7 @@ public static class JourneyAnalyzerValidation
     /// </summary>
     /// <param name="value">JourneyAnalyzer instance to validate</param>
     /// <returns>List of validation errors, empty if valid</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="value"/> is null.</exception>
     public static IReadOnlyList<string> Validate(this JourneyAnalyzer value)
     {
         ArgumentNullException.ThrowIfNull(value);
@@ -89,8 +95,10 @@ public static class JourneyAnalyzerValidation
     /// </summary>
     /// <param name="deviceId">Device identifier</param>
     /// <returns>True if valid, false otherwise</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="deviceId"/> is null.</exception>
     public static bool IsValid(this string deviceId)
     {
+        ArgumentNullException.ThrowIfNull(deviceId);
         return deviceId.Validate().Count == 0;
     }
 
@@ -100,10 +108,12 @@ public static class JourneyAnalyzerValidation
     /// <param name="deviceId">Device identifier</param>
     /// <param name="waypointCount">Number of waypoints to simulate</param>
     /// <returns>True if valid, false otherwise</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="deviceId"/> is null.</exception>
     public static bool IsValid(
         string deviceId,
         int waypointCount)
     {
+        ArgumentNullException.ThrowIfNull(deviceId);
         return Validate(deviceId, waypointCount).Count == 0;
     }
 
@@ -112,8 +122,10 @@ public static class JourneyAnalyzerValidation
     /// </summary>
     /// <param name="value">JourneyAnalyzer instance to check</param>
     /// <returns>True if valid, false otherwise</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="value"/> is null.</exception>
     public static bool IsValid(this JourneyAnalyzer value)
     {
+        ArgumentNullException.ThrowIfNull(value);
         return value.Validate().Count == 0;
     }
 
@@ -121,9 +133,11 @@ public static class JourneyAnalyzerValidation
     /// Ensures a device identifier is valid for journey analysis, throwing an exception if not.
     /// </summary>
     /// <param name="deviceId">Device identifier</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="deviceId"/> is null.</exception>
     /// <exception cref="ArgumentException">Thrown when validation fails</exception>
     public static void EnsureValid(this string deviceId)
     {
+        ArgumentNullException.ThrowIfNull(deviceId);
         var errors = deviceId.Validate();
         if (errors.Count > 0)
         {
@@ -136,11 +150,13 @@ public static class JourneyAnalyzerValidation
     /// </summary>
     /// <param name="deviceId">Device identifier</param>
     /// <param name="waypointCount">Number of waypoints to simulate</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="deviceId"/> is null.</exception>
     /// <exception cref="ArgumentException">Thrown when validation fails</exception>
     public static void EnsureValid(
         string deviceId,
         int waypointCount)
     {
+        ArgumentNullException.ThrowIfNull(deviceId);
         var errors = Validate(deviceId, waypointCount);
         if (errors.Count > 0)
         {
@@ -152,9 +168,11 @@ public static class JourneyAnalyzerValidation
     /// Ensures a JourneyAnalyzer instance is valid, throwing an exception if not.
     /// </summary>
     /// <param name="value">JourneyAnalyzer instance to validate</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="value"/> is null.</exception>
     /// <exception cref="ArgumentException">Thrown when validation fails</exception>
     public static void EnsureValid(this JourneyAnalyzer value)
     {
+        ArgumentNullException.ThrowIfNull(value);
         var errors = value.Validate();
         if (errors.Count > 0)
         {
