@@ -3,7 +3,7 @@
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
-// =============================================================================
+// =====================================================================
 
 namespace GpsTrackerProtocol.Utilities;
 
@@ -20,6 +20,7 @@ public static class StringExtensionsValidation
     /// <param name="originalString">The original string that was parsed.</param>
     /// <param name="defaultValue">The default value used when parsing failed.</param>
     /// <returns>List of validation problems; empty list if valid.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="originalString"/> is null.</exception>
     public static IReadOnlyList<string> Validate(
         double parsedValue,
         string originalString,
@@ -49,6 +50,7 @@ public static class StringExtensionsValidation
     /// <param name="originalString">The original string that was parsed.</param>
     /// <param name="defaultValue">The default value used when parsing failed.</param>
     /// <returns>List of validation problems; empty list if valid.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="originalString"/> is null.</exception>
     public static IReadOnlyList<string> Validate(
         int parsedValue,
         string originalString,
@@ -76,6 +78,7 @@ public static class StringExtensionsValidation
     /// </summary>
     /// <param name="imeiValue">The IMEI string to validate.</param>
     /// <returns>List of validation problems; empty list if valid.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="imeiValue"/> is null.</exception>
     public static IReadOnlyList<string> ValidateImei(string imeiValue)
     {
         ArgumentNullException.ThrowIfNull(imeiValue);
@@ -103,6 +106,7 @@ public static class StringExtensionsValidation
     /// </summary>
     /// <param name="deviceIdValue">The device ID string to validate.</param>
     /// <returns>List of validation problems; empty list if valid.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="deviceIdValue"/> is null.</exception>
     public static IReadOnlyList<string> ValidateDeviceId(string deviceIdValue)
     {
         ArgumentNullException.ThrowIfNull(deviceIdValue);
@@ -131,6 +135,8 @@ public static class StringExtensionsValidation
     /// <param name="maxLength">The maximum length for truncation.</param>
     /// <param name="suffix">The suffix to append when truncating.</param>
     /// <returns>List of validation problems; empty list if valid.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="suffix"/> is null.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="maxLength"/> is less than or equal to zero.</exception>
     public static IReadOnlyList<string> Validate(int maxLength, string suffix = "...")
     {
         ArgumentNullException.ThrowIfNull(suffix);
@@ -155,6 +161,7 @@ public static class StringExtensionsValidation
     /// </summary>
     /// <param name="hexValue">The hex string to validate.</param>
     /// <returns>List of validation problems; empty list if valid.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="hexValue"/> is null.</exception>
     public static IReadOnlyList<string> ValidateHex(string hexValue)
     {
         ArgumentNullException.ThrowIfNull(hexValue);
@@ -182,6 +189,7 @@ public static class StringExtensionsValidation
     /// </summary>
     /// <param name="deviceId">The device ID string to validate.</param>
     /// <returns>List of validation problems; empty list if valid.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="deviceId"/> is null.</exception>
     public static IReadOnlyList<string> ValidateDeviceIdForSanitization(string deviceId)
     {
         ArgumentNullException.ThrowIfNull(deviceId);
@@ -193,6 +201,7 @@ public static class StringExtensionsValidation
     /// </summary>
     /// <param name="colorValue">The hex color string to validate.</param>
     /// <returns>List of validation problems; empty list if valid.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="colorValue"/> is null.</exception>
     public static IReadOnlyList<string> ValidateColor(string colorValue)
     {
         ArgumentNullException.ThrowIfNull(colorValue);
@@ -229,10 +238,8 @@ public static class StringExtensionsValidation
     public static bool IsValid(
         double parsedValue,
         string originalString,
-        double defaultValue = 0)
-    {
-        return Validate(parsedValue, originalString, defaultValue).Count == 0;
-    }
+        double defaultValue = 0) =>
+        Validate(parsedValue, originalString, defaultValue).Count == 0;
 
     /// <summary>
     /// Determines whether the parsed integer value is valid.
@@ -244,30 +251,24 @@ public static class StringExtensionsValidation
     public static bool IsValid(
         int parsedValue,
         string originalString,
-        int defaultValue = 0)
-    {
-        return Validate(parsedValue, originalString, defaultValue).Count == 0;
-    }
+        int defaultValue = 0) =>
+        Validate(parsedValue, originalString, defaultValue).Count == 0;
 
     /// <summary>
     /// Determines whether the IMEI string is valid.
     /// </summary>
     /// <param name="imeiValue">The IMEI string to validate.</param>
     /// <returns>True if the IMEI is valid; otherwise, false.</returns>
-    public static bool IsValidImei(string imeiValue)
-    {
-        return ValidateImei(imeiValue).Count == 0;
-    }
+    public static bool IsValidImei(string imeiValue) =>
+        ValidateImei(imeiValue).Count == 0;
 
     /// <summary>
     /// Determines whether the device ID string is valid.
     /// </summary>
     /// <param name="deviceIdValue">The device ID string to validate.</param>
     /// <returns>True if the device ID is valid; otherwise, false.</returns>
-    public static bool IsValidDeviceId(string deviceIdValue)
-    {
-        return ValidateDeviceId(deviceIdValue).Count == 0;
-    }
+    public static bool IsValidDeviceId(string deviceIdValue) =>
+        ValidateDeviceId(deviceIdValue).Count == 0;
 
     /// <summary>
     /// Determines whether the truncation parameters are valid.
@@ -275,30 +276,24 @@ public static class StringExtensionsValidation
     /// <param name="maxLength">The maximum length for truncation.</param>
     /// <param name="suffix">The suffix to append when truncating.</param>
     /// <returns>True if the parameters are valid; otherwise, false.</returns>
-    public static bool IsValid(int maxLength, string suffix = "...")
-    {
-        return Validate(maxLength, suffix).Count == 0;
-    }
+    public static bool IsValid(int maxLength, string suffix = "...") =>
+        Validate(maxLength, suffix).Count == 0;
 
     /// <summary>
     /// Determines whether the hex string is valid for conversion.
     /// </summary>
     /// <param name="hexValue">The hex string to validate.</param>
     /// <returns>True if the hex string is valid; otherwise, false.</returns>
-    public static bool IsValidHex(string hexValue)
-    {
-        return ValidateHex(hexValue).Count == 0;
-    }
+    public static bool IsValidHex(string hexValue) =>
+        ValidateHex(hexValue).Count == 0;
 
     /// <summary>
     /// Determines whether the color string is valid.
     /// </summary>
     /// <param name="colorValue">The hex color string to validate.</param>
     /// <returns>True if the color is valid; otherwise, false.</returns>
-    public static bool IsValidColor(string colorValue)
-    {
-        return ValidateColor(colorValue).Count == 0;
-    }
+    public static bool IsValidColor(string colorValue) =>
+        ValidateColor(colorValue).Count == 0;
 
     /// <summary>
     /// Ensures that the parsed double value is valid, throwing an exception if not.
@@ -376,6 +371,7 @@ public static class StringExtensionsValidation
     /// <param name="maxLength">The maximum length for truncation.</param>
     /// <param name="suffix">The suffix to append when truncating.</param>
     /// <exception cref="ArgumentException">Thrown if the parameters are invalid.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="maxLength"/> is less than or equal to zero.</exception>
     public static void EnsureValid(int maxLength, string suffix = "...")
     {
         var problems = Validate(maxLength, suffix);
