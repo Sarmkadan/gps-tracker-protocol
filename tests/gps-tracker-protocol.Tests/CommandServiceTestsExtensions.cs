@@ -17,6 +17,10 @@ namespace gps_tracker_protocol.Tests
     /// <summary>
     /// Extension methods for <see cref="CommandServiceTests"/> to provide additional test utilities.
     /// </summary>
+    /// <remarks>
+    /// This static class contains factory methods for creating test entities like <see cref="Command"/>,
+    /// <see cref="Device"/>, and collections of commands to simplify test setup and improve readability.
+    /// </remarks>
     public static class CommandServiceTestsExtensions
     {
         /// <summary>
@@ -27,7 +31,8 @@ namespace gps_tracker_protocol.Tests
         /// <param name="commandType">The command type.</param>
         /// <param name="payload">The command payload.</param>
         /// <returns>The created command.</returns>
-        /// <exception cref="ArgumentNullException">Thrown when deviceId or commandType is null or empty.</exception>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="deviceId"/> is null.</exception>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="commandType"/> is null or empty.</exception>
         public static Command CreateSentCommand(
             this CommandServiceTests tests,
             string deviceId,
@@ -37,7 +42,7 @@ namespace gps_tracker_protocol.Tests
             ArgumentNullException.ThrowIfNull(deviceId);
             ArgumentException.ThrowIfNullOrEmpty(commandType);
 
-            var command = new Command
+            return new Command
             {
                 Id = Guid.NewGuid().ToString("N", CultureInfo.InvariantCulture),
                 DeviceId = deviceId,
@@ -46,8 +51,6 @@ namespace gps_tracker_protocol.Tests
                 SentTime = DateTime.UtcNow,
                 IsSent = true
             };
-
-            return command;
         }
 
         /// <summary>
@@ -59,7 +62,7 @@ namespace gps_tracker_protocol.Tests
         /// <param name="deviceName">The device name.</param>
         /// <param name="isActive">Whether the device is active.</param>
         /// <returns>The created device.</returns>
-        /// <exception cref="ArgumentNullException">Thrown when deviceId is null or empty.</exception>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="deviceId"/> is null.</exception>
         public static Device CreateDevice(
             this CommandServiceTests tests,
             string deviceId,
@@ -89,7 +92,8 @@ namespace gps_tracker_protocol.Tests
         /// <param name="commandType">The command type.</param>
         /// <param name="payload">The command payload.</param>
         /// <returns>The created command.</returns>
-        /// <exception cref="ArgumentNullException">Thrown when deviceId or commandType is null or empty.</exception>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="deviceId"/> is null.</exception>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="commandType"/> is null or empty.</exception>
         public static Command CreateCommand(
             this CommandServiceTests tests,
             string deviceId,
@@ -115,9 +119,10 @@ namespace gps_tracker_protocol.Tests
         /// </summary>
         /// <param name="tests">The test instance.</param>
         /// <param name="deviceId">The device ID.</param>
-        /// <param name="count">Number of commands to create.</param>
+        /// <param name="count">Number of commands to create. Must be greater than zero.</param>
         /// <param name="commandType">The command type (optional prefix).</param>
         /// <returns>List of created commands.</returns>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="count"/> is less than 1.</exception>
         public static IReadOnlyList<Command> CreateCommandList(
             this CommandServiceTests tests,
             string deviceId,
@@ -127,10 +132,8 @@ namespace gps_tracker_protocol.Tests
             ArgumentNullException.ThrowIfNull(deviceId);
             ArgumentOutOfRangeException.ThrowIfLessThan(count, 1);
 
-            var commands = new List<Command>();
-            for (int i = 0; i < count; i++)
-            {
-                commands.Add(new Command
+            return Enumerable.Range(0, count)
+                .Select(i => new Command
                 {
                     Id = Guid.NewGuid().ToString("N", CultureInfo.InvariantCulture),
                     DeviceId = deviceId,
@@ -138,10 +141,48 @@ namespace gps_tracker_protocol.Tests
                     Payload = $"payload_{i}",
                     CreatedAt = DateTime.UtcNow.AddMinutes(-i),
                     Status = CommandStatus.Pending
-                });
-            }
-
-            return commands.AsReadOnly();
+                })
+                .ToList()
+                .AsReadOnly();
         }
+
+        /// <summary>
+        /// Creates a response for testing command execution results.
+        /// </summary>
+        /// <param name="tests">The test instance.</param>
+        /// <param name="commandId">The command ID.</param>
+        /// <param name="success">Whether the command execution succeeded.</param>
+        /// <param name="responseData">Optional response data.</param>
+        /// <returns>The created command response.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="commandId"/> is null.</exception>
+        public static CommandResponse CreateCommandResponse(
+            this CommandServiceTests tests,
+            string commandId,
+            bool success,
+            string? responseData = null)
+        {
+            ArgumentNullException.ThrowIfNull(commandId);
+
+            return new CommandResponse
+            {
+                Id = Guid.NewGuid().ToString("N", CultureInfo.InvariantCulture),
+                CommandId = commandId,
+                Success = success,
+                ResponseData = responseData ?? string.Empty,
+                Timestamp = DateTime.UtcNow
+            };
+        }
+    }
+
+    /// <summary>
+    /// Mock response for testing command execution.
+    /// </summary>
+    public class CommandResponse
+    {
+        public string Id { get; set; } = string.Empty;
+        public string CommandId { get; set; } = string.Empty;
+        public bool Success { get; set; }
+        public string ResponseData { get; set; } = string.Empty;
+        public DateTime Timestamp { get; set; }
     }
 }
