@@ -154,6 +154,94 @@ public class LocationDataServiceExample
 }
 ```
 
+## DomainAndServiceTestsValidation
+
+The `DomainAndServiceTestsValidation` class provides validation extension methods for domain models and services used in `DomainAndServiceTests`. It includes validation methods for `LocationData`, `Device`, `GpsFrame`, and `GeofenceService` entities, along with convenience methods to check validity and throw exceptions when validation fails.
+
+This validation helper ensures that domain models meet expected constraints before being used in tests or production code, helping to catch issues early and provide clear error messages when invalid data is encountered.
+
+Example usage for validating domain models and services:
+
+```csharp
+using GpsTrackerProtocol.Domain.Models;
+using GpsTrackerProtocol.Services;
+using GpsTrackerProtocol.Tests;
+
+public class DomainAndServiceTestsValidationExample
+{
+    public void ValidateDomainModels()
+    {
+        // Create and validate a LocationData instance
+        var location = new LocationData
+        {
+            DeviceId = "device-001",
+            Latitude = 40.7128,
+            Longitude = -74.0060,
+            Timestamp = DateTime.UtcNow,
+            Speed = 65.5,
+            Bearing = 90.0,
+            SatelliteCount = 8
+        };
+
+        // Validate and get errors
+        var locationErrors = location.Validate();
+        Console.WriteLine($"Location validation errors: {locationErrors.Count}");
+
+        // Check if valid using IsValid
+        bool isValid = location.IsValid();
+        Console.WriteLine($"Location is valid: {isValid}");
+
+        // Validate and throw if invalid using EnsureValid
+        try
+        {
+            location.EnsureValid();
+            Console.WriteLine("Location passed validation");
+        }
+        catch (ArgumentException ex)
+        {
+            Console.WriteLine($"Validation failed: {ex.Message}");
+        }
+
+        // Create and validate a Device instance
+        var device = new Device
+        {
+            Id = "device-001",
+            Imei = "123456789012345",
+            Name = "GPS Tracker Unit #1",
+            Model = "GT06",
+            Status = DeviceStatus.Active
+        };
+
+        var deviceErrors = device.Validate();
+        Console.WriteLine($"Device validation errors: {deviceErrors.Count}");
+
+        // Validate a GpsFrame instance
+        var frame = new GpsFrame
+        {
+            Protocol = ProtocolType.GT06,
+            RawData = new byte[] { 0x78, 0x78, 0x01, 0x02, 0x03, 0x04 },
+            IsValidChecksum = true
+        };
+
+        var frameErrors = frame.Validate();
+        Console.WriteLine($"GpsFrame validation errors: {frameErrors.Count}");
+
+        // Validate a GeofenceService instance
+        var geofenceService = new GeofenceService();
+        var serviceErrors = geofenceService.Validate();
+        Console.WriteLine($"GeofenceService validation errors: {serviceErrors.Count}");
+    }
+
+    public static void Main(string[] args)
+    {
+        Console.WriteLine("Starting DomainAndServiceTestsValidation example...");
+        var example = new DomainAndServiceTestsValidationExample();
+        example.ValidateDomainModels();
+        Console.WriteLine("DomainAndServiceTestsValidation example completed!");
+    }
+}
+```
+
 ## DataExporter
 
 The `DataExporter` class provides functionality for exporting GPS location data to JSON, CSV, and GeoJSON formats. It supports exporting location history for specific devices or all devices, making it ideal for data analysis, reporting, and integration with mapping applications.
