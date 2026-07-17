@@ -657,6 +657,66 @@ public class GpsTrackerProtocolOptionsExample
 }
 ```
 
+## CommandServiceTestsExtensions
+
+The `CommandServiceTestsExtensions` class provides factory methods and extension utilities for creating test entities in `CommandServiceTests`. It simplifies test setup by offering convenient methods to generate realistic `Command`, `Device`, and `CommandResponse` objects with proper defaults, reducing boilerplate code in unit tests.
+
+Example usage in tests:
+
+```csharp
+using gps_tracker_protocol.Tests;
+using GpsTrackerProtocol.Domain.Models;
+
+public class CommandServiceTestsExample
+{
+    private readonly CommandServiceTests _tests = new();
+
+    public void CreateTestEntities()
+    {
+        // Create a test device
+        var device = _tests.CreateDevice(
+            deviceId: "device-001",
+            imei: "123456789012345",
+            deviceName: "Test GPS Device",
+            isActive: true
+        );
+        Console.WriteLine($"Created device: {device.DeviceName} (IMEI: {device.Imei})");
+
+        // Create a sent command
+        var sentCommand = _tests.CreateSentCommand(
+            deviceId: device.Id,
+            commandType: "REBOOT",
+            payload: "{ \"delay\": 30 }"
+        );
+        Console.WriteLine($"Created sent command: {sentCommand.CommandType} (ID: {sentCommand.Id})");
+
+        // Create a pending command
+        var pendingCommand = _tests.CreateCommand(
+            deviceId: device.Id,
+            commandType: "SET_CONFIG",
+            payload: "{ \"speedThreshold\": 120 }"
+        );
+        Console.WriteLine($"Created pending command: {pendingCommand.CommandType}");
+
+        // Create a list of commands for batch testing
+        var commandList = _tests.CreateCommandList(
+            deviceId: device.Id,
+            count: 5,
+            commandType: "BATCH_TEST"
+        );
+        Console.WriteLine($"Created {commandList.Count} commands for batch testing");
+
+        // Create a command response
+        var response = _tests.CreateCommandResponse(
+            commandId: pendingCommand.Id,
+            success: true,
+            responseData: "{\"status\": \"reboot_initiated\"}"
+        );
+        Console.WriteLine($"Created command response: Success={response.Success}, Data={response.ResponseData}");
+    }
+}
+```
+
 ## IJourneyService
 
 Example usage in code:
