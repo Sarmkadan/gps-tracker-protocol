@@ -572,6 +572,91 @@ public class FleetDashboardOptionsExample
 }
 ```
 
+## GpsTrackerProtocolOptions
+
+The `GpsTrackerProtocolOptions` class provides centralized configuration for the GPS tracker protocol system. It controls global settings such as protocol-specific behaviors (GT06, H02, TK103), rate limiting, caching policies, location history limits, and logging configuration that affect how the system processes incoming GPS tracker data from various device protocols.
+
+Example usage for configuring GPS tracker protocol options:
+
+```csharp
+using GpsTrackerProtocol.Configuration;
+using GpsTrackerProtocol.Domain.Models;
+using Microsoft.Extensions.DependencyInjection;
+
+public class GpsTrackerProtocolOptionsExample
+{
+    public static void ConfigureServices(IServiceCollection services)
+    {
+        // Configure GPS tracker protocol options with custom settings
+        services.ConfigureGpsTrackerProtocolOptions(opts =>
+        {
+            opts.DefaultProtocol = ProtocolType.GT06;
+            opts.MaxDevices = 1000;
+            opts.LocationHistoryLimit = 10000;
+            opts.CacheExpirationMinutes = 30;
+            opts.RateLimitPerMinute = 600;
+            opts.LoggingLevel = "Information";
+            
+            // GT06 protocol settings
+            opts.GT06Enabled = true;
+            opts.GT06Timeout = 30;
+            opts.GT06MaxFrameSize = 1024;
+            
+            // H02 protocol settings
+            opts.H02Enabled = true;
+            opts.H02Timeout = 25;
+            opts.H02MaxFrameSize = 512;
+            
+            // TK103 protocol settings
+            opts.TK103Enabled = true;
+            opts.TK103Timeout = 20;
+            opts.TK103MaxFrameSize = 256;
+            
+            // Protocol-specific settings
+            opts.Protocol = new ProtocolSettings
+            {
+                HeartbeatInterval = TimeSpan.FromMinutes(5),
+                MaxSpeedKmh = 220.0,
+                MinSpeedKmh = 0.1,
+                MaxAltitudeMeters = 5000.0,
+                MinSatellites = 4
+            };
+        });
+    }
+
+    public static void ConfigureFromAppSettings()
+    {
+        // Alternatively, configure via appsettings.json:
+        // {
+        //   "GpsTrackerProtocol": {
+        //     "DefaultProtocol": "GT06",
+        //     "MaxDevices": 1000,
+        //     "LocationHistoryLimit": 10000,
+        //     "CacheExpirationMinutes": 30,
+        //     "RateLimitPerMinute": 600,
+        //     "LoggingLevel": "Information",
+        //     "GT06Enabled": true,
+        //     "GT06Timeout": 30,
+        //     "GT06MaxFrameSize": 1024,
+        //     "H02Enabled": true,
+        //     "H02Timeout": 25,
+        //     "H02MaxFrameSize": 512,
+        //     "TK103Enabled": true,
+        //     "TK103Timeout": 20,
+        //     "TK103MaxFrameSize": 256,
+        //     "Protocol": {
+        //       "HeartbeatInterval": "00:05:00",
+        //       "MaxSpeedKmh": 220.0,
+        //       "MinSpeedKmh": 0.1,
+        //       "MaxAltitudeMeters": 5000.0,
+        //       "MinSatellites": 4
+        //     }
+        //   }
+        // }
+    }
+}
+```
+
 ## IJourneyService
 
 Example usage in code:
