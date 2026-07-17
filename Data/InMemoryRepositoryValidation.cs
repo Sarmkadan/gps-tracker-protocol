@@ -6,7 +6,7 @@
 
 namespace GpsTrackerProtocol.Data;
 
-using System.Globalization;
+using System.Diagnostics.CodeAnalysis;
 using GpsTrackerProtocol.Domain;
 using GpsTrackerProtocol.Domain.Models;
 
@@ -21,15 +21,14 @@ public static class InMemoryRepositoryValidation
     /// <param name="value">The repository to validate.</param>
     /// <returns>A list of validation problems; empty if valid.</returns>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="value"/> is null.</exception>
-    public static IReadOnlyList<string> Validate(this InMemoryRepository<LocationData> value)
+    public static async Task<IReadOnlyList<string>> ValidateAsync(this InMemoryRepository<LocationData> value)
     {
         ArgumentNullException.ThrowIfNull(value);
 
         var problems = new List<string>();
 
         // Validate LocationData-specific constraints by checking all entities
-        // Since we can't access protected _store directly, we use the public GetAllAsync method
-        var allEntities = value.GetAllAsync().Result; // Safe for in-memory repo
+        var allEntities = await value.GetAllAsync();
 
         foreach (var entity in allEntities)
         {
@@ -45,9 +44,11 @@ public static class InMemoryRepositoryValidation
     /// <param name="value">The repository to check.</param>
     /// <returns>True if valid; otherwise false.</returns>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="value"/> is null.</exception>
-    public static bool IsValid(this InMemoryRepository<LocationData> value)
+    public static async Task<bool> IsValidAsync(this InMemoryRepository<LocationData> value)
     {
-        return Validate(value).Count == 0;
+        ArgumentNullException.ThrowIfNull(value);
+
+        return (await ValidateAsync(value)).Count == 0;
     }
 
     /// <summary>
@@ -56,11 +57,11 @@ public static class InMemoryRepositoryValidation
     /// <param name="value">The repository to validate.</param>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="value"/> is null.</exception>
     /// <exception cref="ArgumentException">Thrown if the repository is invalid.</exception>
-    public static void EnsureValid(this InMemoryRepository<LocationData> value)
+    public static async Task EnsureValidAsync(this InMemoryRepository<LocationData> value)
     {
         ArgumentNullException.ThrowIfNull(value);
 
-        var problems = Validate(value);
+        var problems = await ValidateAsync(value);
         if (problems.Count > 0)
         {
             throw new ArgumentException(
@@ -74,7 +75,7 @@ public static class InMemoryRepositoryValidation
     /// <param name="location">The location data to validate.</param>
     /// <returns>A list of validation problems; empty if valid.</returns>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="location"/> is null.</exception>
-    public static IReadOnlyList<string> ValidateLocationData(LocationData? location)
+    public static IReadOnlyList<string> ValidateLocationData([NotNull] LocationData? location)
     {
         if (location is null)
         {
@@ -191,14 +192,9 @@ public static class InMemoryRepositoryValidation
     /// <returns>A list of validation problems; empty if valid.</returns>
     public static IReadOnlyList<string> ValidateParameters(string deviceId)
     {
-        var problems = new List<string>();
+        ArgumentException.ThrowIfNullOrEmpty(deviceId);
 
-        if (string.IsNullOrWhiteSpace(deviceId))
-        {
-            problems.Add("deviceId is null or whitespace");
-        }
-
-        return problems.AsReadOnly();
+        return [];
     }
 
     /// <summary>
@@ -237,16 +233,9 @@ public static class InMemoryRepositoryValidation
     /// <returns>A list of validation problems; empty if valid.</returns>
     public static IReadOnlyList<string> ValidateParameters(string deviceId, DateTime start, DateTime end)
     {
-        var problems = new List<string>();
+        ArgumentException.ThrowIfNullOrEmpty(deviceId);
 
-        if (string.IsNullOrWhiteSpace(deviceId))
-        {
-            problems.Add("deviceId is null or whitespace");
-        }
-
-        problems.AddRange(ValidateParameters(start, end));
-
-        return problems.AsReadOnly();
+        return ValidateParameters(start, end);
     }
 
     /// <summary>
