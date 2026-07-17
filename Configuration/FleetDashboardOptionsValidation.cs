@@ -7,6 +7,7 @@
 
 namespace GpsTrackerProtocol.Configuration;
 
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 
 /// <summary>
@@ -29,13 +30,13 @@ public static class FleetDashboardOptionsValidation
         // Validate DefaultFuelPricePerLiter
         if (value.DefaultFuelPricePerLiter < 0)
         {
-            errors.Add($"DefaultFuelPricePerLiter must be non-negative, but was {value.DefaultFuelPricePerLiter.ToString(CultureInfo.InvariantCulture)}.");
+            errors.Add(string.Create(CultureInfo.InvariantCulture, $"DefaultFuelPricePerLiter must be non-negative, but was {value.DefaultFuelPricePerLiter:F2}."));
         }
 
         // Validate AverageRoadSpeedKmh
         if (value.AverageRoadSpeedKmh <= 0)
         {
-            errors.Add($"AverageRoadSpeedKmh must be positive, but was {value.AverageRoadSpeedKmh.ToString(CultureInfo.InvariantCulture)}.");
+            errors.Add(string.Create(CultureInfo.InvariantCulture, $"AverageRoadSpeedKmh must be positive, but was {value.AverageRoadSpeedKmh:F2}."));
         }
 
         // Validate MaxStopsPerRoute
@@ -59,7 +60,7 @@ public static class FleetDashboardOptionsValidation
         // Validate LowFuelThresholdLiters
         if (value.LowFuelThresholdLiters < 0)
         {
-            errors.Add($"LowFuelThresholdLiters must be non-negative, but was {value.LowFuelThresholdLiters.ToString(CultureInfo.InvariantCulture)}.");
+            errors.Add(string.Create(CultureInfo.InvariantCulture, $"LowFuelThresholdLiters must be non-negative, but was {value.LowFuelThresholdLiters:F2}."));
         }
 
         return errors.AsReadOnly();
@@ -70,9 +71,10 @@ public static class FleetDashboardOptionsValidation
     /// </summary>
     /// <param name="value">The options to check.</param>
     /// <returns><see langword="true"/> if valid; otherwise, <see langword="false"/>.</returns>
-    public static bool IsValid(this FleetDashboardOptions value)
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="value"/> is <see langword="null"/>.</exception>
+    public static bool IsValid([NotNullWhen(true)] this FleetDashboardOptions? value)
     {
-        return value.Validate().Count == 0;
+        return value is not null && value.Validate().Count == 0;
     }
 
     /// <summary>
