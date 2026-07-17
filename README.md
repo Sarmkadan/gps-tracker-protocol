@@ -1719,6 +1719,137 @@ public class KalmanLocationSmootherExample
 }
 ```
 
+## StringExtensionsValidation
+
+The `StringExtensionsValidation` class provides comprehensive validation methods for string operations and parsed values from the `StringExtensions` class. It includes validation methods that return detailed error lists, boolean validation checks, and methods that throw exceptions when validation fails. This validation system ensures data integrity when parsing device identifiers, IMEIs, coordinates, and other string-based inputs from GPS tracker protocols.
+
+Example usage for validating parsed values and device identifiers:
+```csharp
+using GpsTrackerProtocol.Utilities;
+
+public class StringExtensionsValidationExample
+{
+public void ValidateParsedValues()
+{
+// Validate parsed double value from string parsing
+string speedText = "65.5";
+double speed = speedText.ToDoubleOrDefault(0.0);
+var speedErrors = StringExtensionsValidation.Validate(speed, speedText, 0.0);
+Console.WriteLine($"Speed validation errors: {speedErrors.Count}");
+
+// Check if parsed value is valid using boolean method
+bool isSpeedValid = StringExtensionsValidation.IsValid(speed, speedText, 0.0);
+Console.WriteLine($"Speed is valid: {isSpeedValid}");
+
+// Validate IMEI string
+string imei = "123456789012345";
+var imeiErrors = StringExtensionsValidation.ValidateImei(imei);
+Console.WriteLine($"IMEI validation errors: {imeiErrors.Count}");
+
+// Check if IMEI is valid
+bool validImei = StringExtensionsValidation.IsValidImei(imei);
+Console.WriteLine($"IMEI '{imei}' is valid: {validImei}");
+
+// Validate device ID string
+string deviceId = "TRK-001-ABC";
+var deviceErrors = StringExtensionsValidation.ValidateDeviceId(deviceId);
+Console.WriteLine($"Device ID validation errors: {deviceErrors.Count}");
+
+// Check if device ID is valid
+bool validDeviceId = StringExtensionsValidation.IsValidDeviceId(deviceId);
+Console.WriteLine($"Device ID '{deviceId}' is valid: {validDeviceId}");
+
+// Validate hex string for conversion
+string hexString = "A1B2C3D4";
+var hexErrors = StringExtensionsValidation.ValidateHex(hexString);
+Console.WriteLine($"Hex string validation errors: {hexErrors.Count}");
+
+// Validate color string
+string color = "#FF5733";
+var colorErrors = StringExtensionsValidation.ValidateColor(color);
+Console.WriteLine($"Color validation errors: {colorErrors.Count}");
+
+// Validate truncation parameters
+var truncateErrors = StringExtensionsValidation.Validate(20, "...");
+Console.WriteLine($"Truncation parameter validation errors: {truncateErrors.Count}");
+
+// Ensure valid parsed value (throws if invalid)
+try
+{
+StringExtensionsValidation.EnsureValid(speed, speedText, 0.0);
+Console.WriteLine("Parsed value passed validation");
+}
+catch (ArgumentException ex)
+{
+Console.WriteLine($"Validation failed: {ex.Message}");
+}
+
+// Ensure valid IMEI (throws if invalid)
+try
+{
+StringExtensionsValidation.EnsureValidImei(imei);
+Console.WriteLine("IMEI passed validation");
+}
+catch (ArgumentException ex)
+{
+Console.WriteLine($"IMEI validation failed: {ex.Message}");
+}
+
+// Ensure valid device ID (throws if invalid)
+try
+{
+StringExtensionsValidation.EnsureValidDeviceId(deviceId);
+Console.WriteLine("Device ID passed validation");
+}
+catch (ArgumentException ex)
+{
+Console.WriteLine($"Device ID validation failed: {ex.Message}");
+}
+
+// Ensure valid hex string (throws if invalid)
+try
+{
+StringExtensionsValidation.EnsureValidHex(hexString);
+Console.WriteLine("Hex string passed validation");
+}
+catch (ArgumentException ex)
+{
+Console.WriteLine($"Hex string validation failed: {ex.Message}");
+}
+
+// Ensure valid color (throws if invalid)
+try
+{
+StringExtensionsValidation.EnsureValidColor(color);
+Console.WriteLine("Color passed validation");
+}
+catch (ArgumentException ex)
+{
+Console.WriteLine($"Color validation failed: {ex.Message}");
+}
+
+// Ensure valid truncation parameters (throws if invalid)
+try
+{
+StringExtensionsValidation.EnsureValid(20, "...");
+Console.WriteLine("Truncation parameters passed validation");
+}
+catch (ArgumentException ex)
+{
+Console.WriteLine($"Truncation parameter validation failed: {ex.Message}");
+}
+}
+
+public static void Main(string[] args)
+{
+Console.WriteLine("Starting StringExtensionsValidation example...");
+var example = new StringExtensionsValidationExample();
+example.ValidateParsedValues();
+Console.WriteLine("StringExtensionsValidation example completed!");
+}
+}
+```
+
 ## StringExtensions
 
 The `StringExtensions` class provides various extension methods for string manipulation and validation commonly used in GPS tracker protocol processing.
