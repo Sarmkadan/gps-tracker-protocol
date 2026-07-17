@@ -9,8 +9,14 @@ using GpsTrackerProtocol.Utilities;
 using System.Collections.Generic;
 using Xunit;
 
+/// <summary>
+/// Provides unit tests for <see cref="DictionaryExtensionsJsonExtensions"/> methods that convert between dictionaries and JSON strings.
+/// </summary>
 public class DictionaryExtensionsJsonExtensionsTests
 {
+	/// <summary>
+	/// Tests that <see cref="DictionaryExtensionsJsonExtensions.ToJson"/> correctly converts a dictionary to a JSON string.
+	/// </summary>
     [Fact]
     public void ToJson_ValidInput_ReturnsCorrectOutput()
     {
@@ -24,6 +30,9 @@ public class DictionaryExtensionsJsonExtensionsTests
         result.Should().Be("{\"key\":\"value\"}");
     }
 
+	/// <summary>
+	/// Tests that <see cref="DictionaryExtensionsJsonExtensions.FromJson"/> correctly converts a JSON string back to a dictionary.
+	/// </summary>
     [Fact]
     public void FromJson_ValidInput_ReturnsCorrectOutput()
     {
