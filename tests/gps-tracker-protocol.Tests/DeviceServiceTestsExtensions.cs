@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Threading.Tasks;
 
 namespace gps_tracker_protocol.Tests
@@ -44,7 +43,9 @@ namespace gps_tracker_protocol.Tests
             ArgumentNullException.ThrowIfNull(tests);
 
             foreach (var test in tests.GetAllTestMethods())
+            {
                 await test(tests).ConfigureAwait(false);
+            }
         }
 
         /// <summary>
@@ -91,7 +92,7 @@ namespace gps_tracker_protocol.Tests
                 nameof(tests.GetAllDevicesAsync_ShouldReturnAllDevices)
             };
 
-            return string.Join(", ", names, StringSplitOptions.None);
+            return string.Join(", ", names);
         }
     }
 }
