@@ -314,6 +314,90 @@ dotnet run -- simulate device-001 20
 dotnet run -- fleet
 ```
 
+## JourneyAnalyzerValidation
+
+The `JourneyAnalyzerValidation` class provides validation extension methods for `JourneyAnalyzer` operations. It includes methods for validating device identifiers, waypoint counts, and JourneyAnalyzer instances to ensure data integrity before analysis operations. The validation methods return detailed error lists, while the `IsValid` methods provide boolean checks, and `EnsureValid` methods throw exceptions when validation fails.
+
+Example usage for validating journey analysis operations:
+
+```csharp
+using GpsTrackerProtocol.Services;
+using GpsTrackerProtocol.Domain.Models;
+
+public class JourneyAnalyzerValidationExample
+{
+    public void ValidateJourneyOperations()
+    {
+        // Validate a device identifier
+        string deviceId = "device-001";
+        var deviceErrors = deviceId.Validate();
+        Console.WriteLine($"Device validation errors: {deviceErrors.Count}");
+        
+        // Check if device ID is valid
+        bool isValidDevice = deviceId.IsValid();
+        Console.WriteLine($"Device ID is valid: {isValidDevice}");
+        
+        // Validate device ID and waypoint count for simulation
+        var simulationErrors = JourneyAnalyzerValidation.Validate(deviceId, 15);
+        Console.WriteLine($"Simulation validation errors: {simulationErrors.Count}");
+        
+        // Check if simulation parameters are valid
+        bool isValidSimulation = JourneyAnalyzerValidation.IsValid(deviceId, 15);
+        Console.WriteLine($"Simulation parameters are valid: {isValidSimulation}");
+        
+        // Validate a JourneyAnalyzer instance
+        var analyzer = new JourneyAnalyzer();
+        var analyzerErrors = analyzer.Validate();
+        Console.WriteLine($"Analyzer validation errors: {analyzerErrors.Count}");
+        
+        // Check if analyzer is valid
+        bool isValidAnalyzer = analyzer.IsValid();
+        Console.WriteLine($"Analyzer is valid: {isValidAnalyzer}");
+        
+        // Ensure valid device ID (throws if invalid)
+        try
+        {
+            deviceId.EnsureValid();
+            Console.WriteLine("Device ID passed validation");
+        }
+        catch (ArgumentException ex)
+        {
+            Console.WriteLine($"Validation failed: {ex.Message}");
+        }
+        
+        // Ensure valid simulation parameters (throws if invalid)
+        try
+        {
+            JourneyAnalyzerValidation.EnsureValid(deviceId, 15);
+            Console.WriteLine("Simulation parameters passed validation");
+        }
+        catch (ArgumentException ex)
+        {
+            Console.WriteLine($"Validation failed: {ex.Message}");
+        }
+        
+        // Ensure valid analyzer instance (throws if invalid)
+        try
+        {
+            analyzer.EnsureValid();
+            Console.WriteLine("Analyzer passed validation");
+        }
+        catch (ArgumentException ex)
+        {
+            Console.WriteLine($"Validation failed: {ex.Message}");
+        }
+    }
+    
+    public static void Main(string[] args)
+    {
+        Console.WriteLine("Starting JourneyAnalyzerValidation example...");
+        var example = new JourneyAnalyzerValidationExample();
+        example.ValidateJourneyOperations();
+        Console.WriteLine("JourneyAnalyzerValidation example completed!");
+    }
+}
+```
+
 ## IAnalyticsService
 
 The `IAnalyticsService` interface provides functionality for computing analytics and statistics for GPS tracker devices and fleets. It aggregates location data, journey information, and device metrics to generate comprehensive reports including device-specific analytics, fleet-wide statistics, and route analysis.
