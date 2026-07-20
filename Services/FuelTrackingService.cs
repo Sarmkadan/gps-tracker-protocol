@@ -7,6 +7,9 @@
 namespace GpsTrackerProtocol.Services;
 
 using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using GpsTrackerProtocol.Domain;
 using GpsTrackerProtocol.Domain.Models;
@@ -42,6 +45,29 @@ public interface IFuelTrackingService
     /// Pure calculation — does not create any records.
     /// </summary>
     double EstimateFuelLiters(double distanceKm, double consumptionLper100km);
+
+    /// <summary>
+    /// Detects fuel theft or anomaly events for a vehicle.
+    /// It analyses an ordered series of fuel‑level readings and flags drops greater than
+    /// <paramref name="percentageThreshold"/> within a <paramref name="timeWindow"/> while the vehicle
+    /// is stationary (odometer does not change). Returns a collection of <see cref="AnomalyRecord"/>
+    /// describing each detected anomaly.
+    /// </summary>
+    /// <param name="vehicleId">Identifier of the vehicle to analyse.</param>
+    /// <param name="percentageThreshold">
+    /// Percentage drop (e.g., 15 for 15 %) that must be exceeded to be considered an anomaly.
+    /// </param>
+    /// <param name="timeWindow">
+    /// Maximum time span between two consecutive readings for the drop to be considered.
+    /// </param>
+    /// <returns>
+    /// A task that resolves to a collection of anomaly records. The collection may be empty
+    /// if no anomalies are detected.
+    /// </returns>
+    Task<IEnumerable<AnomalyRecord>> DetectAnomaliesAsync(
+        string vehicleId,
+        double percentageThreshold,
+        TimeSpan timeWindow);
 }
 
 /// <summary>
@@ -169,5 +195,63 @@ public sealed class FuelTrackingService : IFuelTrackingService
             return 0.0;
 
         return Math.Round(distanceKm * consumptionLper100km / 100.0, 3);
+    }
+
+    /// <inheritdoc/>
+    public Task<IEnumerable<AnomalyRecord>> DetectAnomaliesAsync(
+        string vehicleId,
+        double percentageThreshold,
+        TimeSpan timeWindow)
+    {
+        if (string.IsNullOrWhiteSpace(vehicleId))
+            throw new ArgumentException("Vehicle ID cannot be empty", nameof(vehicleId));
+
+        if (percentageThreshold <= 0)
+            throw new ArgumentException("Percentage threshold must be greater than zero", nameof(percentageThreshold));
+
+        // Gather ordered fuel records for the vehicle.
+        var ordered = _records.Values
+            .Where(r => r.VehicleId == vehicleId)
+            .OrderBy(r => r.Timestamp)
+            .ToList();
+
+        var anomalies = new List<AnomalyRecord>();
+
+        for (int i = 1; i < ordered.Count; i++)
+        {
+            var previous = ordered[i - 1];
+            var current = ordered[i];
+
+            // Vehicle must be stationary: odometer reading unchanged.
+            if (previous.OdometerKm != current.OdometerKm)
+                continue;
+
+            // Compute percentage drop in fuel level.
+            var fuelDrop = previous.FuelAmountLiters - current.FuelAmountLiters;
+            if (fuelDrop <= 0)
+                continue; // No drop.
+
+            var percentDrop = (fuelDrop / previous.FuelAmountLiters) * 100.0;
+            var timeDiff = current.Timestamp - previous.Timestamp;
+
+            if (percentDrop >= percentageThreshold && timeDiff <= timeWindow)
+            {
+                anomalies.Add(new AnomalyRecord
+                {
+                    Timestamp = current.Timestamp,
+                    DropAmountLiters = Math.Round(fuelDrop, 3),
+                    Duration = timeDiff
+                });
+
+                _logger.LogWarning(
+                    "Fuel anomaly detected for vehicle {VehicleId}: drop {Drop:F2} L ({Percent:F1}%) over {Duration}",
+                    vehicleId,
+                    fuelDrop,
+                    percentDrop,
+                    timeDiff);
+            }
+        }
+
+        return Task.FromResult<IEnumerable<AnomalyRecord>>(anomalies);
     }
 }
