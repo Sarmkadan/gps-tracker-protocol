@@ -162,3 +162,14 @@ public enum CommandStatus
     Completed,
     Failed
 }
+
+// New event for speed limit alerts
+public class SpeedLimitExceededEvent : IDomainEvent
+{
+    public string EventId { get; set; } = Guid.NewGuid().ToString();
+    public DateTime Timestamp { get; set; } = DateTime.UtcNow;
+    public string AggregateId { get; set; }
+    public string DeviceId { get; set; }
+    public double Speed { get; set; }
+    public double MaxSpeed { get; set; }
+}
