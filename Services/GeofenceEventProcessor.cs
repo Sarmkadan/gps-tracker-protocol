@@ -6,6 +6,11 @@
 
 namespace GpsTrackerProtocol.Services;
 
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using GpsTrackerProtocol.Domain.Models;
 using GpsTrackerProtocol.Events;
@@ -53,24 +58,47 @@ public class GeofenceEventProcessor : IGeofenceEventProcessor
     private readonly INotificationService _notificationService;
     private readonly ILogger<GeofenceEventProcessor> _logger;
 
+    // DeviceId -> set of geofence ids currently inside
     private readonly Dictionary<string, HashSet<string>> _deviceState = new();
+
+    // DeviceId -> webhook URL
     private readonly Dictionary<string, string> _webhookSubscriptions = new();
+
+    // (DeviceId, GeofenceId) -> entry timestamp
     private readonly Dictionary<(string DeviceId, string GeofenceId), DateTime> _entryTimestamps = new();
+
+    // Tracks which dwell events have already been emitted to avoid duplicates
+    private readonly HashSet<(string DeviceId, string GeofenceId)> _dwellEmitted = new();
+
     private readonly object _lock = new();
 
+    // Configurable dwell threshold (default 5 minutes)
+    private readonly TimeSpan _dwellThreshold;
+
     /// <summary>Initialises a new <see cref="GeofenceEventProcessor"/> with required dependencies.</summary>
+    /// <param name="geofenceService">Service providing geofence data.</param>
+    /// <param name="webhookClient">Client used to POST webhook payloads.</param>
+    /// <param name="eventPublisher">Publishes domain events.</param>
+    /// <param name="notificationService">Sends out‑of‑band notifications.</param>
+    /// <param name="logger">Logger instance.</param>
+    /// <param name="dwellThreshold">
+    /// Optional dwell threshold. If <c>TimeSpan.Zero</c> (default), a 5‑minute threshold is used.
+    /// </param>
     public GeofenceEventProcessor(
         IGeofenceService geofenceService,
         IWebhookClient webhookClient,
         IEventPublisher eventPublisher,
         INotificationService notificationService,
-        ILogger<GeofenceEventProcessor> logger)
+        ILogger<GeofenceEventProcessor> logger,
+        TimeSpan dwellThreshold = default)
     {
         _geofenceService = geofenceService;
         _webhookClient = webhookClient;
         _eventPublisher = eventPublisher;
         _notificationService = notificationService;
         _logger = logger;
+
+        _dwellThreshold = dwellThreshold == TimeSpan.Zero ? TimeSpan.FromMinutes(5) : dwellThreshold;
     }
 
     /// <inheritdoc/>
@@ -94,6 +122,7 @@ public class GeofenceEventProcessor : IGeofenceEventProcessor
             .ToHashSet();
 
         List<(string GeofenceId, bool Entered, TimeSpan Dwell)> transitions;
+        List<(string GeofenceId, TimeSpan Dwell)> dwellEvents = new();
         string? webhookUrl;
 
         lock (_lock)
@@ -101,14 +130,16 @@ public class GeofenceEventProcessor : IGeofenceEventProcessor
             _deviceState.TryGetValue(location.DeviceId, out var previouslyInside);
             previouslyInside ??= [];
 
-            transitions = [];
+            transitions = new List<(string GeofenceId, bool Entered, TimeSpan Dwell)>();
 
+            // Detect entries
             foreach (var id in currentlyInside.Except(previouslyInside))
             {
                 _entryTimestamps[(location.DeviceId, id)] = location.Timestamp;
                 transitions.Add((id, true, TimeSpan.Zero));
             }
 
+            // Detect exits
             foreach (var id in previouslyInside.Except(currentlyInside))
             {
                 var dwell = _entryTimestamps.TryGetValue((location.DeviceId, id), out var entryTime)
@@ -118,10 +149,25 @@ public class GeofenceEventProcessor : IGeofenceEventProcessor
                 transitions.Add((id, false, dwell));
             }
 
+            // Detect dwell exceedance
+            foreach (var id in currentlyInside)
+            {
+                if (_entryTimestamps.TryGetValue((location.DeviceId, id), out var entryTime))
+                {
+                    var dwell = location.Timestamp - entryTime;
+                    if (dwell >= _dwellThreshold && !_dwellEmitted.Contains((location.DeviceId, id)))
+                    {
+                        _dwellEmitted.Add((location.DeviceId, id));
+                        dwellEvents.Add((id, dwell));
+                    }
+                }
+            }
+
             _deviceState[location.DeviceId] = currentlyInside;
             _webhookSubscriptions.TryGetValue(location.DeviceId, out webhookUrl);
         }
 
+        // Process entry / exit events
         foreach (var (geofenceId, entered, dwell) in transitions)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -130,6 +176,13 @@ public class GeofenceEventProcessor : IGeofenceEventProcessor
                 await OnEnteredAsync(location, geofenceId, webhookUrl).ConfigureAwait(false);
             else
                 await OnExitedAsync(location, geofenceId, dwell, webhookUrl).ConfigureAwait(false);
+        }
+
+        // Process dwell events
+        foreach (var (geofenceId, dwell) in dwellEvents)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            await OnDwellAsync(location, geofenceId, dwell, webhookUrl).ConfigureAwait(false);
         }
     }
 
@@ -220,6 +273,39 @@ public class GeofenceEventProcessor : IGeofenceEventProcessor
                 GeofenceId   = geofenceId,
                 Latitude     = location.Latitude,
                 Longitude    = location.Longitude,
+                DwellSeconds = (long)dwell.TotalSeconds,
+                Timestamp    = @event.Timestamp.ToString("o")
+            });
+        }
+    }
+
+    private async Task OnDwellAsync(LocationData location, string geofenceId, TimeSpan dwell, string? webhookUrl)
+    {
+        _logger.LogInformation("Device {DeviceId} dwell exceeded in geofence {GeofenceId} (duration {Dwell})",
+            location.DeviceId, geofenceId, dwell);
+
+        var @event = new GeofenceDwellEvent
+        {
+            AggregateId   = location.DeviceId,
+            DeviceId      = location.DeviceId,
+            GeofenceId    = geofenceId,
+            DwellDuration = dwell,
+            DwellThreshold = _dwellThreshold
+        };
+
+        await _eventPublisher.PublishAsync(@event).ConfigureAwait(false);
+
+        // Optional: send webhook for dwell events (not required by spec, but kept for symmetry)
+        if (!string.IsNullOrWhiteSpace(webhookUrl))
+        {
+            await _webhookClient.SendGeofenceEventAsync(webhookUrl, new GeofenceWebhookPayload
+            {
+                EventType    = "geofence_dwell",
+                DeviceId     = location.DeviceId,
+                GeofenceId   = geofenceId,
+                Latitude     = location.Latitude,
+                Longitude    = location.Longitude,
+                Speed        = location.Speed,
                 DwellSeconds = (long)dwell.TotalSeconds,
                 Timestamp    = @event.Timestamp.ToString("o")
             });
