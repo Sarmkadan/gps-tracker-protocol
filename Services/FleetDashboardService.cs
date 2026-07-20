@@ -13,6 +13,22 @@ using GpsTrackerProtocol.Domain.Models;
 using GpsTrackerProtocol.Configuration;
 
 /// <summary>
+/// Represents a summary of fleet status including device counts, online/offline status,
+/// average speed of moving vehicles, and active alert count.
+/// </summary>
+/// <param name="TotalDevices">Total number of devices in the fleet.</param>
+/// <param name="OnlineDevices">Number of devices currently online.</param>
+/// <param name="OfflineDevices">Number of devices currently offline.</param>
+/// <param name="AverageMovingSpeedKmh">Average speed of vehicles currently in motion.</param>
+/// <param name="ActiveAlerts">Number of active alerts across the fleet.</param>
+public sealed record FleetSummary(
+    int TotalDevices,
+    int OnlineDevices,
+    int OfflineDevices,
+    double AverageMovingSpeedKmh,
+    int ActiveAlerts);
+
+/// <summary>
 /// Manages the fleet vehicle registry and exposes a real-time analytics dashboard
 /// that aggregates live telemetry from GPS devices with fuel and route data.
 /// </summary>
@@ -61,6 +77,12 @@ public interface IFleetDashboardService
     /// Computes named fleet-wide KPI metrics over an arbitrary time window.
     /// </summary>
     Task<IReadOnlyDictionary<string, double>> ComputeFleetKpisAsync(DateTime from, DateTime to);
+
+    /// <summary>
+    /// Returns a summary of the fleet status including device counts, online/offline status,
+    /// average speed of moving vehicles, and active alert count.
+    /// </summary>
+    Task<FleetSummary> GetFleetSummaryAsync();
 }
 
 /// <summary>
@@ -76,6 +98,7 @@ public sealed class FleetDashboardService : IFleetDashboardService
     private readonly ILocationDataService _locationService;
     private readonly IFuelTrackingService _fuelTracking;
     private readonly IRouteOptimizationEngine _routeEngine;
+    private readonly IGeofenceAlertingService _alertingService;
     private readonly FleetDashboardOptions _options;
     private readonly ILogger<FleetDashboardService> _logger;
 
@@ -88,6 +111,7 @@ public sealed class FleetDashboardService : IFleetDashboardService
         ILocationDataService locationService,
         IFuelTrackingService fuelTracking,
         IRouteOptimizationEngine routeEngine,
+        IGeofenceAlertingService alertingService,
         FleetDashboardOptions options,
         ILogger<FleetDashboardService> logger)
     {
@@ -95,6 +119,7 @@ public sealed class FleetDashboardService : IFleetDashboardService
         _locationService = locationService;
         _fuelTracking = fuelTracking;
         _routeEngine = routeEngine;
+        _alertingService = alertingService;
         _options = options;
         _logger = logger;
     }
@@ -121,7 +146,7 @@ public sealed class FleetDashboardService : IFleetDashboardService
                 vehicle.DeviceId);
 
         if (_vehicles.Values.Any(v =>
-                v.RegistrationNumber.Equals(vehicle.RegistrationNumber, StringComparison.OrdinalIgnoreCase)))
+            v.RegistrationNumber.Equals(vehicle.RegistrationNumber, StringComparison.OrdinalIgnoreCase)))
             throw new ValidationException(
                 $"A vehicle with registration '{vehicle.RegistrationNumber}' is already registered",
                 nameof(FleetVehicle.RegistrationNumber),
@@ -257,6 +282,77 @@ public sealed class FleetDashboardService : IFleetDashboardService
         var totalFuel = reports.Sum(r => r.TotalFuelConsumedLiters);
 
         return BuildKpiDictionary([], reports, totalDist, totalFuel, vehicles.Count);
+    }
+
+    /// <inheritdoc/>
+    public async Task<FleetSummary> GetFleetSummaryAsync()
+    {
+        var vehicles = _vehicles.Values.ToList();
+        if (vehicles.Count == 0)
+        {
+            return new FleetSummary(
+                TotalDevices: 0,
+                OnlineDevices: 0,
+                OfflineDevices: 0,
+                AverageMovingSpeedKmh: 0,
+                ActiveAlerts: 0);
+        }
+
+        // Get device statuses to determine online/offline counts
+        var deviceTasks = vehicles.Select(v => _deviceService.GetDeviceAsync(v.DeviceId));
+        var devices = await Task.WhenAll(deviceTasks).ConfigureAwait(false);
+
+        // Calculate online/offline counts based on last-seen threshold
+        var onlineDevices = 0;
+        var offlineDevices = 0;
+        var totalSpeed = 0.0;
+        var movingCount = 0;
+
+        foreach (var (vehicle, device) in vehicles.Zip(devices))
+        {
+            if (device is null)
+            {
+                offlineDevices++;
+                continue;
+            }
+
+            // Check if device is online based on last-seen threshold
+            var isOnline = device.LastSeen >= DateTime.UtcNow.AddMinutes(-_options.SnapshotCacheTtl.TotalMinutes);
+            if (isOnline)
+            {
+                onlineDevices++;
+            }
+            else
+            {
+                offlineDevices++;
+            }
+
+            // Get vehicle status to check if moving and get speed
+            var status = await GetVehicleStatusAsync(vehicle.Id).ConfigureAwait(false);
+            if (status.Status == DeviceStatus.Moving && status.CurrentSpeedKmh > 0)
+            {
+                totalSpeed += status.CurrentSpeedKmh.Value;
+                movingCount++;
+            }
+        }
+
+        // Calculate average speed of moving vehicles
+        var averageMovingSpeed = movingCount > 0 ? totalSpeed / movingCount : 0;
+
+        // Get active alerts count across all vehicles
+        var activeAlerts = 0;
+        foreach (var vehicle in vehicles)
+        {
+            var alerts = _alertingService.GetActiveAlerts(vehicle.DeviceId);
+            activeAlerts += alerts.Count;
+        }
+
+        return new FleetSummary(
+            TotalDevices: vehicles.Count,
+            OnlineDevices: onlineDevices,
+            OfflineDevices: offlineDevices,
+            AverageMovingSpeedKmh: Math.Round(averageMovingSpeed, 2),
+            ActiveAlerts: activeAlerts);
     }
 
     // -------------------------------------------------------------------------
