@@ -7,10 +7,14 @@
 namespace GpsTrackerProtocol.Services;
 
 using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using GpsTrackerProtocol.Domain;
 using GpsTrackerProtocol.Domain.Models;
 using GpsTrackerProtocol.Configuration;
+using GpsTrackerProtocol.Formatting;
 
 /// <summary>
 /// Represents a summary of fleet status including device counts, online/offline status,
@@ -273,15 +277,11 @@ public sealed class FleetDashboardService : IFleetDashboardService
         if (to <= from)
             throw new ArgumentException("'to' must be strictly after 'from'");
 
-        var vehicles = _vehicles.Values.ToList();
-        if (vehicles.Count == 0)
-            return new Dictionary<string, double>();
-
-        var reports = await Task.WhenAll(vehicles.Select(v => _fuelTracking.GetReportAsync(v.Id, from, to))).ConfigureAwait(false);
+        var reports = await Task.WhenAll(_vehicles.Values.Select(v => _fuelTracking.GetReportAsync(v.Id, from, to))).ConfigureAwait(false);
         var totalDist = reports.Sum(r => r.TotalDistanceKm);
         var totalFuel = reports.Sum(r => r.TotalFuelConsumedLiters);
 
-        return BuildKpiDictionary([], reports, totalDist, totalFuel, vehicles.Count);
+        return BuildKpiDictionary([], reports, totalDist, totalFuel, _vehicles.Values.Count);
     }
 
     /// <inheritdoc/>
@@ -316,7 +316,7 @@ public sealed class FleetDashboardService : IFleetDashboardService
                 continue;
             }
 
-            // Check if device is online based on last-seen threshold
+            // Check if device is online based based on last-seen threshold
             var isOnline = device.LastSeen >= DateTime.UtcNow.AddMinutes(-_options.SnapshotCacheTtl.TotalMinutes);
             if (isOnline)
             {
@@ -353,6 +353,29 @@ public sealed class FleetDashboardService : IFleetDashboardService
             OfflineDevices: offlineDevices,
             AverageMovingSpeedKmh: Math.Round(averageMovingSpeed, 2),
             ActiveAlerts: activeAlerts);
+    }
+
+    /// <summary>
+    /// Exports a GeoJSON FeatureCollection containing the latest known location of every device
+    /// registered in the fleet. The collection can be used directly by mapping libraries such as
+    /// Leaflet or Mapbox.
+    /// </summary>
+    public async Task<string> ExportFleetSnapshotAsync()
+    {
+        // Retrieve the latest location for each device in the fleet.
+        var latestLocations = await Task.WhenAll(
+            _vehicles.Values.Select(v => _locationService.GetLatestLocationAsync(v.DeviceId))
+        ).ConfigureAwait(false);
+
+        // Filter out any null results (devices without a known location).
+        var validLocations = latestLocations
+            .Where(loc => loc != null)
+            .Cast<LocationData>()
+            .ToList();
+
+        // Use the GeoJsonFormatter to produce a FeatureCollection.
+        var formatter = new GeoJsonFormatter();
+        return formatter.FormatLocationCollection(validLocations);
     }
 
     // -------------------------------------------------------------------------
