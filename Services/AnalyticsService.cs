@@ -20,6 +20,7 @@ public interface IAnalyticsService
     Task<DeviceAnalytics> GetDeviceAnalyticsAsync(string deviceId);
     Task<FleetAnalytics> GetFleetAnalyticsAsync();
     Task<RouteAnalytics> GetRouteAnalyticsAsync(string journeyId);
+    Task<JourneyWithIdlePeriods> GetJourneyWithIdlePeriodsAsync(string journeyId);
 }
 
 public class AnalyticsService : IAnalyticsService
@@ -188,6 +189,34 @@ public class AnalyticsService : IAnalyticsService
             MaxLon = points.Max(w => w.Longitude)
         };
     }
+
+    /// <summary>
+    /// Gets a journey with detected idle periods.
+    /// </summary>
+    /// <param name="journeyId">The journey ID.</param>
+    /// <returns>A journey with idle periods.</returns>
+    public async Task<JourneyWithIdlePeriods> GetJourneyWithIdlePeriodsAsync(string journeyId)
+    {
+        if (string.IsNullOrWhiteSpace(journeyId))
+            throw new ArgumentException("Journey ID cannot be empty", nameof(journeyId));
+
+        var journey = await _journeyService.GetJourneyAsync(journeyId).ConfigureAwait(false);
+        if (journey is null)
+            throw new KeyNotFoundException($"Journey {journeyId} not found");
+
+        var idlePeriods = await _journeyService.GetIdlePeriodsAsync(journeyId).ConfigureAwait(false);
+        var totalIdleMinutes = idlePeriods.Sum(ip => ip.Duration.TotalMinutes);
+        var totalDurationMinutes = journey.GetDuration().TotalMinutes;
+        var idlePercentage = totalDurationMinutes > 0 ? (totalIdleMinutes / totalDurationMinutes) * 100 : 0;
+
+        return new JourneyWithIdlePeriods
+        {
+            Journey = journey,
+            IdlePeriods = idlePeriods,
+            TotalIdleTimeMinutes = totalIdleMinutes,
+            IdlePercentage = idlePercentage
+        };
+    }
 }
 
 public class DeviceAnalytics
@@ -239,4 +268,15 @@ public class BoundingBox
     public double MaxLat { get; set; }
     public double MinLon { get; set; }
     public double MaxLon { get; set; }
+}
+
+/// <summary>
+/// Represents a journey with detected idle periods.
+/// </summary>
+public class JourneyWithIdlePeriods
+{
+    public Journey Journey { get; set; } = null!;
+    public IEnumerable<IdlePeriod> IdlePeriods { get; set; } = Enumerable.Empty<IdlePeriod>();
+    public double TotalIdleTimeMinutes { get; set; }
+    public double IdlePercentage { get; set; }
 }

@@ -96,3 +96,19 @@ public class Journey
     public override string ToString() =>
         $"Journey({Id}) - {DeviceId} - {Waypoints.Count} points - {GetDuration().TotalMinutes:F1}min";
 }
+
+/// <summary>
+/// Represents a period of inactivity/idle time during a journey.
+/// </summary>
+public class IdlePeriod
+{
+    public DateTime StartTime { get; set; }
+    public DateTime EndTime { get; set; }
+    public TimeSpan Duration { get; set; }
+    public LocationData StartLocation { get; set; } = null!;
+    public LocationData EndLocation { get; set; } = null!;
+    public double MaxDistanceMeters { get; set; }
+
+    public override string ToString() =>
+        $"IdlePeriod [{StartTime:O} - {EndTime:O}] Duration: {Duration.TotalMinutes:F1}min, Distance: {MaxDistanceMeters}m";
+}

@@ -2,7 +2,7 @@
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
-// =============================================================================
+// =====================================================================
 
 namespace GpsTrackerProtocol.Services;
 
@@ -15,7 +15,7 @@ using GpsTrackerProtocol.Domain.Models;
 /// </summary>
 public interface IJourneyService
 {
-/// <summary>
+    /// <summary>
     /// Starts a new journey for a device.
     /// </summary>
     /// <param name="deviceId">The device ID.</param>
@@ -71,6 +71,22 @@ public interface IJourneyService
     /// <param name="olderThan">The threshold date.</param>
     /// <returns>The number of journeys deleted.</returns>
     Task<int> CleanupOldJourneysAsync(DateTime olderThan);
+
+    /// <summary>
+    /// Detects idle periods within a journey based on consecutive locations within a small radius.
+    /// </summary>
+    /// <param name="journeyId">The journey ID.</param>
+    /// <param name="maxDistanceMeters">Maximum distance in meters to consider locations as stationary.</param>
+    /// <param name="minDurationSeconds">Minimum duration in seconds to consider as idle.</param>
+    /// <returns>A collection of idle periods.</returns>
+    Task<IEnumerable<IdlePeriod>> DetectIdlePeriodsAsync(string journeyId, double maxDistanceMeters = 25.0, int minDurationSeconds = 300);
+
+    /// <summary>
+    /// Gets idle periods for a journey.
+    /// </summary>
+    /// <param name="journeyId">The journey ID.</param>
+    /// <returns>A collection of idle periods.</returns>
+    Task<IEnumerable<IdlePeriod>> GetIdlePeriodsAsync(string journeyId);
 }
 
 /// <summary>
@@ -204,6 +220,129 @@ public class JourneyService : IJourneyService
             throw new ArgumentException("Device ID cannot be empty", nameof(deviceId));
 
         return await _journeyRepository.GetTotalDistanceAsync(deviceId).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Detects idle periods within a journey based on consecutive locations within a small radius.
+    /// </summary>
+    /// <param name="journeyId">The journey ID.</param>
+    /// <param name="maxDistanceMeters">Maximum distance in meters to consider locations as stationary.</param>
+    /// <param name="minDurationSeconds">Minimum duration in seconds to consider as idle.</param>
+    /// <returns>A collection of idle periods.</returns>
+    public async Task<IEnumerable<IdlePeriod>> DetectIdlePeriodsAsync(string journeyId, double maxDistanceMeters = 25.0, int minDurationSeconds = 300)
+    {
+        if (string.IsNullOrWhiteSpace(journeyId))
+            throw new ArgumentException("Journey ID cannot be empty", nameof(journeyId));
+
+        var journey = await _journeyRepository.GetByIdAsync(journeyId).ConfigureAwait(false);
+        if (journey is null)
+            throw new InvalidOperationException($"Journey {journeyId} not found");
+
+        if (journey.Waypoints.Count < 2)
+            return Enumerable.Empty<IdlePeriod>();
+
+        var idlePeriods = new List<IdlePeriod>();
+        var waypoints = journey.Waypoints.OrderBy(w => w.Timestamp).ToList();
+
+        LocationData? startPoint = null;
+        DateTime? idleStartTime = null;
+        double? initialLatitude = null;
+        double? initialLongitude = null;
+
+        for (int i = 0; i < waypoints.Count; i++)
+        {
+            var current = waypoints[i];
+
+            if (startPoint is null)
+            {
+                startPoint = current;
+                idleStartTime = current.Timestamp;
+                initialLatitude = current.Latitude;
+                initialLongitude = current.Longitude;
+                continue;
+            }
+
+            var distanceFromStart = startPoint.DistanceTo(current) * 1000; // Convert km to meters
+            var timeElapsed = (current.Timestamp - idleStartTime.Value).TotalSeconds;
+
+            if (distanceFromStart <= maxDistanceMeters && timeElapsed >= minDurationSeconds)
+            {
+                // Continue accumulating this idle period
+                continue;
+            }
+            else
+            {
+                // End of current idle period
+                if (timeElapsed >= minDurationSeconds)
+                {
+                    idlePeriods.Add(new IdlePeriod
+                    {
+                        StartTime = idleStartTime.Value,
+                        EndTime = current.Timestamp,
+                        Duration = TimeSpan.FromSeconds(timeElapsed),
+                        StartLocation = new LocationData
+                        {
+                            Latitude = initialLatitude!.Value,
+                            Longitude = initialLongitude!.Value,
+                            Timestamp = idleStartTime.Value
+                        },
+                        EndLocation = new LocationData
+                        {
+                            Latitude = current.Latitude,
+                            Longitude = current.Longitude,
+                            Timestamp = current.Timestamp
+                        },
+                        MaxDistanceMeters = maxDistanceMeters
+                    });
+                }
+
+                // Start new potential idle period
+                startPoint = current;
+                idleStartTime = current.Timestamp;
+                initialLatitude = current.Latitude;
+                initialLongitude = current.Longitude;
+            }
+        }
+
+        // Check if journey ended while still in idle state
+        if (startPoint is not null && idleStartTime is not null)
+        {
+            var timeElapsed = (waypoints.Last().Timestamp - idleStartTime.Value).TotalSeconds;
+            if (timeElapsed >= minDurationSeconds)
+            {
+                idlePeriods.Add(new IdlePeriod
+                {
+                    StartTime = idleStartTime.Value,
+                    EndTime = waypoints.Last().Timestamp,
+                    Duration = TimeSpan.FromSeconds(timeElapsed),
+                    StartLocation = new LocationData
+                    {
+                        Latitude = initialLatitude!.Value,
+                        Longitude = initialLongitude!.Value,
+                        Timestamp = idleStartTime.Value
+                    },
+                    EndLocation = new LocationData
+                    {
+                        Latitude = waypoints.Last().Latitude,
+                        Longitude = waypoints.Last().Longitude,
+                        Timestamp = waypoints.Last().Timestamp
+                    },
+                    MaxDistanceMeters = maxDistanceMeters
+                });
+            }
+        }
+
+        return idlePeriods;
+    }
+
+    /// <summary>
+    /// Gets idle periods for a journey.
+    /// </summary>
+    /// <param name="journeyId">The journey ID.</param>
+    /// <returns>A collection of idle periods.</returns>
+    public async Task<IEnumerable<IdlePeriod>> GetIdlePeriodsAsync(string journeyId)
+    {
+        return await DetectIdlePeriodsAsync(journeyId).ConfigureAwait(false);
     }
 
     /// <summary>
