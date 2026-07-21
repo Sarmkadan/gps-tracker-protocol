@@ -204,4 +204,215 @@ public class GpsUtilitiesTests
 
         zoom.Should().Be(18);
     }
+
+    /// <summary>
+    /// Verifies that the CalculateDistanceKm method returns approximately 111.19 km when moving one degree north.
+    /// This tests the known distance property of latitude degrees.
+    /// </summary>
+    [Fact]
+    public void CalculateDistanceKm_OneDegreeNorth_ReturnsApproximatelyOneHundredEleven()
+    {
+        // One degree of latitude ≈ 111.19 km (constant regardless of longitude)
+        var distance = GpsUtilities.CalculateDistanceKm(40.0, 0.0, 41.0, 0.0);
+
+        distance.Should().BeApproximately(111.19, 0.1);
+    }
+
+    /// <summary>
+    /// Verifies that the CalculateDistanceKm method returns approximately 111.19 km when moving one degree south.
+    /// Tests that direction doesn't matter for latitude distance.
+    /// </summary>
+    [Fact]
+    public void CalculateDistanceKm_OneDegreeSouth_ReturnsApproximatelyOneHundredEleven()
+    {
+        var distance = GpsUtilities.CalculateDistanceKm(41.0, 0.0, 40.0, 0.0);
+
+        distance.Should().BeApproximately(111.19, 0.1);
+    }
+
+    /// <summary>
+    /// Verifies that the CalculateDistanceKm method returns correct distance for New York to Los Angeles.
+    /// Known distance: ~3940 km
+    /// </summary>
+    [Fact]
+    public void CalculateDistanceKm_NewYorkToLosAngeles_ReturnsKnownDistance()
+    {
+        // New York coordinates
+        var nyLat = 40.7128;
+        var nyLon = -74.0060;
+
+        // Los Angeles coordinates
+        var laLat = 34.0522;
+        var laLon = -118.2437;
+
+        var distance = GpsUtilities.CalculateDistanceKm(nyLat, nyLon, laLat, laLon);
+
+        // Known approximate distance between NYC and LA is ~3940 km
+        distance.Should().BeApproximately(3940, 10);
+    }
+
+    /// <summary>
+    /// Verifies that the CalculateDistanceKm method returns correct distance for London to Paris.
+    /// Known distance: ~344 km
+    /// </summary>
+    [Fact]
+    public void CalculateDistanceKm_LondonToParis_ReturnsKnownDistance()
+    {
+        // London coordinates
+        var londonLat = 51.5074;
+        var londonLon = -0.1278;
+
+        // Paris coordinates
+        var parisLat = 48.8566;
+        var parisLon = 2.3522;
+
+        var distance = GpsUtilities.CalculateDistanceKm(londonLat, londonLon, parisLat, parisLon);
+
+        // Known approximate distance between London and Paris is ~344 km
+        distance.Should().BeApproximately(344, 5);
+    }
+
+    /// <summary>
+    /// Verifies that the CalculateDistanceKm method returns correct distance for Sydney to Tokyo.
+    /// Tests long distance calculation across Pacific Ocean.
+    /// </summary>
+    [Fact]
+    public void CalculateDistanceKm_SydneyToTokyo_ReturnsKnownDistance()
+    {
+        // Sydney coordinates
+        var sydneyLat = -33.8688;
+        var sydneyLon = 151.2093;
+
+        // Tokyo coordinates
+        var tokyoLat = 35.6762;
+        var tokyoLon = 139.6503;
+
+        var distance = GpsUtilities.CalculateDistanceKm(sydneyLat, sydneyLon, tokyoLat, tokyoLon);
+
+        // Known approximate distance between Sydney and Tokyo is ~7820 km
+        distance.Should().BeApproximately(7820, 20);
+    }
+
+    /// <summary>
+    /// Verifies that the CalculateDistanceKm method handles coordinates near the antimeridian.
+    /// The Haversine formula will calculate the long way around (not crossing antimeridian),
+    /// so we test that it returns a reasonable distance.
+    /// </summary>
+    [Fact]
+    public void CalculateDistanceKm_NearAntimeridian_ReturnsReasonableDistance()
+    {
+        // Point near antimeridian in Eastern hemisphere (just west of 180°)
+        var point1Lat = 0.0;
+        var point1Lon = 179.9;
+
+        // Point near antimeridian in Western hemisphere (just east of 180°)
+        var point2Lat = 0.0;
+        var point2Lon = -179.9;
+
+        var distance = GpsUtilities.CalculateDistanceKm(point1Lat, point1Lon, point2Lat, point2Lon);
+
+        // The Haversine formula calculates the long way around (not crossing antimeridian)
+        // Distance should be reasonable (less than half Earth's circumference)
+        distance.Should().BeLessThan(20038); // Half of Earth's circumference
+        distance.Should().BeGreaterThan(0);
+    }
+
+    /// <summary>
+    /// Verifies that the CalculateDistanceKm method returns correct distance for North Pole to South Pole.
+    /// Tests maximum distance calculation.
+    /// </summary>
+    [Fact]
+    public void CalculateDistanceKm_NorthPoleToSouthPole_ReturnsKnownDistance()
+    {
+        // North Pole
+        var northPoleLat = 90.0;
+        var northPoleLon = 0.0;
+
+        // South Pole
+        var southPoleLat = -90.0;
+        var southPoleLon = 0.0;
+
+        var distance = GpsUtilities.CalculateDistanceKm(northPoleLat, northPoleLon, southPoleLat, southPoleLon);
+
+        // Distance from North Pole to South Pole should be approximately Earth's diameter
+        distance.Should().BeApproximately(20015, 10);
+    }
+
+    /// <summary>
+    /// Verifies that the CalculateBearing method returns correct bearing for cardinal directions.
+    /// </summary>
+    [Fact]
+    public void CalculateBearing_CardinalDirections_ReturnsCorrectBearings()
+    {
+        // North: bearing = 0°
+        var bearingNorth = GpsUtilities.CalculateBearing(0, 0, 1, 0);
+        bearingNorth.Should().BeApproximately(0, 0.01);
+
+        // East: bearing = 90°
+        var bearingEast = GpsUtilities.CalculateBearing(0, 0, 0, 1);
+        bearingEast.Should().BeApproximately(90, 0.01);
+
+        // South: bearing = 180°
+        var bearingSouth = GpsUtilities.CalculateBearing(0, 0, -1, 0);
+        bearingSouth.Should().BeApproximately(180, 0.01);
+
+        // West: bearing = 270°
+        var bearingWest = GpsUtilities.CalculateBearing(0, 0, 0, -1);
+        bearingWest.Should().BeApproximately(270, 0.01);
+    }
+
+    /// <summary>
+    /// Verifies that the CalculateBearing method returns correct bearing for intermediate directions.
+    /// </summary>
+    [Fact]
+    public void CalculateBearing_IntermediateDirections_ReturnsCorrectBearings()
+    {
+        // Northeast: bearing = 45°
+        var bearingNortheast = GpsUtilities.CalculateBearing(0, 0, 1, 1);
+        bearingNortheast.Should().BeApproximately(45, 0.01);
+
+        // Southeast: bearing = 135°
+        var bearingSoutheast = GpsUtilities.CalculateBearing(0, 0, -1, 1);
+        bearingSoutheast.Should().BeApproximately(135, 0.01);
+
+        // Southwest: bearing = 225°
+        var bearingSouthwest = GpsUtilities.CalculateBearing(0, 0, -1, -1);
+        bearingSouthwest.Should().BeApproximately(225, 0.01);
+
+        // Northwest: bearing = 315°
+        var bearingNorthwest = GpsUtilities.CalculateBearing(0, 0, 1, -1);
+        bearingNorthwest.Should().BeApproximately(315, 0.01);
+    }
+
+    /// <summary>
+    /// Verifies that the CalculateBearing method returns a valid bearing for real-world coordinates.
+    /// </summary>
+    [Fact]
+    public void CalculateBearing_RealWorldCoordinates_ReturnsValidBearing()
+    {
+        var lat1 = 40.7128;
+        var lon1 = -74.0060;
+        var lat2 = 34.0522;
+        var lon2 = -118.2437;
+
+        var bearing = GpsUtilities.CalculateBearing(lat1, lon1, lat2, lon2);
+
+        // Should return a valid bearing between 0-360
+        bearing.Should().BeInRange(0, 360);
+    }
+
+    /// <summary>
+    /// Verifies that the CalculateBearing method handles coordinates near the poles correctly.
+    /// </summary>
+    [Fact]
+    public void CalculateBearing_NearPoles_ReturnsValidBearing()
+    {
+        // From equator to North Pole
+        var bearing1 = GpsUtilities.CalculateBearing(0, 0, 89, 0);
+        bearing1.Should().BeApproximately(0, 0.01);
+
+        // From North Pole to equator (bearing is undefined at pole, but should not crash)
+        var bearing2 = GpsUtilities.CalculateBearing(89, 0, 0, 0);
+        bearing2.Should().BeApproximately(180, 0.01);
+    }
 }
