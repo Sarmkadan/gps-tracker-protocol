@@ -48,7 +48,7 @@ namespace GpsTrackerProtocol.Tests
             // Longitude 0°42.25' West => -(0 + 42.25/60) = -0.7041667
             Assert.Equal(-0.7041667, Math.Round(result.Longitude, 7));
             // Speed 0.13 knots => 0.13 * 1.852 km/h = 0.24076
-            Assert.Equal(0.24076, Math.Round(result.Speed ?? 0, 5));
+            Assert.Equal(0.24076, Math.Round(result.Speed, 5));
             Assert.Equal(309.62, result.Bearing);
             Assert.Equal("GPRMC", result.ExtendedData["SentenceType"]);
         }
