@@ -10,6 +10,7 @@ using Microsoft.Extensions.Logging;
 using GpsTrackerProtocol.Data;
 using GpsTrackerProtocol.Domain.Models;
 using GpsTrackerProtocol.Utilities;
+using GpsTrackerProtocol.Formatting;
 
 /// <summary>
 /// Analytics service for computing device and fleet statistics.
@@ -21,6 +22,10 @@ public interface IAnalyticsService
     Task<FleetAnalytics> GetFleetAnalyticsAsync();
     Task<RouteAnalytics> GetRouteAnalyticsAsync(string journeyId);
     Task<JourneyWithIdlePeriods> GetJourneyWithIdlePeriodsAsync(string journeyId);
+    /// <summary>
+    /// Generates a CSV report of per‑device daily travelled distance for the given date range.
+    /// </summary>
+    Task<string> GetDailyDistanceReportCsvAsync(DateTime start, DateTime end);
 }
 
 public class AnalyticsService : IAnalyticsService
@@ -216,6 +221,52 @@ public class AnalyticsService : IAnalyticsService
             TotalIdleTimeMinutes = totalIdleMinutes,
             IdlePercentage = idlePercentage
         };
+    }
+
+    /// <summary>
+    /// Generates a CSV report of per‑device daily travelled distance for the supplied date range.
+    /// </summary>
+    public async Task<string> GetDailyDistanceReportCsvAsync(DateTime start, DateTime end)
+    {
+        var devices = await _deviceService.GetAllDevicesAsync().ConfigureAwait(false);
+        var records = new List<DailyDistanceRecord>();
+
+        foreach (var device in devices)
+        {
+            // Retrieve all location points for the device; the service currently limits by count,
+            // so we request a very large number to effectively get the full history.
+            var locations = await _locationService.GetLocationHistoryAsync(device.Id, int.MaxValue).ConfigureAwait(false);
+
+            var filtered = locations
+                .Where(l => l.Timestamp >= start && l.Timestamp <= end)
+                .OrderBy(l => l.Timestamp)
+                .ToList();
+
+            var dayGroups = filtered.GroupBy(l => l.Timestamp.Date);
+            foreach (var dayGroup in dayGroups)
+            {
+                var dayLocations = dayGroup.OrderBy(l => l.Timestamp).ToList();
+                double distance = 0;
+                for (int i = 1; i < dayLocations.Count; i++)
+                {
+                    var prev = dayLocations[i - 1];
+                    var curr = dayLocations[i];
+                    distance += GpsUtilities.CalculateDistanceKm(
+                        prev.Latitude, prev.Longitude,
+                        curr.Latitude, curr.Longitude);
+                }
+
+                records.Add(new DailyDistanceRecord
+                {
+                    DeviceId = device.Id,
+                    Day = dayGroup.Key,
+                    DistanceKm = Math.Round(distance, 2)
+                });
+            }
+        }
+
+        var formatter = new CsvFormatter();
+        return formatter.FormatDailyDistanceReport(records);
     }
 }
 

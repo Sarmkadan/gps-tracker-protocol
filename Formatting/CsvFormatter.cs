@@ -19,6 +19,7 @@ public interface ICsvFormatter
     string FormatLocationHistory(IEnumerable<LocationData> locations);
     string FormatJourney(Journey journey);
     string FormatDevices(IEnumerable<Device> devices);
+    string FormatDailyDistanceReport(IEnumerable<DailyDistanceRecord> records);
 }
 
 public class CsvFormatter : ICsvFormatter
@@ -26,6 +27,7 @@ public class CsvFormatter : ICsvFormatter
     private const string LocationHeader = "DeviceId,Timestamp,Latitude,Longitude,Speed(km/h),Bearing(°),Altitude(m),Accuracy(m),SatelliteCount,Protocol";
     private const string JourneyHeader = "WaypointIndex,Timestamp,Latitude,Longitude,Speed(km/h),Bearing(°),Altitude(m),DistanceFromPrevious(km)";
     private const string DeviceHeader = "Id,Imei,DeviceName,Protocol,IsActive,Status,LastSeen";
+    private const string DailyDistanceHeader = "DeviceId,Date,DistanceKm";
 
     public string FormatLocationHistory(IEnumerable<LocationData> locations)
     {
@@ -85,6 +87,22 @@ public class CsvFormatter : ICsvFormatter
         foreach (var device in devices)
         {
             sb.AppendLine(FormatDeviceRow(device));
+        }
+
+        return sb.ToString();
+    }
+
+    public string FormatDailyDistanceReport(IEnumerable<DailyDistanceRecord> records)
+    {
+        if (records is null || !records.Any())
+            return DailyDistanceHeader;
+
+        var sb = new StringBuilder();
+        sb.AppendLine(DailyDistanceHeader);
+
+        foreach (var rec in records)
+        {
+            sb.AppendLine($"{EscapeCsvField(rec.DeviceId)},{rec.Day:yyyy-MM-dd},{rec.DistanceKm.ToString("F2", CultureInfo.InvariantCulture)}");
         }
 
         return sb.ToString();
@@ -150,5 +168,18 @@ public class CsvFormatter : ICsvFormatter
 
             return field;
         }));
+    }
+
+    private string EscapeCsvField(string field)
+    {
+        if (field is null)
+            return string.Empty;
+
+        if (field.Contains(",") || field.Contains("\"") || field.Contains("\n"))
+        {
+            return "\"" + field.Replace("\"", "\"\"") + "\"";
+        }
+
+        return field;
     }
 }
