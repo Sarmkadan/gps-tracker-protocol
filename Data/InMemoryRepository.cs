@@ -18,17 +18,17 @@ public class InMemoryRepository<T> : IRepository<T> where T : class
 {
     protected readonly ConcurrentDictionary<string, T> _store = new();
 
-    public virtual async Task<T?> GetByIdAsync(string id)
+    public virtual Task<T?> GetByIdAsync(string id)
     {
-        return _store.TryGetValue(id, out var entity) ? CreateSnapshot(entity) : null;
+        return Task.FromResult(_store.TryGetValue(id, out var entity) ? CreateSnapshot(entity) : null);
     }
 
-    public virtual async Task<IEnumerable<T>> GetAllAsync()
+    public virtual Task<IEnumerable<T>> GetAllAsync()
     {
-        return _store.Values.Select(CreateSnapshot).ToList();
+        return Task.FromResult<IEnumerable<T>>(_store.Values.Select(CreateSnapshot).ToList());
     }
 
-    public virtual async Task<T> CreateAsync(T entity)
+    public virtual Task<T> CreateAsync(T entity)
     {
         if (entity is null)
             throw new ArgumentNullException(nameof(entity));
@@ -37,10 +37,10 @@ public class InMemoryRepository<T> : IRepository<T> where T : class
         var snapshot = CreateSnapshot(entity);
         if (!_store.TryAdd(id, snapshot))
             throw new InvalidOperationException($"Entity with ID {id} already exists");
-        return snapshot;
+        return Task.FromResult(snapshot);
     }
 
-    public virtual async Task<T> UpdateAsync(T entity)
+    public virtual Task<T> UpdateAsync(T entity)
     {
         if (entity is null)
             throw new ArgumentNullException(nameof(entity));
@@ -50,17 +50,17 @@ public class InMemoryRepository<T> : IRepository<T> where T : class
         _store.AddOrUpdate(id,
             (key) => throw new KeyNotFoundException($"Entity with ID {id} not found"),
             (key, old) => snapshot);
-        return snapshot;
+        return Task.FromResult(snapshot);
     }
 
-    public virtual async Task<bool> DeleteAsync(string id)
+    public virtual Task<bool> DeleteAsync(string id)
     {
-        return _store.TryRemove(id, out _);
+        return Task.FromResult(_store.TryRemove(id, out _));
     }
 
-    public virtual async Task<bool> ExistsAsync(string id)
+    public virtual Task<bool> ExistsAsync(string id)
     {
-        return _store.ContainsKey(id);
+        return Task.FromResult(_store.ContainsKey(id));
     }
 
     protected string GetId(T entity)
@@ -85,7 +85,10 @@ public class InMemoryRepository<T> : IRepository<T> where T : class
         // Deep copy ExtendedData if it exists (for LocationData)
         if (entity is LocationData locationData && copy is LocationData locationDataCopy)
         {
-            locationDataCopy.ExtendedData = new Dictionary<string, object>(locationData.ExtendedData);
+            lock (locationData.ExtendedData)
+            {
+                locationDataCopy.ExtendedData = new Dictionary<string, object>(locationData.ExtendedData);
+            }
         }
 
         return copy!;
