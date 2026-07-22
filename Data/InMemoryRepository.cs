@@ -6,6 +6,8 @@
 
 namespace GpsTrackerProtocol.Data;
 
+using System.Collections.Concurrent;
+using System.Reflection;
 using GpsTrackerProtocol.Domain;
 using GpsTrackerProtocol.Domain.Models;
 
@@ -14,33 +16,16 @@ using GpsTrackerProtocol.Domain.Models;
 /// </summary>
 public class InMemoryRepository<T> : IRepository<T> where T : class
 {
-    protected readonly Dictionary<string, T> _store = [];
-    protected readonly ReaderWriterLockSlim _lock = new();
+    protected readonly ConcurrentDictionary<string, T> _store = new();
 
     public virtual async Task<T?> GetByIdAsync(string id)
     {
-        _lock.EnterReadLock();
-        try
-        {
-            return _store.TryGetValue(id, out var entity) ? entity : null;
-        }
-        finally
-        {
-            _lock.ExitReadLock();
-        }
+        return _store.TryGetValue(id, out var entity) ? CreateSnapshot(entity) : null;
     }
 
     public virtual async Task<IEnumerable<T>> GetAllAsync()
     {
-        _lock.EnterReadLock();
-        try
-        {
-            return _store.Values.ToList();
-        }
-        finally
-        {
-            _lock.ExitReadLock();
-        }
+        return _store.Values.Select(CreateSnapshot).ToList();
     }
 
     public virtual async Task<T> CreateAsync(T entity)
@@ -49,18 +34,10 @@ public class InMemoryRepository<T> : IRepository<T> where T : class
             throw new ArgumentNullException(nameof(entity));
 
         var id = GetId(entity);
-        _lock.EnterWriteLock();
-        try
-        {
-            if (_store.ContainsKey(id))
-                throw new InvalidOperationException($"Entity with ID {id} already exists");
-            _store[id] = entity;
-            return entity;
-        }
-        finally
-        {
-            _lock.ExitWriteLock();
-        }
+        var snapshot = CreateSnapshot(entity);
+        if (!_store.TryAdd(id, snapshot))
+            throw new InvalidOperationException($"Entity with ID {id} already exists");
+        return snapshot;
     }
 
     public virtual async Task<T> UpdateAsync(T entity)
@@ -69,44 +46,21 @@ public class InMemoryRepository<T> : IRepository<T> where T : class
             throw new ArgumentNullException(nameof(entity));
 
         var id = GetId(entity);
-        _lock.EnterWriteLock();
-        try
-        {
-            if (!_store.ContainsKey(id))
-                throw new KeyNotFoundException($"Entity with ID {id} not found");
-            _store[id] = entity;
-            return entity;
-        }
-        finally
-        {
-            _lock.ExitWriteLock();
-        }
+        var snapshot = CreateSnapshot(entity);
+        _store.AddOrUpdate(id,
+            (key) => throw new KeyNotFoundException($"Entity with ID {id} not found"),
+            (key, old) => snapshot);
+        return snapshot;
     }
 
     public virtual async Task<bool> DeleteAsync(string id)
     {
-        _lock.EnterWriteLock();
-        try
-        {
-            return _store.Remove(id);
-        }
-        finally
-        {
-            _lock.ExitWriteLock();
-        }
+        return _store.TryRemove(id, out _);
     }
 
     public virtual async Task<bool> ExistsAsync(string id)
     {
-        _lock.EnterReadLock();
-        try
-        {
-            return _store.ContainsKey(id);
-        }
-        finally
-        {
-            _lock.ExitReadLock();
-        }
+        return _store.ContainsKey(id);
     }
 
     protected string GetId(T entity)
@@ -116,6 +70,26 @@ public class InMemoryRepository<T> : IRepository<T> where T : class
             return id;
         throw new InvalidOperationException($"Entity {entity.GetType().Name} must have an Id property");
     }
+
+    /// <summary>
+    /// Creates a deep copy of the entity to prevent external modifications.
+    /// </summary>
+    protected virtual T CreateSnapshot(T entity)
+    {
+        if (entity == null)
+            return null!;
+
+        // Use MemberwiseClone for shallow copy, then deep copy any mutable properties
+        var copy = (T)entity.GetType().GetMethod("MemberwiseClone", BindingFlags.Instance | BindingFlags.NonPublic)?.Invoke(entity, null);
+
+        // Deep copy ExtendedData if it exists (for LocationData)
+        if (entity is LocationData locationData && copy is LocationData locationDataCopy)
+        {
+            locationDataCopy.ExtendedData = new Dictionary<string, object>(locationData.ExtendedData);
+        }
+
+        return copy!;
+    }
 }
 
 /// <summary>
@@ -123,83 +97,48 @@ public class InMemoryRepository<T> : IRepository<T> where T : class
 /// </summary>
 public class InMemoryLocationDataRepository : InMemoryRepository<LocationData>, ILocationDataRepository
 {
+    private readonly SemaphoreSlim _deleteLock = new(1, 1);
+
     public async Task<IEnumerable<LocationData>> GetByDeviceIdAsync(string deviceId)
     {
-        _lock.EnterReadLock();
-        try
-        {
-            return _store.Values.Where(l => l.DeviceId == deviceId).ToList();
-        }
-        finally
-        {
-            _lock.ExitReadLock();
-        }
+        return _store.Values.Where(l => l.DeviceId == deviceId).Select(CreateSnapshot).ToList();
     }
 
     public async Task<IEnumerable<LocationData>> GetByTimeRangeAsync(DateTime start, DateTime end)
     {
-        _lock.EnterReadLock();
-        try
-        {
-            return _store.Values.Where(l => l.Timestamp >= start && l.Timestamp <= end).ToList();
-        }
-        finally
-        {
-            _lock.ExitReadLock();
-        }
+        return _store.Values.Where(l => l.Timestamp >= start && l.Timestamp <= end).Select(CreateSnapshot).ToList();
     }
 
     public async Task<IEnumerable<LocationData>> GetByDeviceAndTimeRangeAsync(string deviceId, DateTime start, DateTime end)
     {
-        _lock.EnterReadLock();
-        try
-        {
-            return _store.Values
-                .Where(l => l.DeviceId == deviceId && l.Timestamp >= start && l.Timestamp <= end)
-                .OrderBy(l => l.Timestamp)
-                .ToList();
-        }
-        finally
-        {
-            _lock.ExitReadLock();
-        }
+        return _store.Values
+            .Where(l => l.DeviceId == deviceId && l.Timestamp >= start && l.Timestamp <= end)
+            .OrderBy(l => l.Timestamp)
+            .Select(CreateSnapshot)
+            .ToList();
     }
 
     public async Task<LocationData?> GetLatestByDeviceIdAsync(string deviceId)
     {
-        _lock.EnterReadLock();
-        try
-        {
-            return _store.Values
-                .Where(l => l.DeviceId == deviceId)
-                .OrderByDescending(l => l.Timestamp)
-                .FirstOrDefault();
-        }
-        finally
-        {
-            _lock.ExitReadLock();
-        }
+        return _store.Values
+            .Where(l => l.DeviceId == deviceId)
+            .OrderByDescending(l => l.Timestamp)
+            .Select(CreateSnapshot)
+            .FirstOrDefault();
     }
 
     public async Task<IEnumerable<LocationData>> GetWithinRadiusAsync(double latitude, double longitude, double radiusKm)
     {
         var center = new LocationData { Latitude = latitude, Longitude = longitude };
-        _lock.EnterReadLock();
-        try
-        {
-            return _store.Values
-                .Where(l => center.DistanceTo(l) <= radiusKm)
-                .ToList();
-        }
-        finally
-        {
-            _lock.ExitReadLock();
-        }
+        return _store.Values
+            .Where(l => center.DistanceTo(l) <= radiusKm)
+            .Select(CreateSnapshot)
+            .ToList();
     }
 
     public async Task<int> DeleteOlderThanAsync(DateTime dateTime)
     {
-        _lock.EnterWriteLock();
+        await _deleteLock.WaitAsync();
         try
         {
             var keysToDelete = _store
@@ -208,13 +147,13 @@ public class InMemoryLocationDataRepository : InMemoryRepository<LocationData>, 
                 .ToList();
 
             foreach (var key in keysToDelete)
-                _store.Remove(key);
+                _store.TryRemove(key, out _);
 
             return keysToDelete.Count;
         }
         finally
         {
-            _lock.ExitWriteLock();
+            _deleteLock.Release();
         }
     }
 }
