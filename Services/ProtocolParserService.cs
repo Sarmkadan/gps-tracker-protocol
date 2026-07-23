@@ -2,6 +2,7 @@
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
+// Implementation of protocol parser service for GPS tracker protocols
 // =============================================================================
 
 namespace GpsTrackerProtocol.Services;
@@ -10,31 +11,31 @@ using GpsTrackerProtocol.Domain;
 using GpsTrackerProtocol.Domain.Models;
 
 /// <summary>
-    /// Service for parsing raw GPS protocol frames into structured location data.
+/// Service for parsing raw GPS protocol frames into structured location data.
+/// </summary>
+public interface IProtocolParserService
+{
+    /// <summary>
+    /// Parses a GPS frame into location data based on protocol type.
     /// </summary>
-    public interface IProtocolParserService
-    {
-        /// <summary>
-        /// Parses a GPS frame into location data based on protocol type.
-        /// </summary>
-        /// <param name="frame">The GPS frame to parse.</param>
-        /// <returns>The parsed location data.</returns>
-        Task<LocationData> ParseFrameAsync(GpsFrame frame);
+    /// <param name="frame">The GPS frame to parse.</param>
+    /// <returns>The parsed location data.</returns>
+    Task<LocationData> ParseFrameAsync(GpsFrame frame);
 
-        /// <summary>
-        /// Detects protocol type from raw data.
-        /// </summary>
-        /// <param name="rawData">The raw byte data.</param>
-        /// <returns>The detected protocol type.</returns>
-        Task<ProtocolType> DetectProtocolAsync(byte[] rawData);
+    /// <summary>
+    /// Detects protocol type from raw data.
+    /// </summary>
+    /// <param name="rawData">The raw byte data.</param>
+    /// <returns>A <see cref="ProtocolDetection"/> result indicating detection status.</returns>
+    Task<ProtocolDetection> DetectProtocolAsync(byte[] rawData);
 
-        /// <summary>
-        /// Validates frame structure and checksum.
-        /// </summary>
-        /// <param name="frame">The GPS frame to validate.</param>
-        /// <returns>True if the frame is valid, false otherwise.</returns>
-        Task<bool> ValidateFrameAsync(GpsFrame frame);
-    }
+    /// <summary>
+    /// Validates frame structure and checksum.
+    /// </summary>
+    /// <param name="frame">The GPS frame to validate.</param>
+    /// <returns>True if the frame is valid, false otherwise.</returns>
+    Task<bool> ValidateFrameAsync(GpsFrame frame);
+}
 
 /// <summary>
 /// Implementation of protocol parser service.
@@ -61,28 +62,64 @@ public class ProtocolParserService : IProtocolParserService
     /// <summary>
     /// Detects protocol type from raw data.
     /// </summary>
-    public async Task<ProtocolType> DetectProtocolAsync(byte[] rawData)
+    /// <param name="rawData">The raw byte data.</param>
+    /// <returns>A <see cref="ProtocolDetection"/> result indicating detection status.</returns>
+    public async Task<ProtocolDetection> DetectProtocolAsync(byte[] rawData)
     {
         if (rawData.Length == 0)
-            throw new ArgumentException("Raw data is empty");
+            return ProtocolDetection.NeedMoreData(0, 1);
+
+        // Define minimum bytes required for each protocol
+        const int gt06MinBytes = 2;
+        const int h02MinBytes = 3;
+        const int tk103MinBytes = 1;
+        int minDetectionBytes = Math.Max(Math.Max(gt06MinBytes, h02MinBytes), tk103MinBytes);
+
+        // Check if we have enough data for reliable detection
+        if (rawData.Length < minDetectionBytes)
+        {
+            return ProtocolDetection.NeedMoreData(rawData.Length, minDetectionBytes);
+        }
 
         // GT06: standard packets start with 0x78 0x78; extended packets with 0x79 0x79
-        if (rawData[0] == ProtocolConstants.GT06_START_MARKER ||
-            rawData[0] == ProtocolConstants.GT06_EXTENDED_START_MARKER)
-            return ProtocolType.GT06;
+        bool isGt06 = rawData.Length >= gt06MinBytes &&
+                     (rawData[0] == ProtocolConstants.GT06_START_MARKER ||
+                      rawData[0] == ProtocolConstants.GT06_EXTENDED_START_MARKER);
 
         // TK103 protocol starts with 0x28
-        if (rawData[0] == ProtocolConstants.TK103_START_MARKER)
-            return ProtocolType.TK103;
-
-        var header = System.Text.Encoding.ASCII.GetString(rawData.Take(6).ToArray());
+        bool isTk103 = rawData.Length >= tk103MinBytes &&
+                      rawData[0] == ProtocolConstants.TK103_START_MARKER;
 
         // H02 protocol: $GPRMC (NMEA) or *HQ (proprietary H02)
-        if (header.StartsWith(ProtocolConstants.H02_START_MARKER) ||
-            header.StartsWith(ProtocolConstants.H02_HQ_START_MARKER))
-            return ProtocolType.H02;
+        // Only check if we have enough bytes for H02 detection
+        bool isH02 = false;
+        if (rawData.Length >= h02MinBytes)
+        {
+            var header = System.Text.Encoding.ASCII.GetString(rawData, 0, Math.Min(rawData.Length, 6));
+            isH02 = header.StartsWith(ProtocolConstants.H02_START_MARKER, StringComparison.Ordinal) ||
+                    header.StartsWith(ProtocolConstants.H02_HQ_START_MARKER, StringComparison.Ordinal);
+        }
 
-        return ProtocolType.Unknown;
+        // Count how many protocols match
+        var matchingProtocols = new List<ProtocolType>();
+        if (isGt06) matchingProtocols.Add(ProtocolType.GT06);
+        if (isH02) matchingProtocols.Add(ProtocolType.H02);
+        if (isTk103) matchingProtocols.Add(ProtocolType.TK103);
+
+        if (matchingProtocols.Count == 1)
+        {
+            // Clear conclusive detection
+            return ProtocolDetection.Detected(matchingProtocols[0], rawData.Length);
+        }
+
+        if (matchingProtocols.Count > 1)
+        {
+            // Multiple protocols match - this is ambiguous
+            return ProtocolDetection.Ambiguous(matchingProtocols, rawData.Length);
+        }
+
+        // No protocols match
+        return ProtocolDetection.Unknown(rawData.Length);
     }
 
     /// <summary>
@@ -138,7 +175,7 @@ public class ProtocolParserService : IProtocolParserService
             return location;
         }
         catch (Exception ex) when (ex is FormatException or OverflowException
-            or IndexOutOfRangeException or InvalidOperationException or GpsTrackerException)
+                                   or IndexOutOfRangeException or InvalidOperationException or GpsTrackerException)
         {
             throw new ParseException($"GT06 parsing failed: {ex.Message}", frame.ToHex(), ProtocolType.GT06);
         }
@@ -190,7 +227,7 @@ public class ProtocolParserService : IProtocolParserService
             return location;
         }
         catch (Exception ex) when (ex is FormatException or OverflowException
-            or IndexOutOfRangeException or InvalidOperationException or GpsTrackerException)
+                                   or IndexOutOfRangeException or InvalidOperationException or GpsTrackerException)
         {
             throw new ParseException($"H02 parsing failed: {ex.Message}", frame.ToHex(), ProtocolType.H02);
         }
@@ -225,7 +262,7 @@ public class ProtocolParserService : IProtocolParserService
             return location;
         }
         catch (Exception ex) when (ex is FormatException or OverflowException
-            or IndexOutOfRangeException or InvalidOperationException or GpsTrackerException)
+                                   or IndexOutOfRangeException or InvalidOperationException or GpsTrackerException)
         {
             throw new ParseException($"TK103 parsing failed: {ex.Message}", frame.ToHex(), ProtocolType.TK103);
         }
@@ -258,7 +295,6 @@ public class ProtocolParserService : IProtocolParserService
         return calculatedChecksum == expectedChecksum;
     }
 
-
     private bool ValidateH02Checksum(GpsFrame frame)
     {
         var frameStr = System.Text.Encoding.ASCII.GetString(frame.RawData).Trim();
@@ -288,7 +324,7 @@ public class ProtocolParserService : IProtocolParserService
             return false;
         }
         string providedChecksumHex = frameStr.Substring(checksumDelimiterIndex + 1, 2);
-        
+
         if (!byte.TryParse(providedChecksumHex, System.Globalization.NumberStyles.HexNumber, null, out byte providedChecksum))
         {
             // Invalid hexadecimal checksum string
@@ -297,6 +333,7 @@ public class ProtocolParserService : IProtocolParserService
 
         return calculatedChecksum == providedChecksum;
     }
+
     private bool ValidateTK103Checksum(GpsFrame frame) => true; // TK103 validation can be protocol-specific
 
     private string ExtractDeviceId(GpsFrame frame)

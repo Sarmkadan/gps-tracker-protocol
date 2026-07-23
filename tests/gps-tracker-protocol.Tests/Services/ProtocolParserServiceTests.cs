@@ -1,5 +1,4 @@
 #nullable enable
-
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -83,28 +82,32 @@ public class ProtocolParserServiceTests
     }
 
     [Fact]
-    public async Task DetectProtocolAsync_GT06_StartMarker_ReturnsGT06()
+    public async Task DetectProtocolAsync_GT06_StartMarker_ReturnsDetected()
     {
         // Arrange
         byte[] gt06Data = { 0x78, 0x78, 0x1E, 0x01 };
 
         // Act
-        var protocol = await _service.DetectProtocolAsync(gt06Data).ConfigureAwait(false);
+        var result = await _service.DetectProtocolAsync(gt06Data).ConfigureAwait(false);
 
         // Assert
+        result.Result.Should().Be(ProtocolDetectionResult.Detected);
+        result.TryGetProtocol(out var protocol).Should().BeTrue();
         protocol.Should().Be(ProtocolType.GT06);
     }
 
     [Fact]
-    public async Task DetectProtocolAsync_GT06_ExtendedStartMarker_ReturnsGT06()
+    public async Task DetectProtocolAsync_GT06_ExtendedStartMarker_ReturnsDetected()
     {
         // Arrange
         byte[] gt06ExtendedData = { 0x79, 0x79, 0x1E, 0x01 };
 
         // Act
-        var protocol = await _service.DetectProtocolAsync(gt06ExtendedData).ConfigureAwait(false);
+        var result = await _service.DetectProtocolAsync(gt06ExtendedData).ConfigureAwait(false);
 
         // Assert
+        result.Result.Should().Be(ProtocolDetectionResult.Detected);
+        result.TryGetProtocol(out var protocol).Should().BeTrue();
         protocol.Should().Be(ProtocolType.GT06);
     }
 
@@ -115,18 +118,18 @@ public class ProtocolParserServiceTests
         byte[] gt06Frame = new byte[]
         {
             0x78, 0x78, // Start markers
-            0x1E,       // Length
-            0x01,       // Protocol number
+            0x1E, // Length
+            0x01, // Protocol number
             0x30, 0x31, 0x32, 0x33, 0x34, // Device ID "01234"
             0x14, 0x01, 0x02, 0x03, 0x04, 0x05, // Timestamp bytes
             0x00, 0x00, 0x01, // Latitude
             0x00, 0x00, 0x02, // Longitude
-            0x04,          // Status byte
-            0x00, 0x01,    // Speed
-            0x00, 0x64,    // Bearing
-            0x08,          // Satellite count
-            0x00,          // Checksum (will be calculated)
-            0x0D, 0x0A      // Stop bytes
+            0x04, // Status byte
+            0x00, 0x01, // Speed
+            0x00, 0x64, // Bearing
+            0x08, // Satellite count
+            0x00, // Checksum (will be calculated)
+            0x0D, 0x0A // Stop bytes
         };
 
         // Calculate checksum
@@ -210,28 +213,32 @@ public class ProtocolParserServiceTests
     }
 
     [Fact]
-    public async Task DetectProtocolAsync_H02_GPRMC_ReturnsH02()
+    public async Task DetectProtocolAsync_H02_GPRMC_ReturnsDetected()
     {
         // Arrange
         byte[] h02Data = Encoding.ASCII.GetBytes("$GPRMC,123456.00,A,5133.81,N,00042.25,W");
 
         // Act
-        var protocol = await _service.DetectProtocolAsync(h02Data).ConfigureAwait(false);
+        var result = await _service.DetectProtocolAsync(h02Data).ConfigureAwait(false);
 
         // Assert
+        result.Result.Should().Be(ProtocolDetectionResult.Detected);
+        result.TryGetProtocol(out var protocol).Should().BeTrue();
         protocol.Should().Be(ProtocolType.H02);
     }
 
     [Fact]
-    public async Task DetectProtocolAsync_H02_HQ_ReturnsH02()
+    public async Task DetectProtocolAsync_H02_HQ_ReturnsDetected()
     {
         // Arrange
         byte[] h02Data = Encoding.ASCII.GetBytes("*HQ,123456789012345,V1,123456");
 
         // Act
-        var protocol = await _service.DetectProtocolAsync(h02Data).ConfigureAwait(false);
+        var result = await _service.DetectProtocolAsync(h02Data).ConfigureAwait(false);
 
         // Assert
+        result.Result.Should().Be(ProtocolDetectionResult.Detected);
+        result.TryGetProtocol(out var protocol).Should().BeTrue();
         protocol.Should().Be(ProtocolType.H02);
     }
 
@@ -308,15 +315,17 @@ public class ProtocolParserServiceTests
     }
 
     [Fact]
-    public async Task DetectProtocolAsync_TK103_StartMarker_ReturnsTK103()
+    public async Task DetectProtocolAsync_TK103_StartMarker_ReturnsDetected()
     {
         // Arrange
         byte[] tk103Data = { 0x28 };
 
         // Act
-        var protocol = await _service.DetectProtocolAsync(tk103Data).ConfigureAwait(false);
+        var result = await _service.DetectProtocolAsync(tk103Data).ConfigureAwait(false);
 
         // Assert
+        result.Result.Should().Be(ProtocolDetectionResult.Detected);
+        result.TryGetProtocol(out var protocol).Should().BeTrue();
         protocol.Should().Be(ProtocolType.TK103);
     }
 
@@ -370,16 +379,30 @@ public class ProtocolParserServiceTests
     }
 
     [Fact]
-    public async Task DetectProtocolAsync_EmptyData_ReturnsUnknown()
+    public async Task DetectProtocolAsync_EmptyData_ReturnsNeedMoreData()
     {
         // Arrange
         byte[] emptyData = Array.Empty<byte>();
 
         // Act
-        var protocol = await _service.DetectProtocolAsync(emptyData).ConfigureAwait(false);
+        var result = await _service.DetectProtocolAsync(emptyData).ConfigureAwait(false);
 
         // Assert
-        protocol.Should().Be(ProtocolType.Unknown);
+        result.Result.Should().Be(ProtocolDetectionResult.NeedMoreData);
+    }
+
+    [Fact]
+    public async Task DetectProtocolAsync_ShortBuffer_ReturnsNeedMoreData()
+    {
+        // Arrange - only 1 byte, need at least 2 for GT06, 3 for H02
+        byte[] shortData = { 0x78 };
+
+        // Act
+        var result = await _service.DetectProtocolAsync(shortData).ConfigureAwait(false);
+
+        // Assert
+        result.Result.Should().Be(ProtocolDetectionResult.NeedMoreData);
+        result.BytesInspected.Should().Be(1);
     }
 
     [Fact]

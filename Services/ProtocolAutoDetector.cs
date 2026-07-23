@@ -36,27 +36,42 @@ public interface IProtocolHandler
 public interface IProtocolAutoDetector
 {
     /// <summary>
-    /// Returns the <see cref="ProtocolType"/> matched by the registered handlers,
-    /// the configured default protocol, or <see cref="ProtocolType.Unknown"/> when
-    /// no match is found and no default is configured.
+    /// Detects the protocol from the provided data and returns a detailed detection result.
     /// </summary>
-    ProtocolType Detect(byte[] data);
+    /// <param name="data">The preamble bytes to analyze.</param>
+    /// <returns>A <see cref="ProtocolDetection"/> result indicating detection status.</returns>
+    ProtocolDetection Detect(byte[] data);
 
     /// <summary>
     /// Returns the first handler whose signature matches <paramref name="data"/>,
     /// or <c>null</c> when no handler matches.
     /// </summary>
+    /// <param name="data">The data to check for protocol compatibility.</param>
+    /// <returns>The matching handler or null if no match.</returns>
     IProtocolHandler? GetHandler(byte[] data);
+
+    /// <summary>
+    /// Gets the minimum number of bytes required for reliable protocol detection.
+    /// </summary>
+    int MinimumDetectionBytesRequired { get; }
+
+    /// <summary>
+    /// Gets the minimum number of bytes required for each protocol type.
+    /// </summary>
+    /// <param name="protocol">The protocol type to check.</param>
+    /// <returns>The minimum bytes required, or 0 if unknown.</returns>
+    int GetMinimumBytesRequired(ProtocolType protocol);
 }
 
 /// <summary>
 /// Auto-detector that inspects the leading bytes of incoming data and selects the
 /// appropriate <see cref="IProtocolHandler"/> based on known protocol signatures:
 /// <list type="bullet">
-///   <item>GT06  – starts with <c>0x78 0x78</c> or <c>0x79 0x79</c></item>
-///   <item>H02   – starts with <c>*HQ</c></item>
-///   <item>TK103 – starts with <c>(</c> (0x28)</item>
+/// <item>GT06 – starts with <c>0x78 0x78</c> or <c>0x79 0x79</c></item>
+/// <item>H02 – starts with <c>*HQ</c> or <c>$GPRMC</c></item>
+/// <item>TK103 – starts with <c>(</c> (0x28)</item>
 /// </list>
+/// Uses minimum byte requirements to prevent ambiguous detections from short buffers.
 /// Falls back to a configurable default protocol (or logs and returns
 /// <see cref="ProtocolType.Unknown"/> when no default is set).
 /// </summary>
@@ -65,6 +80,7 @@ public class ProtocolAutoDetector : IProtocolAutoDetector
     private readonly IReadOnlyList<IProtocolHandler> _handlers;
     private readonly ILogger<ProtocolAutoDetector> _logger;
     private readonly ProtocolType _defaultProtocol;
+    private readonly Dictionary<ProtocolType, int> _minimumBytesRequired = new();
 
     public ProtocolAutoDetector(
         IEnumerable<IProtocolHandler> handlers,
@@ -74,26 +90,71 @@ public class ProtocolAutoDetector : IProtocolAutoDetector
         _handlers = handlers.ToList();
         _logger = logger;
         _defaultProtocol = defaultProtocol;
+
+        // Define minimum bytes required for reliable detection of each protocol
+        _minimumBytesRequired[ProtocolType.GT06] = 2;  // Needs at least 2 bytes for 0x78 0x78 signature
+        _minimumBytesRequired[ProtocolType.H02] = 3;   // Needs at least 3 bytes for "*HQ" or "$GP"
+        _minimumBytesRequired[ProtocolType.TK103] = 1; // Needs at least 1 byte for 0x28 '('
     }
 
-    public ProtocolType Detect(byte[] data)
-    {
-        var handler = GetHandler(data);
-        if (handler is not null)
-            return handler.Protocol;
+    public int MinimumDetectionBytesRequired => _minimumBytesRequired.Values.DefaultIfEmpty(0).Max();
 
+    public int GetMinimumBytesRequired(ProtocolType protocol)
+    {
+        return _minimumBytesRequired.TryGetValue(protocol, out var bytes) ? bytes : 0;
+    }
+
+    public ProtocolDetection Detect(byte[] data)
+    {
+        ArgumentNullException.ThrowIfNull(data);
+
+        // Check if we have enough data for any protocol detection
+        if (data.Length == 0)
+        {
+            return ProtocolDetection.NeedMoreData(0, MinimumDetectionBytesRequired);
+        }
+
+        if (data.Length < MinimumDetectionBytesRequired)
+        {
+            return ProtocolDetection.NeedMoreData(data.Length, MinimumDetectionBytesRequired);
+        }
+
+        // Check for ambiguous matches - multiple handlers could potentially match
+        var matchingHandlers = _handlers
+            .Where(h => h.CanHandle(data))
+            .ToList();
+
+        if (matchingHandlers.Count == 1)
+        {
+            // Clear conclusive detection
+            return ProtocolDetection.Detected(matchingHandlers[0].Protocol, data.Length);
+        }
+
+        if (matchingHandlers.Count > 1)
+        {
+            // Multiple protocols match - this is ambiguous
+            var possibleProtocols = matchingHandlers.Select(h => h.Protocol).ToList();
+            _logger.LogWarning(
+                "Ambiguous protocol signature in {Length}-byte preamble: possible protocols {Protocols}",
+                data.Length,
+                string.Join(", ", possibleProtocols));
+            return ProtocolDetection.Ambiguous(possibleProtocols, data.Length);
+        }
+
+        // No handlers match - check if we should use default or return unknown
         if (_defaultProtocol != ProtocolType.Unknown)
         {
             _logger.LogWarning(
                 "Unknown protocol signature in {Length}-byte preamble, falling back to default protocol {Default}",
-                data.Length, _defaultProtocol);
-            return _defaultProtocol;
+                data.Length,
+                _defaultProtocol);
+            return ProtocolDetection.Detected(_defaultProtocol, data.Length);
         }
 
         _logger.LogWarning(
-            "Unknown protocol signature in {Length}-byte preamble; no default configured, disconnecting",
+            "Unknown protocol signature in {Length}-byte preamble; no default configured",
             data.Length);
-        return ProtocolType.Unknown;
+        return ProtocolDetection.Unknown(data.Length);
     }
 
     public IProtocolHandler? GetHandler(byte[] data) =>
