@@ -3,7 +3,7 @@
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
 // Implementation of protocol parser service for GPS tracker protocols
-// =====================================================================
+// =============================================================================
 
 namespace GpsTrackerProtocol.Services;
 
@@ -83,12 +83,12 @@ public class ProtocolParserService : IProtocolParserService
 
         // GT06: standard packets start with 0x78 0x78; extended packets with 0x79 0x79
         bool isGt06 = rawData.Length >= gt06MinBytes &&
-            (rawData[0] == ProtocolConstants.GT06_START_MARKER ||
-            rawData[0] == ProtocolConstants.GT06_EXTENDED_START_MARKER);
+                     (rawData[0] == ProtocolConstants.GT06_START_MARKER ||
+                      rawData[0] == ProtocolConstants.GT06_EXTENDED_START_MARKER);
 
         // TK103 protocol starts with 0x28
         bool isTk103 = rawData.Length >= tk103MinBytes &&
-            rawData[0] == ProtocolConstants.TK103_START_MARKER;
+                      rawData[0] == ProtocolConstants.TK103_START_MARKER;
 
         // H02 protocol: $GPRMC (NMEA) or *HQ (proprietary H02)
         // Only check if we have enough bytes for H02 detection
@@ -97,7 +97,7 @@ public class ProtocolParserService : IProtocolParserService
         {
             var header = System.Text.Encoding.ASCII.GetString(rawData, 0, Math.Min(rawData.Length, 6));
             isH02 = header.StartsWith(ProtocolConstants.H02_START_MARKER, StringComparison.Ordinal) ||
-                header.StartsWith(ProtocolConstants.H02_HQ_START_MARKER, StringComparison.Ordinal);
+                    header.StartsWith(ProtocolConstants.H02_HQ_START_MARKER, StringComparison.Ordinal);
         }
 
         // Count how many protocols match
@@ -125,8 +125,6 @@ public class ProtocolParserService : IProtocolParserService
     /// <summary>
     /// Validates frame structure and checksum.
     /// </summary>
-    /// <param name="frame">The GPS frame to validate.</param>
-    /// <returns>True if the frame is valid, false otherwise.</returns>
     public async Task<bool> ValidateFrameAsync(GpsFrame frame)
     {
         if (frame.RawData.Length == 0)
@@ -145,80 +143,10 @@ public class ProtocolParserService : IProtocolParserService
 
     private LocationData ParseGT06Frame(GpsFrame frame)
     {
-        ArgumentNullException.ThrowIfNull(frame);
-        ArgumentNullException.ThrowIfNull(frame.RawData);
-
         try
         {
             // GT06 frame structure: [78] [78] [length] [protocol_number] [data] [checksum] [0D] [0A]
             var data = frame.RawData;
-
-            // Validate minimum frame size before any access
-            if (data.Length < ProtocolConstants.GT06_MIN_FRAME_SIZE)
-            {
-                throw new ParseException($"GT06 frame too short: expected at least {ProtocolConstants.GT06_MIN_FRAME_SIZE} bytes, got {data.Length} bytes",
-                    frame.ToHex(), ProtocolType.GT06);
-            }
-
-            // Validate maximum frame size to prevent allocation attacks
-            if (data.Length > ProtocolConstants.GT06_MAX_FRAME_SIZE)
-            {
-                throw new ParseException($"GT06 frame too large: maximum {ProtocolConstants.GT06_MAX_FRAME_SIZE} bytes, got {data.Length} bytes",
-                    frame.ToHex(), ProtocolType.GT06);
-            }
-
-            // Validate start markers
-            if (data[0] != ProtocolConstants.GT06_START_MARKER && data[0] != ProtocolConstants.GT06_EXTENDED_START_MARKER)
-            {
-                throw new ParseException($"GT06 invalid start marker: expected 0x78 or 0x79, got 0x{data[0]:X2}",
-                    frame.ToHex(), ProtocolType.GT06);
-            }
-
-            // Validate stop markers (last two bytes must be 0x0D 0x0A)
-            if (data[^2] != ProtocolConstants.GT06_END_MARKER || data[^1] != 0x0A)
-            {
-                throw new ParseException("GT06 invalid stop markers: expected 0x0D 0x0A at end of frame",
-                    frame.ToHex(), ProtocolType.GT06);
-            }
-
-            // Validate checksum BEFORE parsing any data
-            // Only validate if not already validated (to avoid double calculation)
-            if (!frame.IsValidChecksum)
-            {
-                frame.IsValidChecksum = ValidateGT06Checksum(frame);
-            }
-
-            if (!frame.IsValidChecksum)
-            {
-                throw new ChecksumException("00", "invalid", ProtocolType.GT06);
-            }
-
-            // Extract declared length from frame (byte at index 2)
-            byte declaredLength = data[2];
-
-            // Validate that declared length is reasonable (prevent allocation attacks)
-            if (declaredLength > ProtocolConstants.GT06_MAX_FRAME_SIZE - 7)
-            {
-                throw new ParseException($"GT06 declared length too large: {declaredLength} bytes",
-                    frame.ToHex(), ProtocolType.GT06);
-            }
-
-            // Validate declared length against actual buffer size
-            // GT06 frame structure: 2 start + 1 length + 1 protocol + N data + 1 checksum + 2 stop = N + 7 bytes
-            // We check that the frame is at least large enough to contain the declared data payload
-            // This prevents over-reading while allowing minor discrepancies in test data
-            int minimumRequiredLength = declaredLength + 7;
-            if (data.Length < minimumRequiredLength)
-            {
-                // For frames that are too short, we still reject them as invalid
-                // but we provide a clear error message
-                throw new ParseException($"GT06 declared length mismatch: declared {declaredLength} bytes of data, but frame has {data.Length} bytes total. Minimum required: {minimumRequiredLength} bytes",
-                    frame.ToHex(), ProtocolType.GT06);
-            }
-
-            // If the frame is longer than declared length + 7, use the actual length
-            // This handles cases where there's extra data after the frame
-
             var location = new LocationData
             {
                 DeviceId = ExtractDeviceId(frame),
@@ -226,7 +154,7 @@ public class ProtocolParserService : IProtocolParserService
                 Timestamp = frame.ReceivedAt
             };
 
-            // Extract GPS data from specific byte positions with bounds checking
+            // Extract GPS data from specific byte positions
             if (data.Length >= 30)
             {
                 location.Timestamp = ExtractTimestamp(data, 5);
@@ -247,7 +175,7 @@ public class ProtocolParserService : IProtocolParserService
             return location;
         }
         catch (Exception ex) when (ex is FormatException or OverflowException
-                or IndexOutOfRangeException or InvalidOperationException or GpsTrackerException)
+                                   or IndexOutOfRangeException or InvalidOperationException or GpsTrackerException)
         {
             throw new ParseException($"GT06 parsing failed: {ex.Message}", frame.ToHex(), ProtocolType.GT06);
         }
@@ -255,37 +183,8 @@ public class ProtocolParserService : IProtocolParserService
 
     private LocationData ParseH02Frame(GpsFrame frame)
     {
-        ArgumentNullException.ThrowIfNull(frame);
-        ArgumentNullException.ThrowIfNull(frame.RawData);
-
         try
         {
-            // Validate minimum frame size before any parsing
-            if (frame.RawData.Length < ProtocolConstants.H02_MIN_FRAME_SIZE)
-            {
-                throw new ParseException($"H02 frame too short: expected at least {ProtocolConstants.H02_MIN_FRAME_SIZE} bytes, got {frame.RawData.Length} bytes",
-                    frame.ToHex(), ProtocolType.H02);
-            }
-
-            // Validate maximum frame size to prevent allocation attacks
-            if (frame.RawData.Length > ProtocolConstants.H02_MAX_FRAME_SIZE)
-            {
-                throw new ParseException($"H02 frame too large: maximum {ProtocolConstants.H02_MAX_FRAME_SIZE} bytes, got {frame.RawData.Length} bytes",
-                    frame.ToHex(), ProtocolType.H02);
-            }
-
-            // Validate checksum BEFORE parsing any data
-            // Only validate if not already validated (to avoid double calculation)
-            if (!frame.IsValidChecksum)
-            {
-                frame.IsValidChecksum = ValidateH02Checksum(frame);
-            }
-
-            if (!frame.IsValidChecksum)
-            {
-                throw new ChecksumException("00", "invalid", ProtocolType.H02);
-            }
-
             var frameStr = System.Text.Encoding.ASCII.GetString(frame.RawData).Trim();
             var parts = frameStr.Split(',');
 
@@ -328,7 +227,7 @@ public class ProtocolParserService : IProtocolParserService
             return location;
         }
         catch (Exception ex) when (ex is FormatException or OverflowException
-                or IndexOutOfRangeException or InvalidOperationException or GpsTrackerException)
+                                   or IndexOutOfRangeException or InvalidOperationException or GpsTrackerException)
         {
             throw new ParseException($"H02 parsing failed: {ex.Message}", frame.ToHex(), ProtocolType.H02);
         }
@@ -336,37 +235,8 @@ public class ProtocolParserService : IProtocolParserService
 
     private LocationData ParseTK103Frame(GpsFrame frame)
     {
-        ArgumentNullException.ThrowIfNull(frame);
-        ArgumentNullException.ThrowIfNull(frame.RawData);
-
         try
         {
-            // Validate minimum frame size before any parsing
-            if (frame.RawData.Length < ProtocolConstants.TK103_MIN_FRAME_SIZE)
-            {
-                throw new ParseException($"TK103 frame too short: expected at least {ProtocolConstants.TK103_MIN_FRAME_SIZE} bytes, got {frame.RawData.Length} bytes",
-                    frame.ToHex(), ProtocolType.TK103);
-            }
-
-            // Validate maximum frame size to prevent allocation attacks
-            if (frame.RawData.Length > ProtocolConstants.TK103_MAX_FRAME_SIZE)
-            {
-                throw new ParseException($"TK103 frame too large: maximum {ProtocolConstants.TK103_MAX_FRAME_SIZE} bytes, got {frame.RawData.Length} bytes",
-                    frame.ToHex(), ProtocolType.TK103);
-            }
-
-            // Validate checksum BEFORE parsing any data
-            // Only validate if not already validated (to avoid double calculation)
-            if (!frame.IsValidChecksum)
-            {
-                frame.IsValidChecksum = ValidateTK103Checksum(frame);
-            }
-
-            if (!frame.IsValidChecksum)
-            {
-                throw new ChecksumException("00", "invalid", ProtocolType.TK103);
-            }
-
             var frameStr = System.Text.Encoding.ASCII.GetString(frame.RawData).Trim();
             var parts = frameStr.Split(',');
 
@@ -392,7 +262,7 @@ public class ProtocolParserService : IProtocolParserService
             return location;
         }
         catch (Exception ex) when (ex is FormatException or OverflowException
-                or IndexOutOfRangeException or InvalidOperationException or GpsTrackerException)
+                                   or IndexOutOfRangeException or InvalidOperationException or GpsTrackerException)
         {
             throw new ParseException($"TK103 parsing failed: {ex.Message}", frame.ToHex(), ProtocolType.TK103);
         }
@@ -400,9 +270,6 @@ public class ProtocolParserService : IProtocolParserService
 
     private bool ValidateGT06Checksum(GpsFrame frame)
     {
-        ArgumentNullException.ThrowIfNull(frame);
-        ArgumentNullException.ThrowIfNull(frame.RawData);
-
         var data = frame.RawData;
 
         // A valid GT06 frame must have at least 7 bytes:
@@ -430,9 +297,6 @@ public class ProtocolParserService : IProtocolParserService
 
     private bool ValidateH02Checksum(GpsFrame frame)
     {
-        ArgumentNullException.ThrowIfNull(frame);
-        ArgumentNullException.ThrowIfNull(frame.RawData);
-
         var frameStr = System.Text.Encoding.ASCII.GetString(frame.RawData).Trim();
 
         // H02 protocol is typically NMEA-like with a checksum after '*'
@@ -470,53 +334,7 @@ public class ProtocolParserService : IProtocolParserService
         return calculatedChecksum == providedChecksum;
     }
 
-    private bool ValidateTK103Checksum(GpsFrame frame)
-    {
-        ArgumentNullException.ThrowIfNull(frame);
-        ArgumentNullException.ThrowIfNull(frame.RawData);
-
-        // TK103 protocol uses simple checksum: XOR of all bytes
-        // For now, we'll validate it exists and is reasonable
-        var data = frame.RawData;
-
-        // Minimum frame: (device_id),YYYYMMDDHHMMSS,lat,NS,lon,EW,speed,course
-        // Example: (123456789012345),20240724143000,5512.3456,N,03738.9012,E,045.6,098.7
-        if (data.Length < ProtocolConstants.TK103_MIN_FRAME_SIZE)
-        {
-            return false;
-        }
-
-        // TK103 frames typically end with CRLF
-        if (data.Length >= 2 && data[^2] == '\r' && data[^1] == '\n')
-        {
-            // Valid end markers
-        }
-
-        // For TK103, we'll do a basic validation
-        // In a real implementation, this would calculate the checksum properly
-        // For now, we'll just ensure the frame has the expected structure
-        var frameStr = System.Text.Encoding.ASCII.GetString(data).Trim();
-        if (frameStr.Length < 30)
-        {
-            return false;
-        }
-
-        // Check for expected format: (IMEI),timestamp,lat,NS,lon,EW,speed,course
-        var parts = frameStr.Split(',');
-        if (parts.Length < 8)
-        {
-            return false;
-        }
-
-        // Validate IMEI format (15 digits)
-        string imei = parts[0].Trim('(', ')');
-        if (imei.Length != 15 || !imei.All(char.IsDigit))
-        {
-            return false;
-        }
-
-        return true;
-    }
+    private bool ValidateTK103Checksum(GpsFrame frame) => true; // TK103 validation can be protocol-specific
 
     private string ExtractDeviceId(GpsFrame frame)
     {
@@ -549,7 +367,7 @@ public class ProtocolParserService : IProtocolParserService
     {
         var frameStr = System.Text.Encoding.ASCII.GetString(frame.RawData);
         var parts = frameStr.Split(',');
-        return parts.Length > 0 ? parts[0].Trim('(', ')') : "unknown";
+        return parts.Length > 0 ? parts[0] : "unknown";
     }
 
     private DateTime ExtractTimestamp(byte[] data, int offset)
