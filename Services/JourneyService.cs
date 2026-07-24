@@ -90,6 +90,45 @@ public interface IJourneyService
 }
 
 /// <summary>
+/// Configuration for journey segmentation and edge-case handling.
+/// </summary>
+public record JourneySegmentationConfig
+{
+    /// <summary>
+    /// Maximum time gap between points to consider them part of the same journey (in minutes).
+    /// Points separated by more than this gap should start a new journey.
+    /// </summary>
+    public int MaxDataGapMinutes { get; init; } = 30;
+
+    /// <summary>
+    /// Duration of stationary period (speed == 0) that should end a journey (in minutes).
+    /// </summary>
+    public int StationaryDurationMinutes { get; init; } = 30;
+
+    /// <summary>
+    /// Maximum reordering window for out-of-order points (in seconds).
+    /// Points within this window can be reordered; points outside are rejected.
+    /// </summary>
+    public int MaxReorderingWindowSeconds { get; init; } = 300;
+
+    /// <summary>
+    /// Minimum speed threshold to consider a point as moving (in km/h).
+    /// Points below this speed are considered stationary.
+    /// </summary>
+    public double StationarySpeedThresholdKmh { get; init; } = 1.0;
+
+    /// <summary>
+    /// Whether to automatically end journeys when ignition-off is detected.
+    /// </summary>
+    public bool AutoEndOnIgnitionOff { get; init; } = true;
+
+    /// <summary>
+    /// Whether to automatically end journeys when device goes offline (no data for MaxDataGapMinutes).
+    /// </summary>
+    public bool AutoEndOnDeviceOffline { get; init; } = true;
+}
+
+/// <summary>
 /// Implementation of journey service.
 /// </summary>
 public class JourneyService : IJourneyService
@@ -98,16 +137,19 @@ public class JourneyService : IJourneyService
     private readonly ILocationDataRepository _locationRepository;
     private readonly IDeviceRepository _deviceRepository;
     private readonly ILocationSanityFilter _locationSanityFilter;
+    private readonly JourneySegmentationConfig _config;
 
     public JourneyService(
         IUnitOfWork unitOfWork,
-        ILocationSanityFilter? locationSanityFilter = null)
+        ILocationSanityFilter? locationSanityFilter = null,
+        JourneySegmentationConfig? config = null)
     {
         ArgumentNullException.ThrowIfNull(unitOfWork);
         _journeyRepository = unitOfWork.Journeys;
         _locationRepository = unitOfWork.LocationData;
         _deviceRepository = unitOfWork.Devices;
         _locationSanityFilter = locationSanityFilter ?? new LocationSanityFilter();
+        _config = config ?? new JourneySegmentationConfig();
     }
 
     /// <summary>
@@ -148,7 +190,7 @@ public class JourneyService : IJourneyService
     }
 
     /// <summary>
-    /// Adds a waypoint to an ongoing journey.
+    /// Adds a waypoint to an ongoing journey with journey segmentation rules.
     /// </summary>
     public async Task<bool> AddWaypointAsync(string journeyId, LocationData location)
     {
@@ -182,9 +224,149 @@ public class JourneyService : IJourneyService
             return false;
         }
 
+        // Apply journey segmentation rules
+        var segmentationResult = await ApplyJourneySegmentationRulesAsync(journey, location, previousLocation);
+        if (!segmentationResult.ShouldAddToCurrentJourney)
+        {
+            // Journey should be ended and a new one started
+            await CompleteJourneyAsync(journey.Id).ConfigureAwait(false);
+
+            // Start a new journey for the same device
+            var newJourney = await StartJourneyAsync(journey.DeviceId).ConfigureAwait(false);
+
+            // Add the location to the new journey
+            newJourney.AddWaypoint(location);
+            await _journeyRepository.UpdateAsync(newJourney).ConfigureAwait(false);
+
+            return true;
+        }
+
+        // Handle out-of-order points and duplicates
+        if (segmentationResult.IsOutOfOrder || segmentationResult.IsDuplicateTimestamp)
+        {
+            // For out-of-order or duplicate points, we don't add them to the journey
+            // but we still return true to indicate the point was processed
+            return true;
+        }
+
         journey.AddWaypoint(location);
         await _journeyRepository.UpdateAsync(journey).ConfigureAwait(false);
         return true;
+    }
+
+    /// <summary>
+    /// Applies journey segmentation rules to determine if a location should be added to the current journey.
+    /// </summary>
+    private async Task<JourneySegmentationResult> ApplyJourneySegmentationRulesAsync(
+        Journey journey,
+        LocationData location,
+        LocationData? previousLocation)
+    {
+        // Check for duplicate timestamp
+        if (previousLocation != null && location.Timestamp == previousLocation.Timestamp)
+        {
+            return new JourneySegmentationResult(
+                shouldAddToCurrentJourney: false,
+                isOutOfOrder: false,
+                isDuplicateTimestamp: true,
+                reason: "Duplicate timestamp detected");
+        }
+
+        // Check for out-of-order points (with tolerance window)
+        if (previousLocation != null && location.Timestamp < previousLocation.Timestamp)
+        {
+            var timeDifference = (previousLocation.Timestamp - location.Timestamp).TotalSeconds;
+            if (timeDifference > _config.MaxReorderingWindowSeconds)
+            {
+                // Point is too far out of order, reject it
+                return new JourneySegmentationResult(
+                    shouldAddToCurrentJourney: false,
+                    isOutOfOrder: true,
+                    isDuplicateTimestamp: false,
+                    reason: $"Point is out of order by {timeDifference}s, exceeding tolerance of {_config.MaxReorderingWindowSeconds}s");
+            }
+            else
+            {
+                // Point is within reordering window, accept it but mark as out-of-order
+                return new JourneySegmentationResult(
+                    shouldAddToCurrentJourney: true,
+                    isOutOfOrder: true,
+                    isDuplicateTimestamp: false,
+                    reason: $"Point is out of order by {timeDifference}s but within tolerance");
+            }
+        }
+
+        // Check for data gap (device offline for too long)
+        if (_config.AutoEndOnDeviceOffline && previousLocation != null)
+        {
+            var timeGap = (location.Timestamp - previousLocation.Timestamp).TotalMinutes;
+            if (timeGap > _config.MaxDataGapMinutes)
+            {
+                return new JourneySegmentationResult(
+                    shouldAddToCurrentJourney: false,
+                    isOutOfOrder: false,
+                    isDuplicateTimestamp: false,
+                    reason: $"Data gap of {timeGap} minutes exceeds maximum of {_config.MaxDataGapMinutes} minutes");
+            }
+        }
+
+        // Check for stationary period (ignition-off detection)
+        if (_config.AutoEndOnIgnitionOff && previousLocation != null)
+        {
+            // Count consecutive stationary points
+            int stationaryCount = 0;
+            LocationData? checkPoint = previousLocation;
+
+            // Look backwards through recent points to find consecutive stationary points
+            var recentWaypoints = journey.Waypoints
+                .TakeLast(5) // Check last 5 points
+                .Reverse()
+                .ToList();
+
+            foreach (var point in recentWaypoints)
+            {
+                if (point.Speed <= _config.StationarySpeedThresholdKmh)
+                {
+                    stationaryCount++;
+                }
+                else
+                {
+                    break; // Stop counting when we find a moving point
+                }
+            }
+
+            // Include the current point if it's also stationary
+            if (location.Speed <= _config.StationarySpeedThresholdKmh)
+            {
+                stationaryCount++;
+            }
+
+            // If we have enough consecutive stationary points, end the journey
+            if (stationaryCount >= 2) // At least 2 consecutive stationary points (previous + current)
+            {
+                // Calculate time span of stationary period
+                var firstStationaryPoint = recentWaypoints.LastOrDefault(p => p.Speed <= _config.StationarySpeedThresholdKmh) ?? previousLocation;
+                if (firstStationaryPoint != null)
+                {
+                    var stationaryDuration = (location.Timestamp - firstStationaryPoint.Timestamp).TotalMinutes;
+                    if (stationaryDuration >= _config.StationaryDurationMinutes)
+                    {
+                        return new JourneySegmentationResult(
+                            shouldAddToCurrentJourney: false,
+                            isOutOfOrder: false,
+                            isDuplicateTimestamp: false,
+                            reason: $"Stationary period of {stationaryDuration} minutes exceeds threshold of {_config.StationaryDurationMinutes} minutes");
+                    }
+                }
+            }
+        }
+
+        // Point is acceptable for current journey
+        return new JourneySegmentationResult(
+            shouldAddToCurrentJourney: true,
+            isOutOfOrder: false,
+            isDuplicateTimestamp: false,
+            reason: "Point accepted");
     }
 
     /// <summary>
@@ -219,6 +401,8 @@ public class JourneyService : IJourneyService
     /// <summary>
     /// Gets a specific journey by ID.
     /// </summary>
+    /// <param name="journeyId">The journey ID.</param>
+    /// <returns>The journey if found, otherwise null.</returns>
     public async Task<Journey?> GetJourneyAsync(string journeyId)
     {
         if (string.IsNullOrWhiteSpace(journeyId))
@@ -364,11 +548,51 @@ public class JourneyService : IJourneyService
     /// <summary>
     /// Cleans up old journey records.
     /// </summary>
+    /// <param name="olderThan">The threshold date.</param>
+    /// <returns>The number of journeys deleted.</returns>
     public async Task<int> CleanupOldJourneysAsync(DateTime olderThan)
     {
         if (olderThan >= DateTime.UtcNow)
             throw new ArgumentException("Cleanup date must be in the past");
 
         return await _journeyRepository.DeleteOlderThanAsync(olderThan).ConfigureAwait(false);
+    }
+}
+
+/// <summary>
+/// Result of applying journey segmentation rules to a location point.
+/// </summary>
+public record JourneySegmentationResult
+{
+    /// <summary>
+    /// Whether the point should be added to the current journey.
+    /// </summary>
+    public bool ShouldAddToCurrentJourney { get; }
+
+    /// <summary>
+    /// Whether the point is out of chronological order.
+    /// </summary>
+    public bool IsOutOfOrder { get; }
+
+    /// <summary>
+    /// Whether the point has a duplicate timestamp.
+    /// </summary>
+    public bool IsDuplicateTimestamp { get; }
+
+    /// <summary>
+    /// Reason for the segmentation decision.
+    /// </summary>
+    public string Reason { get; }
+
+    public JourneySegmentationResult(
+        bool shouldAddToCurrentJourney,
+        bool isOutOfOrder,
+        bool isDuplicateTimestamp,
+        string reason)
+    {
+        ShouldAddToCurrentJourney = shouldAddToCurrentJourney;
+        IsOutOfOrder = isOutOfOrder;
+        IsDuplicateTimestamp = isDuplicateTimestamp;
+        Reason = reason;
     }
 }
