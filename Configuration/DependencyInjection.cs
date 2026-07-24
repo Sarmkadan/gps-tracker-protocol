@@ -39,6 +39,7 @@ public static class DependencyInjection
         services.AddSingleton<ILocationDataService, LocationDataService>();
         services.AddSingleton<ICommandService, CommandService>();
         services.AddSingleton<IJourneyService, JourneyService>();
+    services.AddSingleton<ILocationSanityFilter, LocationSanityFilter>();
 
         // Register protocol handlers and auto-detector
         services.AddSingleton<IProtocolHandler, GT06ProtocolHandler>();

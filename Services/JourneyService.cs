@@ -97,12 +97,17 @@ public class JourneyService : IJourneyService
     private readonly IJourneyRepository _journeyRepository;
     private readonly ILocationDataRepository _locationRepository;
     private readonly IDeviceRepository _deviceRepository;
+    private readonly ILocationSanityFilter _locationSanityFilter;
 
-    public JourneyService(IUnitOfWork unitOfWork)
+    public JourneyService(
+        IUnitOfWork unitOfWork,
+        ILocationSanityFilter? locationSanityFilter = null)
     {
+        ArgumentNullException.ThrowIfNull(unitOfWork);
         _journeyRepository = unitOfWork.Journeys;
         _locationRepository = unitOfWork.LocationData;
         _deviceRepository = unitOfWork.Devices;
+        _locationSanityFilter = locationSanityFilter ?? new LocationSanityFilter();
     }
 
     /// <summary>
@@ -165,6 +170,17 @@ public class JourneyService : IJourneyService
 
         if (journey.Waypoints.Count >= ConfigConstants.MAX_JOURNEY_WAYPOINTS)
             throw new InvalidOperationException("Journey has reached maximum waypoint limit");
+
+        // Apply GPS fix quality filtering before adding the waypoint
+        var previousLocation = journey.Waypoints.Count > 0 ? journey.Waypoints[^1] : null;
+        var filterResult = _locationSanityFilter.FilterLocation(location, previousLocation);
+
+        if (!filterResult.IsAccepted)
+        {
+            // Location was rejected by sanity filter
+            // In a real application, this would be logged/metrics would be incremented
+            return false;
+        }
 
         journey.AddWaypoint(location);
         await _journeyRepository.UpdateAsync(journey).ConfigureAwait(false);
