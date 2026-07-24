@@ -15,7 +15,7 @@ using GpsTrackerProtocol;
 /// <summary>
 /// Parser for GT06 protocol frames.
 /// </summary>
-public class Gt06ProtocolParser : IProtocolParser
+public class Gt06ProtocolParser : IFrameParser<LocationData>, IProtocolParser
 {
     /// <inheritdoc/>
     public ProtocolType ProtocolType => ProtocolType.GT06;
@@ -26,6 +26,16 @@ public class Gt06ProtocolParser : IProtocolParser
     /// <inheritdoc/>
     public ParseResult<LocationData> Parse(ReadOnlySpan<byte> frameData)
     {
+        if (frameData.IsEmpty)
+        {
+            return ParseResult<LocationData>.Failure(
+                "EMPTY_FRAME",
+                "GT06 frame is empty",
+                0,
+                ProtocolType.GT06
+            );
+        }
+
         try
         {
             // Validate minimum frame size before any access
@@ -161,11 +171,20 @@ public class Gt06ProtocolParser : IProtocolParser
     }
 
     /// <inheritdoc/>
+    public bool TryParse(ReadOnlySpan<byte> frameData, out LocationData? result)
+    {
+        var parseResult = Parse(frameData);
+        result = parseResult.IsSuccess ? parseResult.Value : null;
+        return parseResult.IsSuccess;
+    }
+
+    /// <inheritdoc/>
     public ParseResult<LocationData> Parse(GpsFrame frame)
     {
         ArgumentNullException.ThrowIfNull(frame);
         return Parse(frame.RawData.AsSpan());
     }
+
 
     /// <inheritdoc/>
     public bool Validate(ReadOnlySpan<byte> frameData)

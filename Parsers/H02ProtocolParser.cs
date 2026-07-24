@@ -15,7 +15,7 @@ using GpsTrackerProtocol;
 /// <summary>
 /// Parser for H02 protocol frames (NMEA and proprietary formats).
 /// </summary>
-public class H02ProtocolParser : IProtocolParser
+public class H02ProtocolParser : IFrameParser<LocationData>, IProtocolParser
 {
     /// <inheritdoc/>
     public ProtocolType ProtocolType => ProtocolType.H02;
@@ -26,6 +26,16 @@ public class H02ProtocolParser : IProtocolParser
     /// <inheritdoc/>
     public ParseResult<LocationData> Parse(ReadOnlySpan<byte> frameData)
     {
+        if (frameData.IsEmpty)
+        {
+            return ParseResult<LocationData>.Failure(
+                "EMPTY_FRAME",
+                "H02 frame is empty",
+                0,
+                ProtocolType.H02
+            );
+        }
+
         try
         {
             // Validate minimum frame size before any parsing
@@ -49,6 +59,7 @@ public class H02ProtocolParser : IProtocolParser
                     ProtocolType.H02
                 );
             }
+
 
             // Validate checksum BEFORE parsing any data
             if (!ValidateChecksum(frameData))
@@ -149,6 +160,14 @@ public class H02ProtocolParser : IProtocolParser
                 ProtocolType.H02
             );
         }
+    }
+
+    /// <inheritdoc/>
+    public bool TryParse(ReadOnlySpan<byte> frameData, out LocationData? result)
+    {
+        var parseResult = Parse(frameData);
+        result = parseResult.IsSuccess ? parseResult.Value : null;
+        return parseResult.IsSuccess;
     }
 
     /// <inheritdoc/>

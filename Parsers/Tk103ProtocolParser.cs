@@ -15,7 +15,7 @@ using GpsTrackerProtocol;
 /// <summary>
 /// Parser for TK103 protocol frames.
 /// </summary>
-public class Tk103ProtocolParser : IProtocolParser
+public class Tk103ProtocolParser : IFrameParser<LocationData>, IProtocolParser
 {
     /// <inheritdoc/>
     public ProtocolType ProtocolType => ProtocolType.TK103;
@@ -26,6 +26,16 @@ public class Tk103ProtocolParser : IProtocolParser
     /// <inheritdoc/>
     public ParseResult<LocationData> Parse(ReadOnlySpan<byte> frameData)
     {
+        if (frameData.IsEmpty)
+        {
+            return ParseResult<LocationData>.Failure(
+                "EMPTY_FRAME",
+                "TK103 frame is empty",
+                0,
+                ProtocolType.TK103
+            );
+        }
+
         try
         {
             // Validate minimum frame size before any parsing
@@ -49,6 +59,7 @@ public class Tk103ProtocolParser : IProtocolParser
                     ProtocolType.TK103
                 );
             }
+
 
             // Validate start marker
             if (frameData[0] != ProtocolConstants.TK103_START_MARKER)
@@ -140,6 +151,14 @@ public class Tk103ProtocolParser : IProtocolParser
                 ProtocolType.TK103
             );
         }
+    }
+
+    /// <inheritdoc/>
+    public bool TryParse(ReadOnlySpan<byte> frameData, out LocationData? result)
+    {
+        var parseResult = Parse(frameData);
+        result = parseResult.IsSuccess ? parseResult.Value : null;
+        return parseResult.IsSuccess;
     }
 
     /// <inheritdoc/>
