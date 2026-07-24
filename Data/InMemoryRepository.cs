@@ -357,7 +357,21 @@ public class InMemoryRepository<T> : IRepository<T> where T : class
         {
             lock (locationData.ExtendedData)
             {
-                locationDataCopy.ExtendedData = new Dictionary<string, object>(locationData.ExtendedData);
+                var deepCopy = new Dictionary<string, object>();
+                foreach (var kvp in locationData.ExtendedData)
+                {
+                    if (kvp.Value is Dictionary<string, object> nestedDict)
+                    {
+                        // Deep copy nested dictionaries
+                        deepCopy[kvp.Key] = new Dictionary<string, object>(nestedDict);
+                    }
+                    else
+                    {
+                        // Shallow copy for other types
+                        deepCopy[kvp.Key] = kvp.Value;
+                    }
+                }
+                locationDataCopy.ExtendedData = deepCopy;
             }
         }
 
