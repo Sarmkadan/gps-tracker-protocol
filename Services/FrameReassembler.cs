@@ -2,11 +2,14 @@
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
-// =============================================================================
+// =====================================================================
 
 namespace GpsTrackerProtocol.Services;
 
-using GpsTrackerProtocol;
+using System.Buffers;
+using GpsTrackerProtocol.Domain;
+using GpsTrackerProtocol.Domain.Models;
+using GpsTrackerProtocol.Parsers;
 
 /// <summary>
 /// Reassembles complete GT06/H02/TK103 protocol frames out of a raw, possibly
@@ -114,6 +117,7 @@ public sealed class FrameReassembler
                 if (_buffer.Count < totalLength)
                     return false; // frame not fully arrived yet
 
+                // Validate end markers before extracting
                 if (_buffer[totalLength - 2] != ProtocolConstants.GT06_END_MARKER || _buffer[totalLength - 1] != 0x0A)
                 {
                     DropBytes(1);
