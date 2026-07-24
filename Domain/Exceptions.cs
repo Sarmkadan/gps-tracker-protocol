@@ -23,6 +23,7 @@ public class ParseException : GpsTrackerException
 {
     public string? RawData { get; set; }
     public ProtocolType Protocol { get; set; }
+    public string? ErrorCode { get; set; }
 
     public ParseException(string message, ProtocolType protocol = ProtocolType.Unknown)
         : base(message)

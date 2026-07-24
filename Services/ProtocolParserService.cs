@@ -9,6 +9,7 @@ namespace GpsTrackerProtocol.Services;
 
 using GpsTrackerProtocol.Domain;
 using GpsTrackerProtocol.Domain.Models;
+using GpsTrackerProtocol.Parsers;
 
 /// <summary>
 /// Service for parsing raw GPS protocol frames into structured location data.
@@ -42,21 +43,51 @@ public interface IProtocolParserService
 /// </summary>
 public class ProtocolParserService : IProtocolParserService
 {
+    private readonly Dictionary<ProtocolType, IProtocolParser> _parsers;
+
+    /// <summary>
+    /// Initializes a new instance of the ProtocolParserService.
+    /// </summary>
+    public ProtocolParserService()
+    {
+        _parsers = new Dictionary<ProtocolType, IProtocolParser>
+        {
+            { ProtocolType.GT06, new Gt06ProtocolParser() },
+            { ProtocolType.H02, new H02ProtocolParser() },
+            { ProtocolType.TK103, new Tk103ProtocolParser() }
+        };
+    }
+
     /// <summary>
     /// Parses a GPS frame into location data based on protocol type.
     /// </summary>
     public async Task<LocationData> ParseFrameAsync(GpsFrame frame)
     {
+        if (frame == null)
+            throw new ArgumentNullException(nameof(frame));
+
         if (!frame.IsValid())
             throw new ParseException("Frame validation failed", frame.ToHex(), frame.Protocol);
 
-        return frame.Protocol switch
+        if (_parsers.TryGetValue(frame.Protocol, out var parser))
         {
-            ProtocolType.GT06 => ParseGT06Frame(frame),
-            ProtocolType.H02 => ParseH02Frame(frame),
-            ProtocolType.TK103 => ParseTK103Frame(frame),
-            _ => throw new ParseException("Unsupported protocol", frame.ToHex())
-        };
+            var result = parser.Parse(frame);
+            if (result.IsSuccess)
+            {
+                return result.Value;
+            }
+            else
+            {
+                // Convert parse error to exception for backward compatibility
+                var error = result.Error!.Value;
+                throw new ParseException(error.Message, error.RawData ?? string.Empty, error.Protocol)
+                {
+                    ErrorCode = error.ErrorCode
+                };
+            }
+        }
+
+        throw new ParseException("Unsupported protocol", frame.ToHex(), frame.Protocol);
     }
 
     /// <summary>
