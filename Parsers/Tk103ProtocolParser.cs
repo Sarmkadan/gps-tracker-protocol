@@ -64,6 +64,17 @@ public class Tk103ProtocolParser : IProtocolParser
             // Convert to string for parsing (TK103 is ASCII-based)
             string frameStr = System.Text.Encoding.ASCII.GetString(frameData).Trim();
 
+            // Validate checksum BEFORE parsing any data
+            if (!ValidateChecksum(frameStr))
+            {
+                return ParseResult<LocationData>.Failure(
+                    "CHECKSUM_FAILED",
+                    "TK103 checksum validation failed",
+                    0,
+                    ProtocolType.TK103
+                );
+            }
+
             // Basic validation of frame structure
             if (frameStr.Length < 30)
             {
@@ -152,8 +163,14 @@ public class Tk103ProtocolParser : IProtocolParser
             if (frameData[0] != ProtocolConstants.TK103_START_MARKER)
                 return false;
 
-            // Check for expected format: (IMEI),timestamp,lat,NS,lon,EW,speed,course
+            // Convert to string for checksum validation and structure checking
             string frameStr = System.Text.Encoding.ASCII.GetString(frameData).Trim();
+
+            // Validate checksum
+            if (!ValidateChecksum(frameStr))
+                return false;
+
+            // Check for expected format: (IMEI),timestamp,lat,NS,lon,EW,speed,course
             var parts = frameStr.Split(',');
             if (parts.Length < 8)
                 return false;
@@ -169,6 +186,52 @@ public class Tk103ProtocolParser : IProtocolParser
         {
             return false;
         }
+    }
+
+    /// <summary>
+    /// Validates TK103 frame checksum.
+    /// </summary>
+    /// <param name="frameStr">The TK103 frame as a string.</param>
+    /// <returns>True if checksum is valid, false otherwise.</returns>
+    private bool ValidateChecksum(string frameStr)
+    {
+        // TK103 frames use NMEA-style checksum with '*' delimiter
+        // Format: (IMEI),data,*checksum
+
+        int checksumDelimiterIndex = frameStr.IndexOf('*');
+
+        if (checksumDelimiterIndex == -1)
+        {
+            // No checksum present - invalid frame
+            return false;
+        }
+
+        // Extract the data part for checksum calculation (before '*')
+        string dataForChecksum = frameStr.Substring(0, checksumDelimiterIndex);
+
+        // Calculate checksum: XOR of all bytes in the data part
+        byte calculatedChecksum = 0;
+        foreach (char c in dataForChecksum)
+        {
+            calculatedChecksum ^= (byte)c;
+        }
+
+        // Extract the provided checksum (two hex digits after '*')
+        if (checksumDelimiterIndex + 3 > frameStr.Length)
+        {
+            // Checksum part is too short
+            return false;
+        }
+
+        string providedChecksumHex = frameStr.Substring(checksumDelimiterIndex + 1, 2);
+
+        if (!byte.TryParse(providedChecksumHex, System.Globalization.NumberStyles.HexNumber, null, out byte providedChecksum))
+        {
+            // Invalid hexadecimal checksum string
+            return false;
+        }
+
+        return calculatedChecksum == providedChecksum;
     }
 
     private string ExtractDeviceId(string frameStr)

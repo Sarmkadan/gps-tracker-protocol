@@ -365,7 +365,54 @@ public class ProtocolParserService : IProtocolParserService
         return calculatedChecksum == providedChecksum;
     }
 
-    private bool ValidateTK103Checksum(GpsFrame frame) => true; // TK103 validation can be protocol-specific
+    private bool ValidateTK103Checksum(GpsFrame frame)
+{
+    try
+    {
+        // Convert to string for checksum validation
+        string frameStr = System.Text.Encoding.ASCII.GetString(frame.RawData).Trim();
+
+        // TK103 frames use NMEA-style checksum with '*' delimiter
+        int checksumDelimiterIndex = frameStr.IndexOf('*');
+
+        if (checksumDelimiterIndex == -1)
+        {
+            // No checksum present - invalid frame
+            return false;
+        }
+
+        // Extract the data part for checksum calculation (before '*')
+        string dataForChecksum = frameStr.Substring(0, checksumDelimiterIndex);
+
+        // Calculate checksum: XOR of all bytes in the data part
+        byte calculatedChecksum = 0;
+        foreach (char c in dataForChecksum)
+        {
+            calculatedChecksum ^= (byte)c;
+        }
+
+        // Extract the provided checksum (two hex digits after '*')
+        if (checksumDelimiterIndex + 3 > frameStr.Length)
+        {
+            // Checksum part is too short
+            return false;
+        }
+
+        string providedChecksumHex = frameStr.Substring(checksumDelimiterIndex + 1, 2);
+
+        if (!byte.TryParse(providedChecksumHex, System.Globalization.NumberStyles.HexNumber, null, out byte providedChecksum))
+        {
+            // Invalid hexadecimal checksum string
+            return false;
+        }
+
+        return calculatedChecksum == providedChecksum;
+    }
+    catch
+    {
+        return false;
+    }
+}
 
     private string ExtractDeviceId(GpsFrame frame)
     {
