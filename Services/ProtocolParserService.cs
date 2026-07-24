@@ -18,22 +18,25 @@ public interface IProtocolParserService
     /// <summary>
     /// Parses a GPS frame into location data based on protocol type.
     /// </summary>
-    /// <param name="frame">The GPS frame to parse.</param>
+    /// <param name="frame">The GPS frame to parse. Must not be null.</param>
     /// <returns>The parsed location data.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="frame"/> is null.</exception>
     Task<LocationData> ParseFrameAsync(GpsFrame frame);
 
     /// <summary>
     /// Detects protocol type from raw data.
     /// </summary>
-    /// <param name="rawData">The raw byte data.</param>
+    /// <param name="rawData">The raw byte data. Must not be null. Maximum size is enforced to prevent DoS.</param>
     /// <returns>A <see cref="ProtocolDetection"/> result indicating detection status.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="rawData"/> is null.</exception>
     Task<ProtocolDetection> DetectProtocolAsync(byte[] rawData);
 
     /// <summary>
     /// Validates frame structure and checksum.
     /// </summary>
-    /// <param name="frame">The GPS frame to validate.</param>
+    /// <param name="frame">The GPS frame to validate. Must not be null.</param>
     /// <returns>True if the frame is valid, false otherwise.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="frame"/> is null.</exception>
     Task<bool> ValidateFrameAsync(GpsFrame frame);
 }
 
@@ -42,13 +45,25 @@ public interface IProtocolParserService
 /// </summary>
 public class ProtocolParserService : IProtocolParserService
 {
+    private const int MaxDetectionBufferSize = 16 * 1024; // 16KB max for protocol detection
+
     /// <summary>
     /// Parses a GPS frame into location data based on protocol type.
     /// </summary>
+    /// <param name="frame">The GPS frame to parse. Must not be null.</param>
+    /// <returns>The parsed location data.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="frame"/> is null.</exception>
     public async Task<LocationData> ParseFrameAsync(GpsFrame frame)
     {
+        ArgumentNullException.ThrowIfNull(frame);
+
+        if (frame.RawData.Length == 0)
+        {
+            throw new ArgumentException("Frame raw data cannot be empty", nameof(frame));
+        }
+
         if (!frame.IsValid())
-            throw new ParseException("Frame validation failed", frame.ToHex(), frame.Protocol);
+        throw new ParseException("Frame validation failed", frame.ToHex(), frame.Protocol);
 
         return frame.Protocol switch
         {
@@ -62,12 +77,21 @@ public class ProtocolParserService : IProtocolParserService
     /// <summary>
     /// Detects protocol type from raw data.
     /// </summary>
-    /// <param name="rawData">The raw byte data.</param>
+    /// <param name="rawData">The raw byte data. Must not be null. Maximum size is enforced to prevent DoS.</param>
     /// <returns>A <see cref="ProtocolDetection"/> result indicating detection status.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="rawData"/> is null.</exception>
     public async Task<ProtocolDetection> DetectProtocolAsync(byte[] rawData)
     {
+        ArgumentNullException.ThrowIfNull(rawData);
+
+        // Enforce maximum buffer size to prevent OOM attacks from huge allocations
+        if (rawData.Length > MaxDetectionBufferSize)
+        {
+            return ProtocolDetection.NeedMoreData(rawData.Length, MaxDetectionBufferSize);
+        }
+
         if (rawData.Length == 0)
-            return ProtocolDetection.NeedMoreData(0, 1);
+        return ProtocolDetection.NeedMoreData(0, 1);
 
         // Define minimum bytes required for each protocol
         const int gt06MinBytes = 2;
@@ -83,12 +107,12 @@ public class ProtocolParserService : IProtocolParserService
 
         // GT06: standard packets start with 0x78 0x78; extended packets with 0x79 0x79
         bool isGt06 = rawData.Length >= gt06MinBytes &&
-                     (rawData[0] == ProtocolConstants.GT06_START_MARKER ||
-                      rawData[0] == ProtocolConstants.GT06_EXTENDED_START_MARKER);
+            (rawData[0] == ProtocolConstants.GT06_START_MARKER ||
+            rawData[0] == ProtocolConstants.GT06_EXTENDED_START_MARKER);
 
         // TK103 protocol starts with 0x28
         bool isTk103 = rawData.Length >= tk103MinBytes &&
-                      rawData[0] == ProtocolConstants.TK103_START_MARKER;
+            rawData[0] == ProtocolConstants.TK103_START_MARKER;
 
         // H02 protocol: $GPRMC (NMEA) or *HQ (proprietary H02)
         // Only check if we have enough bytes for H02 detection
@@ -97,7 +121,7 @@ public class ProtocolParserService : IProtocolParserService
         {
             var header = System.Text.Encoding.ASCII.GetString(rawData, 0, Math.Min(rawData.Length, 6));
             isH02 = header.StartsWith(ProtocolConstants.H02_START_MARKER, StringComparison.Ordinal) ||
-                    header.StartsWith(ProtocolConstants.H02_HQ_START_MARKER, StringComparison.Ordinal);
+                header.StartsWith(ProtocolConstants.H02_HQ_START_MARKER, StringComparison.Ordinal);
         }
 
         // Count how many protocols match
@@ -125,10 +149,17 @@ public class ProtocolParserService : IProtocolParserService
     /// <summary>
     /// Validates frame structure and checksum.
     /// </summary>
+    /// <param name="frame">The GPS frame to validate. Must not be null.</param>
+    /// <returns>True if the frame is valid, false otherwise.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="frame"/> is null.</exception>
     public async Task<bool> ValidateFrameAsync(GpsFrame frame)
     {
+        ArgumentNullException.ThrowIfNull(frame);
+
         if (frame.RawData.Length == 0)
+        {
             return false;
+        }
 
         frame.IsValidChecksum = frame.Protocol switch
         {
@@ -170,12 +201,12 @@ public class ProtocolParserService : IProtocolParserService
             }
 
             if (!location.IsValid())
-                throw new ValidationException("Location data validation failed");
+            throw new ValidationException("Location data validation failed");
 
             return location;
         }
         catch (Exception ex) when (ex is FormatException or OverflowException
-                                   or IndexOutOfRangeException or InvalidOperationException or GpsTrackerException)
+            or IndexOutOfRangeException or InvalidOperationException or GpsTrackerException)
         {
             throw new ParseException($"GT06 parsing failed: {ex.Message}", frame.ToHex(), ProtocolType.GT06);
         }
@@ -201,7 +232,7 @@ public class ProtocolParserService : IProtocolParserService
                 if (parts.Length >= 10)
                 {
                     if (parts.Length > 10 && parts[10].Length >= 6)
-                        location.Timestamp = DateTime.ParseExact(parts[10][..6] + parts[3], "ddMMyyHHmmss", null);
+                    location.Timestamp = DateTime.ParseExact(parts[10][..6] + parts[3], "ddMMyyHHmmss", null);
                     location.Latitude = ParseCoordinate(parts[4], parts[5]);
                     // Use the E/W indicator at parts[7], not parts[6] which is the longitude value.
                     location.Longitude = ParseCoordinate(parts[6], parts[7]);
@@ -214,7 +245,7 @@ public class ProtocolParserService : IProtocolParserService
                 // $GPRMC,{HHMMSS.ss},{A/V},{lat},{NS},{lon},{EW},{speed},{bearing},{DDMMYY},...
                 var timeStr = parts[1].Length >= 6 ? parts[1][..6] : parts[1];
                 if (parts.Length > 9 && parts[9].Length >= 6)
-                    location.Timestamp = DateTime.ParseExact(parts[9][..6] + timeStr, "ddMMyyHHmmss", null);
+                location.Timestamp = DateTime.ParseExact(parts[9][..6] + timeStr, "ddMMyyHHmmss", null);
                 location.Latitude = ParseCoordinate(parts[3], parts[4]);
                 location.Longitude = ParseCoordinate(parts[5], parts[6]);
                 location.Speed = double.Parse(parts[7]);
@@ -222,12 +253,12 @@ public class ProtocolParserService : IProtocolParserService
             }
 
             if (!location.IsValid())
-                throw new ValidationException("Location data validation failed");
+            throw new ValidationException("Location data validation failed");
 
             return location;
         }
         catch (Exception ex) when (ex is FormatException or OverflowException
-                                   or IndexOutOfRangeException or InvalidOperationException or GpsTrackerException)
+            or IndexOutOfRangeException or InvalidOperationException or GpsTrackerException)
         {
             throw new ParseException($"H02 parsing failed: {ex.Message}", frame.ToHex(), ProtocolType.H02);
         }
@@ -257,12 +288,12 @@ public class ProtocolParserService : IProtocolParserService
             }
 
             if (!location.IsValid())
-                throw new ValidationException("Location data validation failed");
+            throw new ValidationException("Location data validation failed");
 
             return location;
         }
         catch (Exception ex) when (ex is FormatException or OverflowException
-                                   or IndexOutOfRangeException or InvalidOperationException or GpsTrackerException)
+            or IndexOutOfRangeException or InvalidOperationException or GpsTrackerException)
         {
             throw new ParseException($"TK103 parsing failed: {ex.Message}", frame.ToHex(), ProtocolType.TK103);
         }
@@ -350,7 +381,7 @@ public class ProtocolParserService : IProtocolParserService
     private string ExtractGT06DeviceId(GpsFrame frame)
     {
         if (frame.RawData.Length >= 9)
-            return System.Text.Encoding.ASCII.GetString(frame.RawData, 4, 5).Trim('\0');
+        return System.Text.Encoding.ASCII.GetString(frame.RawData, 4, 5).Trim('\0');
         return "unknown";
     }
 
@@ -359,7 +390,7 @@ public class ProtocolParserService : IProtocolParserService
         var frameStr = System.Text.Encoding.ASCII.GetString(frame.RawData);
         var parts = frameStr.Split(',');
         if (frameStr.StartsWith(ProtocolConstants.H02_HQ_START_MARKER))
-            return parts.Length > 1 ? parts[1] : "unknown";
+        return parts.Length > 1 ? parts[1] : "unknown";
         return parts.Length > 0 ? parts[0] : "unknown";
     }
 
@@ -391,14 +422,14 @@ public class ProtocolParserService : IProtocolParserService
             // Bit 2: Latitude Hemisphere (0: South, 1: North)
             bool isNorth = (statusByte & 0b00000100) != 0;
             if (!isNorth) // If not North, it's South
-                degrees = -degrees;
+            degrees = -degrees;
         }
         else // Longitude
         {
             // Bit 3: Longitude Hemisphere (0: East, 1: West)
             bool isWest = (statusByte & 0b00001000) != 0;
             if (isWest)
-                degrees = -degrees;
+            degrees = -degrees;
         }
 
         return degrees;
@@ -418,14 +449,14 @@ public class ProtocolParserService : IProtocolParserService
     private double ParseCoordinate(string value, string direction)
     {
         if (!double.TryParse(value, out var coord))
-            return 0;
+        return 0;
 
         var degrees = Math.Floor(coord / 100);
         var minutes = coord - (degrees * 100);
         var coordinate = degrees + (minutes / 60);
 
         if (direction == "S" || direction == "W")
-            coordinate = -coordinate;
+        coordinate = -coordinate;
 
         return coordinate;
     }
