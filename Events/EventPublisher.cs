@@ -9,23 +9,6 @@ namespace GpsTrackerProtocol.Events;
 using Microsoft.Extensions.Logging;
 using GpsTrackerProtocol.Domain.Models;
 
-/// <summary>
-/// Event system for decoupling location updates and journey events.
-/// Allows subscribers to react to system events without tight coupling.
-/// </summary>
-public interface IDomainEvent
-{
-    string EventId { get; }
-    DateTime Timestamp { get; }
-    string AggregateId { get; }
-}
-
-public interface IEventPublisher
-{
-    Task PublishAsync<T>(T @event) where T : IDomainEvent;
-    IDisposable Subscribe<T>(Func<T, Task> handler) where T : IDomainEvent;
-}
-
 public class EventPublisher : IEventPublisher
 {
     private readonly Dictionary<Type, List<Delegate>> _subscribers = new();
