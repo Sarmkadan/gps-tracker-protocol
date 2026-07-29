@@ -108,6 +108,29 @@ public static class LocationDataExtensions
         return location.DistanceTo(center) <= radiusMeters;
     }
 
+    /// <summary>
+    /// Returns true if the location data is older than the provided time span.
+    /// </summary>
+    /// <param name="source">The location data to check.</param>
+    /// <param name="timeSpan">The time span to compare against.</param>
+    /// <returns>True if the location data is older than the provided time span.</returns>
+    public static bool IsStale(this LocationData source, TimeSpan timeSpan)
+    {
+        if (source is null) throw new ArgumentNullException(nameof(source));
+        return (DateTime.UtcNow - source.Timestamp) > timeSpan;
+    }
+
+    /// <summary>
+    /// Returns a string formatted as "latitude, longitude".
+    /// </summary>
+    /// <param name="source">The location data.</param>
+    /// <returns>A string representation of the coordinates.</returns>
+    public static string ToCoordinateString(this LocationData source)
+    {
+        if (source is null) throw new ArgumentNullException(nameof(source));
+        return $"{source.Latitude}, {source.Longitude}";
+    }
+
     // Helper to validate latitude/longitude ranges.
     private static bool IsValidCoordinate(double latitude, double longitude)
     {
