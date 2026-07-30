@@ -6,7 +6,11 @@
 
 namespace GpsTrackerProtocol.Formatting;
 
+using System;
+using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
+using System.Linq;
 using System.Text;
 using GpsTrackerProtocol.Domain.Models;
 
@@ -20,6 +24,12 @@ public interface ICsvFormatter
     string FormatJourney(Journey journey);
     string FormatDevices(IEnumerable<Device> devices);
     string FormatDailyDistanceReport(IEnumerable<DailyDistanceRecord> records);
+
+    // New streaming methods
+    void WriteLocationHistory(TextWriter writer, IEnumerable<LocationData> locations);
+    void WriteJourney(TextWriter writer, Journey journey);
+    void WriteDevices(TextWriter writer, IEnumerable<Device> devices);
+    void WriteDailyDistanceReport(TextWriter writer, IEnumerable<DailyDistanceRecord> records);
 }
 
 public class CsvFormatter : ICsvFormatter
@@ -107,6 +117,97 @@ public class CsvFormatter : ICsvFormatter
 
         return sb.ToString();
     }
+
+    // ------------------------------------------------------------------------
+    // Streaming implementations – write directly to a TextWriter to avoid
+    // allocating a large string in memory.
+    // ------------------------------------------------------------------------
+
+    public void WriteLocationHistory(TextWriter writer, IEnumerable<LocationData> locations)
+    {
+        if (writer is null) throw new ArgumentNullException(nameof(writer));
+
+        if (locations is null || !locations.Any())
+        {
+            writer.WriteLine(LocationHeader);
+            return;
+        }
+
+        writer.WriteLine(LocationHeader);
+        foreach (var location in locations)
+        {
+            writer.WriteLine(FormatLocationRow(location));
+        }
+    }
+
+    public void WriteJourney(TextWriter writer, Journey journey)
+    {
+        if (writer is null) throw new ArgumentNullException(nameof(writer));
+
+        if (journey is null || !journey.Waypoints.Any())
+        {
+            writer.WriteLine(JourneyHeader);
+            return;
+        }
+
+        writer.WriteLine(JourneyHeader);
+
+        double previousLat = 0, previousLon = 0;
+
+        for (int i = 0; i < journey.Waypoints.Count; i++)
+        {
+            var waypoint = journey.Waypoints[i];
+            double distanceFromPrevious = 0;
+
+            if (i > 0)
+            {
+                distanceFromPrevious = Utilities.GpsUtilities.CalculateDistanceKm(
+                    previousLat, previousLon, waypoint.Latitude, waypoint.Longitude);
+            }
+
+            writer.WriteLine(FormatJourneyRow(i + 1, waypoint, distanceFromPrevious));
+            previousLat = waypoint.Latitude;
+            previousLon = waypoint.Longitude;
+        }
+    }
+
+    public void WriteDevices(TextWriter writer, IEnumerable<Device> devices)
+    {
+        if (writer is null) throw new ArgumentNullException(nameof(writer));
+
+        if (devices is null || !devices.Any())
+        {
+            writer.WriteLine(DeviceHeader);
+            return;
+        }
+
+        writer.WriteLine(DeviceHeader);
+        foreach (var device in devices)
+        {
+            writer.WriteLine(FormatDeviceRow(device));
+        }
+    }
+
+    public void WriteDailyDistanceReport(TextWriter writer, IEnumerable<DailyDistanceRecord> records)
+    {
+        if (writer is null) throw new ArgumentNullException(nameof(writer));
+
+        if (records is null || !records.Any())
+        {
+            writer.WriteLine(DailyDistanceHeader);
+            return;
+        }
+
+        writer.WriteLine(DailyDistanceHeader);
+        foreach (var rec in records)
+        {
+            writer.WriteLine($"{EscapeCsvField(rec.DeviceId)},{rec.Day:yyyy-MM-dd},{rec.DistanceKm.ToString("F2", CultureInfo.InvariantCulture)}");
+        }
+    }
+
+    // ------------------------------------------------------------------------
+    // Helper methods – unchanged from the original implementation.
+    // ------------------------------------------------------------------------
 
     private string FormatLocationRow(LocationData location)
     {
