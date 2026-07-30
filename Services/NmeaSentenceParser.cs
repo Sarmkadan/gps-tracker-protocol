@@ -175,13 +175,13 @@ public class NmeaSentenceParser
         }
 
         // Parse speed (knots to km/h)
-        if (double.TryParse(speedKnots, NumberStyles.Float, CultureInfo.InvariantCulture, out var speedKnotsValue))
+        if (double.TryParse(speedKnots, NumberStyles.Float | NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var speedKnotsValue))
         {
             locationData.Speed = speedKnotsValue * 1.852; // 1 knot = 1.852 km/h
         }
 
         // Parse bearing
-        if (double.TryParse(bearing, NumberStyles.Float, CultureInfo.InvariantCulture, out var bearingValue))
+        if (double.TryParse(bearing, NumberStyles.Float | NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var bearingValue))
         {
             locationData.Bearing = bearingValue;
         }
@@ -243,13 +243,13 @@ public class NmeaSentenceParser
         }
 
         // Parse HDOP (Horizontal Dilution of Precision)
-        if (double.TryParse(hdop, NumberStyles.Float, CultureInfo.InvariantCulture, out var hdopValue))
+        if (double.TryParse(hdop, NumberStyles.Float | NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var hdopValue))
         {
             locationData.Accuracy = hdopValue;
         }
 
         // Parse altitude
-        if (double.TryParse(altitude, NumberStyles.Float, CultureInfo.InvariantCulture, out var altValue))
+        if (double.TryParse(altitude, NumberStyles.Float | NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var altValue))
         {
             locationData.Altitude = altValue;
         }
