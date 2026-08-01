@@ -9,10 +9,23 @@ using Xunit;
 
 namespace GpsTrackerProtocol.Tests
 {
+    /// <summary>
+    /// Contains unit tests for the NmeaSentenceParser class, verifying correct parsing of various NMEA sentence types.
+    /// </summary>
     public class NmeaSentenceParserTests
     {
         private readonly NmeaSentenceParser _parser = new();
 
+        /// <summary>
+        /// Initializes a new instance of the NmeaSentenceParserTests class with a new NmeaSentenceParser instance.
+        /// </summary>
+        public NmeaSentenceParserTests()
+        {
+        }
+
+        /// <summary>
+        /// Tests that a valid GPGGA sentence is parsed correctly, extracting device ID, latitude, longitude, altitude, satellite count, accuracy, and sentence type.
+        /// </summary>
         [Fact]
         public void ParseGpgga_ValidSentence_ReturnsExpectedLocationData()
         {
@@ -33,6 +46,9 @@ namespace GpsTrackerProtocol.Tests
             Assert.Equal("GPGGA", result.ExtendedData["SentenceType"]);
         }
 
+        /// <summary>
+        /// Tests that a valid GPRMC sentence is parsed correctly, extracting device ID, latitude, longitude, speed, bearing, and sentence type.
+        /// </summary>
         [Fact]
         public void ParseGprmc_ValidSentence_ReturnsExpectedLocationData()
         {
@@ -53,6 +69,9 @@ namespace GpsTrackerProtocol.Tests
             Assert.Equal("GPRMC", result.ExtendedData["SentenceType"]);
         }
 
+        /// <summary>
+        /// Tests that the ConvertNmeaCoordinate method correctly converts coordinates in the southern and western hemispheres to negative decimal degrees.
+        /// </summary>
         [Fact]
         public void ConvertNmeaCoordinate_SouthernAndWesternHemisphere_ReturnsNegativeValues()
         {
@@ -65,6 +84,9 @@ namespace GpsTrackerProtocol.Tests
             Assert.Equal(-(98 + 12.345 / 60), Math.Round(lon, 6));
         }
 
+        /// <summary>
+        /// Tests that parsing a sentence with an invalid checksum throws a ParseException with a message containing "Invalid checksum".
+        /// </summary>
         [Fact]
         public void ParseSentence_MalformedChecksum_ThrowsParseException()
         {
@@ -75,6 +97,9 @@ namespace GpsTrackerProtocol.Tests
             Assert.Contains("Invalid checksum", ex.Message);
         }
 
+        /// <summary>
+        /// Tests that parsing an empty string throws a ParseException with a message indicating the input cannot be null or empty.
+        /// </summary>
         [Fact]
         public void ParseSentence_EmptyString_ThrowsParseException()
         {
