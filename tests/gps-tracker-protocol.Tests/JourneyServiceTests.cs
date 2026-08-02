@@ -13,6 +13,10 @@ using NSubstitute;
 
 namespace GpsTrackerProtocol.Tests
 {
+    /// <summary>
+    /// Contains unit tests for the <see cref="JourneyService"/> class, covering journey lifecycle operations,
+    /// waypoint management, idle detection, and distance/speed calculations.
+    /// </summary>
     public class JourneyServiceTests
     {
         private readonly IJourneyRepository _journeyRepository = Substitute.For<IJourneyRepository>();
@@ -21,6 +25,10 @@ namespace GpsTrackerProtocol.Tests
         private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
         private readonly JourneyService _journeyService;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="JourneyServiceTests"/> class, setting up the necessary
+        /// repository mocks and the <see cref="JourneyService"/> instance under test.
+        /// </summary>
         public JourneyServiceTests()
         {
             _unitOfWork.Journeys.Returns(_journeyRepository);
@@ -30,6 +38,11 @@ namespace GpsTrackerProtocol.Tests
             _journeyService = new JourneyService(_unitOfWork);
         }
 
+        /// <summary>
+        /// Verifies that <see cref="JourneyService.StartJourneyAsync(string)"/> successfully creates a new journey
+        /// for a valid, existing device that does not currently have an ongoing journey.
+        /// </summary>
+        /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
         [Fact]
         public async Task StartJourneyAsync_WithValidDeviceId_CreatesAndReturnsJourney()
         {
@@ -53,6 +66,11 @@ namespace GpsTrackerProtocol.Tests
             await _journeyRepository.Received(1).CreateAsync(Arg.Any<Journey>());
         }
 
+        /// <summary>
+        /// Verifies that <see cref="JourneyService.StartJourneyAsync(string)"/> throws an <see cref="ArgumentException"/>
+        /// when provided with a null, empty, or whitespace-only device identifier.
+        /// </summary>
+        /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
         [Fact]
         public async Task StartJourneyAsync_WithNullOrEmptyDeviceId_ThrowsArgumentException()
         {
@@ -67,6 +85,11 @@ namespace GpsTrackerProtocol.Tests
                 .Should().ThrowAsync<ArgumentException>();
         }
 
+        /// <summary>
+        /// Verifies that <see cref="JourneyService.StartJourneyAsync(string)"/> throws a <see cref="DeviceException"/>
+        /// when provided with a device identifier that does not exist in the system.
+        /// </summary>
+        /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
         [Fact]
         public async Task StartJourneyAsync_WithNonExistentDeviceId_ThrowsDeviceException()
         {
@@ -79,6 +102,11 @@ namespace GpsTrackerProtocol.Tests
                 .Should().ThrowAsync<DeviceException>();
         }
 
+        /// <summary>
+        /// Verifies that <see cref="JourneyService.StartJourneyAsync(string)"/> throws an <see cref="InvalidOperationException"/>
+        /// when attempting to start a new journey for a device that already has an ongoing journey.
+        /// </summary>
+        /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
         [Fact]
         public async Task StartJourneyAsync_WithDeviceHavingOngoingJourney_ThrowsInvalidOperationException()
         {
@@ -95,6 +123,11 @@ namespace GpsTrackerProtocol.Tests
                 .Should().ThrowAsync<InvalidOperationException>();
         }
 
+        /// <summary>
+        /// Verifies that <see cref="JourneyService.AddWaypointAsync(string, LocationData)"/> successfully adds a valid
+        /// waypoint to an existing, ongoing journey.
+        /// </summary>
+        /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
         [Fact]
         public async Task AddWaypointAsync_WithValidJourneyAndLocation_AddsWaypointSuccessfully()
         {
@@ -132,6 +165,11 @@ namespace GpsTrackerProtocol.Tests
             await _journeyRepository.Received(1).UpdateAsync(journey);
         }
 
+        /// <summary>
+        /// Verifies that <see cref="JourneyService.AddWaypointAsync(string, LocationData)"/> throws an <see cref="ArgumentNullException"/>
+        /// when attempting to add a null location data object.
+        /// </summary>
+        /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
         [Fact]
         public async Task AddWaypointAsync_WithNullLocation_ThrowsArgumentNullException()
         {
@@ -143,6 +181,11 @@ namespace GpsTrackerProtocol.Tests
                 .Should().ThrowAsync<ArgumentNullException>();
         }
 
+        /// <summary>
+        /// Verifies that <see cref="JourneyService.AddWaypointAsync(string, LocationData)"/> throws a <see cref="ValidationException"/>
+        /// when attempting to add a location data object with invalid properties (e.g., invalid latitude).
+        /// </summary>
+        /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
         [Fact]
         public async Task AddWaypointAsync_WithInvalidLocation_ThrowsValidationException()
         {
@@ -175,6 +218,11 @@ namespace GpsTrackerProtocol.Tests
                 .Should().ThrowAsync<ValidationException>();
         }
 
+        /// <summary>
+        /// Verifies that <see cref="JourneyService.CompleteJourneyAsync(string)"/> successfully marks an ongoing
+        /// journey as completed and sets the end time.
+        /// </summary>
+        /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
         [Fact]
         public async Task CompleteJourneyAsync_WithOngoingJourney_MarksJourneyAsCompleted()
         {
@@ -200,6 +248,11 @@ namespace GpsTrackerProtocol.Tests
             await _journeyRepository.Received(1).UpdateAsync(journey);
         }
 
+        /// <summary>
+        /// Verifies that <see cref="JourneyService.GetTotalDistanceAsync(string)"/> correctly retrieves the
+        /// total distance of a device's journey using the Haversine formula calculation from the repository.
+        /// </summary>
+        /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
         [Fact]
         public async Task GetTotalDistanceAsync_CalculatesCorrectDistance_UsingHaversineFormula()
         {
@@ -217,6 +270,11 @@ namespace GpsTrackerProtocol.Tests
             await _journeyRepository.Received(1).GetTotalDistanceAsync(deviceId);
         }
 
+        /// <summary>
+        /// Verifies that a <see cref="Journey"/> object correctly assembles added waypoints in the order
+        /// they were added and calculates the total journey distance based on these points.
+        /// </summary>
+        /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
         [Fact]
         public async Task Journey_AssemblesPointsInCorrectOrder_AndCalculatesDistance()
         {
@@ -273,6 +331,10 @@ namespace GpsTrackerProtocol.Tests
             journey.GetTotalDistance().Should().Be(calculatedDistance);
         }
 
+        /// <summary>
+        /// Verifies that a <see cref="Journey"/> with only a single waypoint correctly reports a total distance of zero.
+        /// </summary>
+        /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
         [Fact]
         public async Task Journey_WithSinglePoint_ReturnsZeroDistance()
         {
@@ -305,6 +367,11 @@ namespace GpsTrackerProtocol.Tests
             journey.GetTotalDistance().Should().Be(0); // Single point should have zero distance
         }
 
+        /// <summary>
+        /// Verifies that a <see cref="Journey"/> correctly includes multiple waypoints even if there are
+        /// significant time gaps between them.
+        /// </summary>
+        /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
         [Fact]
         public async Task Journey_WithTimestampGap_ContainsAllPointsInSameJourney()
         {
@@ -377,6 +444,11 @@ namespace GpsTrackerProtocol.Tests
             journey.GetTotalDistance().Should().BeGreaterThan(0);
         }
 
+        /// <summary>
+        /// Verifies that <see cref="JourneyService.DetectIdlePeriodsAsync(string, double, int)"/> correctly identifies
+        /// idle periods when the device stays within a specific distance threshold for the required minimum duration.
+        /// </summary>
+        /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
         [Fact]
         public async Task DetectIdlePeriodsAsync_WithConsecutiveLocationsWithinRadius_ReturnsIdlePeriods()
         {
@@ -449,6 +521,11 @@ namespace GpsTrackerProtocol.Tests
             idlePeriod.MaxDistanceMeters.Should().Be(25.0);
         }
 
+        /// <summary>
+        /// Verifies that a <see cref="Journey"/> correctly calculates the average speed based on the
+        /// recorded speeds of its constituent waypoints.
+        /// </summary>
+        /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
         [Fact]
         public async Task Journey_GetAverageSpeed_CalculatesCorrectAverage()
         {
