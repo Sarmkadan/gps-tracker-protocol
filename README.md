@@ -2739,3 +2739,37 @@ Console.WriteLine("InMemoryDeviceRepository example completed!");
 }
 }
 ```
+
+## JourneyServiceTests
+
+The `JourneyServiceTests` class provides comprehensive unit tests for the `JourneyService` class, ensuring the reliability of journey lifecycle management, waypoint tracking, idle period detection, and distance/speed calculations. It covers scenarios like starting journeys, adding waypoints, completing journeys, and validating calculations based on the Haversine formula and speed data.
+
+Example usage for running/referencing test scenarios:
+```csharp
+using GpsTrackerProtocol.Tests;
+using System.Threading.Tasks;
+using Xunit;
+
+public class JourneyServiceTestsExample
+{
+    private readonly JourneyServiceTests _tests = new();
+
+    public async Task RunTestScenariosAsync()
+    {
+        // Validate starting a new journey
+        await _tests.StartJourneyAsync_WithValidDeviceId_CreatesAndReturnsJourney();
+
+        // Validate waypoint addition
+        await _tests.AddWaypointAsync_WithValidJourneyAndLocation_AddsWaypointSuccessfully();
+        
+        // Validate journey completion
+        await _tests.CompleteJourneyAsync_WithOngoingJourney_MarksJourneyAsCompleted();
+        
+        // Validate distance calculation
+        await _tests.GetTotalDistanceAsync_CalculatesCorrectDistance_UsingHaversineFormula();
+        
+        // Validate idle period detection
+        await _tests.DetectIdlePeriodsAsync_WithConsecutiveLocationsWithinRadius_ReturnsIdlePeriods();
+    }
+}
+```
