@@ -35,6 +35,9 @@ public class LoggingPipeline : ILoggingPipeline
 
     public LogContext CreateContext(string frameId, string deviceId)
     {
+        ArgumentException.ThrowIfNullOrEmpty(frameId);
+        ArgumentException.ThrowIfNullOrEmpty(deviceId);
+
         return new LogContext
         {
             CorrelationId = Guid.NewGuid().ToString(),
@@ -46,6 +49,9 @@ public class LoggingPipeline : ILoggingPipeline
 
     public void LogFrameReceived(LogContext ctx, GpsFrame frame)
     {
+        ArgumentNullException.ThrowIfNull(ctx);
+        ArgumentNullException.ThrowIfNull(frame);
+
         _logger.LogInformation(
             "[{CorrelationId}] Frame received | Device: {DeviceId}, Size: {Size}B, Protocol: {Protocol}",
             ctx.CorrelationId, ctx.DeviceId, frame.RawData.Length, frame.Protocol);
@@ -53,6 +59,8 @@ public class LoggingPipeline : ILoggingPipeline
 
     public void LogParsingStarted(LogContext ctx, ProtocolType protocol)
     {
+        ArgumentNullException.ThrowIfNull(ctx);
+
         _logger.LogDebug(
             "[{CorrelationId}] Parsing started | Protocol: {Protocol}",
             ctx.CorrelationId, protocol);
@@ -60,6 +68,9 @@ public class LoggingPipeline : ILoggingPipeline
 
     public void LogParsingCompleted(LogContext ctx, LocationData location)
     {
+        ArgumentNullException.ThrowIfNull(ctx);
+        ArgumentNullException.ThrowIfNull(location);
+
         _logger.LogInformation(
             "[{CorrelationId}] Parsing completed | Lat: {Lat:F6}, Lon: {Lon:F6}, Speed: {Speed:F1}km/h",
             ctx.CorrelationId, location.Latitude, location.Longitude, location.Speed);
@@ -67,11 +78,16 @@ public class LoggingPipeline : ILoggingPipeline
 
     public void LogStorageStarted(LogContext ctx)
     {
+        ArgumentNullException.ThrowIfNull(ctx);
+
         _logger.LogDebug("[{CorrelationId}] Storage started", ctx.CorrelationId);
     }
 
     public void LogStorageCompleted(LogContext ctx, string storedId)
     {
+        ArgumentNullException.ThrowIfNull(ctx);
+        ArgumentException.ThrowIfNullOrEmpty(storedId);
+
         var elapsed = DateTime.UtcNow - ctx.StartTime;
         _logger.LogInformation(
             "[{CorrelationId}] Storage completed | StoredId: {StoredId}, Elapsed: {Elapsed}ms",
