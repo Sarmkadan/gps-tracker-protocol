@@ -43,16 +43,19 @@ public class ValidationPipeline : IValidationPipeline
 
     public ValidationResult ValidateFrame(GpsFrame frame)
     {
+        ArgumentNullException.ThrowIfNull("frame");
         return _frameValidator.Validate(frame);
     }
 
     public ValidationResult ValidateLocation(LocationData location)
     {
+        ArgumentNullException.ThrowIfNull("location");
         return _locationValidator.Validate(location);
     }
 
     public ValidationResult ValidateDevice(Device device)
     {
+        ArgumentNullException.ThrowIfNull("device");
         return _deviceValidator.Validate(device);
     }
 }
