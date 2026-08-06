@@ -31,6 +31,7 @@ public class FuelTrackingServiceTests
     [Fact]
     public async Task RecordFuelEventAsync_ShouldStoreRecordSuccessfully()
     {
+        _logger.LogInformation("Starting test {MethodName}", nameof(RecordFuelEventAsync_ShouldStoreRecordSuccessfully));
         // Arrange
         var record = new FuelRecord("vehicle1", "device1", FuelEventType.Refuel, 50.0, DateTime.UtcNow);
 
@@ -41,6 +42,7 @@ public class FuelTrackingServiceTests
         result.Id.Should().NotBeNullOrEmpty();
         result.VehicleId.Should().Be("vehicle1");
         result.FuelAmountLiters.Should().Be(50.0);
+        _logger.LogInformation("Finished test {MethodName}", nameof(RecordFuelEventAsync_ShouldStoreRecordSuccessfully));
     }
 
     /// <summary>
@@ -49,11 +51,13 @@ public class FuelTrackingServiceTests
     [Fact]
     public async Task RecordFuelEventAsync_ShouldThrowException_WhenFuelAmountIsZeroOrNegative()
     {
+        _logger.LogInformation("Starting test {MethodName}", nameof(RecordFuelEventAsync_ShouldThrowException_WhenFuelAmountIsZeroOrNegative));
         // Arrange
         var record = new FuelRecord("vehicle1", "device1", FuelEventType.Consumption, 0.0, DateTime.UtcNow);
 
         // Act & Assert
         await Assert.ThrowsAsync<ValidationException>(() => _service.RecordFuelEventAsync(record));
+        _logger.LogInformation("Finished test {MethodName}", nameof(RecordFuelEventAsync_ShouldThrowException_WhenFuelAmountIsZeroOrNegative));
     }
 
     /// <summary>
@@ -62,6 +66,7 @@ public class FuelTrackingServiceTests
     [Fact]
     public async Task GetRecordsAsync_ShouldReturnFilteredRecords()
     {
+        _logger.LogInformation("Starting test {MethodName}", nameof(GetRecordsAsync_ShouldReturnFilteredRecords));
         // Arrange
         var vehicleId = "vehicle1";
         await _service.RecordFuelEventAsync(new FuelRecord(vehicleId, "device1", FuelEventType.Refuel, 50.0, DateTime.UtcNow));
@@ -74,6 +79,7 @@ public class FuelTrackingServiceTests
         // Assert
         records.Should().ContainSingle();
         records.First().EventType.Should().Be(FuelEventType.Refuel);
+        _logger.LogInformation("Finished test {MethodName}", nameof(GetRecordsAsync_ShouldReturnFilteredRecords));
     }
 
     /// <summary>
@@ -82,6 +88,7 @@ public class FuelTrackingServiceTests
     [Fact]
     public async Task DeleteRecordAsync_ShouldReturnTrue_WhenRecordExists()
     {
+        _logger.LogInformation("Starting test {MethodName}", nameof(DeleteRecordAsync_ShouldReturnTrue_WhenRecordExists));
         // Arrange
         var record = await _service.RecordFuelEventAsync(new FuelRecord("vehicle1", "device1", FuelEventType.Refuel, 50.0, DateTime.UtcNow));
 
@@ -92,6 +99,7 @@ public class FuelTrackingServiceTests
         result.Should().BeTrue();
         var records = await _service.GetRecordsAsync("vehicle1");
         records.Should().BeEmpty();
+        _logger.LogInformation("Finished test {MethodName}", nameof(DeleteRecordAsync_ShouldReturnTrue_WhenRecordExists));
     }
 
     /// <summary>
@@ -100,6 +108,7 @@ public class FuelTrackingServiceTests
     [Fact]
     public async Task GetReportAsync_ShouldCalculateCorrectTotals()
     {
+        _logger.LogInformation("Starting test {MethodName}", nameof(GetReportAsync_ShouldCalculateCorrectTotals));
         // Arrange
         var vehicleId = "vehicle1";
         var now = DateTime.UtcNow;
@@ -113,6 +122,7 @@ public class FuelTrackingServiceTests
         report.TotalFuelConsumedLiters.Should().Be(15.0);
         report.TotalDistanceKm.Should().Be(100.0);
         report.AverageConsumptionLper100km.Should().Be(15.0); // (15 / 100) * 100
+        _logger.LogInformation("Finished test {MethodName}", nameof(GetReportAsync_ShouldCalculateCorrectTotals));
     }
 
     /// <summary>
@@ -121,6 +131,7 @@ public class FuelTrackingServiceTests
     [Fact]
     public void EstimateFuelLiters_ShouldReturnZero_WhenInputsAreInvalid()
     {
+        _logger.LogInformation("Starting test {MethodName}", nameof(EstimateFuelLiters_ShouldReturnZero_WhenInputsAreInvalid));
         // Act
         var result = _service.EstimateFuelLiters(0, 10);
         var result2 = _service.EstimateFuelLiters(100, 0);
@@ -128,5 +139,6 @@ public class FuelTrackingServiceTests
         // Assert
         result.Should().Be(0);
         result2.Should().Be(0);
+        _logger.LogInformation("Finished test {MethodName}", nameof(EstimateFuelLiters_ShouldReturnZero_WhenInputsAreInvalid));
     }
 }
