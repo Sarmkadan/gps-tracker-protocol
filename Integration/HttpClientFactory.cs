@@ -30,6 +30,7 @@ public class HttpClientFactoryService : IHttpClientFactory
 
     public HttpClient CreateClient(string name = "default")
     {
+        ArgumentException.ThrowIfNullOrEmpty(name);
         lock (_clients)
         {
             if (_clients.ContainsKey(name))
@@ -58,6 +59,8 @@ public class HttpClientFactoryService : IHttpClientFactory
 
     public HttpClient CreateClientWithAuth(string name, string authToken)
     {
+        ArgumentException.ThrowIfNullOrEmpty(name);
+        ArgumentException.ThrowIfNullOrEmpty(authToken);
         var client = CreateClient(name);
         client.DefaultRequestHeaders.Authorization =
             new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", authToken);
