@@ -19,11 +19,13 @@ public class ErrorHandlingMiddleware
 
     public ErrorHandlingMiddleware(ILogger<ErrorHandlingMiddleware> logger)
     {
+        ArgumentNullException.ThrowIfNull(logger);
         _logger = logger;
     }
 
     public async Task InvokeAsync(Func<Task> next)
     {
+        ArgumentNullException.ThrowIfNull(next);
         try
         {
             await next();
@@ -53,6 +55,8 @@ public class ErrorHandlingMiddleware
 
     public ErrorResponse CreateErrorResponse(Exception ex, string correlationId)
     {
+        ArgumentNullException.ThrowIfNull(ex);
+        ArgumentException.ThrowIfNullOrEmpty(correlationId);
         var errorCode = ex switch
         {
             ParseException => "PARSE_ERROR",
