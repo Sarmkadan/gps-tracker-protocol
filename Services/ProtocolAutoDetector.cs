@@ -23,9 +23,14 @@ public interface IProtocolHandler
     /// Returns true when the supplied preamble bytes match this protocol's signature.
     /// Implementations should only inspect the first few bytes.
     /// </summary>
+    /// <param name="preamble">The leading bytes of the incoming data to inspect.</param>
+    /// <returns><c>true</c> when the preamble matches this protocol's signature; otherwise, <c>false</c>.</returns>
     bool CanHandle(byte[] preamble);
 
     /// <summary>Creates a <see cref="GpsFrame"/> from raw connection data.</summary>
+    /// <param name="data">The raw frame bytes received from the device.</param>
+    /// <param name="sourceAddress">The network address of the device that sent the data.</param>
+    /// <returns>A task that resolves to the constructed <see cref="GpsFrame"/>.</returns>
     Task<GpsFrame> CreateFrameAsync(byte[] data, string sourceAddress);
 }
 
@@ -82,6 +87,15 @@ public class ProtocolAutoDetector : IProtocolAutoDetector
     private readonly ProtocolType _defaultProtocol;
     private readonly Dictionary<ProtocolType, int> _minimumBytesRequired = new();
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ProtocolAutoDetector"/> class.
+    /// </summary>
+    /// <param name="handlers">The protocol handlers available for signature matching.</param>
+    /// <param name="logger">The logger used to record detection warnings.</param>
+    /// <param name="defaultProtocol">
+    /// The protocol to fall back to when no handler signature matches. Pass
+    /// <see cref="ProtocolType.Unknown"/> (the default) to disable the fallback.
+    /// </param>
     public ProtocolAutoDetector(
         IEnumerable<IProtocolHandler> handlers,
         ILogger<ProtocolAutoDetector> logger,
@@ -97,13 +111,28 @@ public class ProtocolAutoDetector : IProtocolAutoDetector
         _minimumBytesRequired[ProtocolType.TK103] = 1; // Needs at least 1 byte for 0x28 '('
     }
 
+    /// <summary>
+    /// Gets the minimum number of bytes required for reliable protocol detection.
+    /// This is the largest of the per-protocol minimum byte requirements.
+    /// </summary>
     public int MinimumDetectionBytesRequired => _minimumBytesRequired.Values.DefaultIfEmpty(0).Max();
 
+    /// <summary>
+    /// Gets the minimum number of bytes required for each protocol type.
+    /// </summary>
+    /// <param name="protocol">The protocol type to check.</param>
+    /// <returns>The minimum bytes required, or 0 if unknown.</returns>
     public int GetMinimumBytesRequired(ProtocolType protocol)
     {
         return _minimumBytesRequired.TryGetValue(protocol, out var bytes) ? bytes : 0;
     }
 
+    /// <summary>
+    /// Detects the protocol from the provided data and returns a detailed detection result.
+    /// </summary>
+    /// <param name="data">The preamble bytes to analyze.</param>
+    /// <returns>A <see cref="ProtocolDetection"/> result indicating detection status.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="data"/> is <c>null</c>.</exception>
     public ProtocolDetection Detect(byte[] data)
     {
         ArgumentNullException.ThrowIfNull(data);
@@ -157,6 +186,12 @@ public class ProtocolAutoDetector : IProtocolAutoDetector
         return ProtocolDetection.Unknown(data.Length);
     }
 
+    /// <summary>
+    /// Returns the first handler whose signature matches <paramref name="data"/>,
+    /// or <c>null</c> when no handler matches.
+    /// </summary>
+    /// <param name="data">The data to check for protocol compatibility.</param>
+    /// <returns>The matching handler or null if no match.</returns>
     public IProtocolHandler? GetHandler(byte[] data) =>
         _handlers.FirstOrDefault(h => h.CanHandle(data));
 }
@@ -167,13 +202,26 @@ public class ProtocolAutoDetector : IProtocolAutoDetector
 /// </summary>
 public class GT06ProtocolHandler : IProtocolHandler
 {
+    /// <summary>The protocol type this handler is responsible for.</summary>
     public ProtocolType Protocol => ProtocolType.GT06;
 
+    /// <summary>
+    /// Determines whether the preamble starts with the GT06 signature
+    /// (<c>0x78 0x78</c> or <c>0x79 0x79</c>).
+    /// </summary>
+    /// <param name="preamble">The leading bytes of the incoming data to inspect.</param>
+    /// <returns><c>true</c> when the first two bytes match a GT06 signature; otherwise, <c>false</c>.</returns>
     public bool CanHandle(byte[] preamble) =>
         preamble.Length >= 2 &&
         ((preamble[0] == 0x78 && preamble[1] == 0x78) ||
          (preamble[0] == 0x79 && preamble[1] == 0x79));
 
+    /// <summary>
+    /// Creates a <see cref="GpsFrame"/> for the GT06 protocol from raw connection data.
+    /// </summary>
+    /// <param name="data">The raw frame bytes received from the device.</param>
+    /// <param name="sourceAddress">The network address of the device that sent the data.</param>
+    /// <returns>A task that resolves to the constructed GT06 <see cref="GpsFrame"/>.</returns>
     public Task<GpsFrame> CreateFrameAsync(byte[] data, string sourceAddress) =>
         Task.FromResult(new GpsFrame
         {
@@ -190,8 +238,15 @@ public class GT06ProtocolHandler : IProtocolHandler
 /// </summary>
 public class H02ProtocolHandler : IProtocolHandler
 {
+    /// <summary>The protocol type this handler is responsible for.</summary>
     public ProtocolType Protocol => ProtocolType.H02;
 
+    /// <summary>
+    /// Determines whether the preamble starts with the H02 signature
+    /// (<c>*HQ</c> or <c>$GPRMC</c>).
+    /// </summary>
+    /// <param name="preamble">The leading bytes of the incoming data to inspect.</param>
+    /// <returns><c>true</c> when the preamble starts with an H02 marker; otherwise, <c>false</c>.</returns>
     public bool CanHandle(byte[] preamble)
     {
         if (preamble.Length < 3)
@@ -202,6 +257,12 @@ public class H02ProtocolHandler : IProtocolHandler
                header.StartsWith(ProtocolConstants.H02_START_MARKER, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// Creates a <see cref="GpsFrame"/> for the H02 protocol from raw connection data.
+    /// </summary>
+    /// <param name="data">The raw frame bytes received from the device.</param>
+    /// <param name="sourceAddress">The network address of the device that sent the data.</param>
+    /// <returns>A task that resolves to the constructed H02 <see cref="GpsFrame"/>.</returns>
     public Task<GpsFrame> CreateFrameAsync(byte[] data, string sourceAddress) =>
         Task.FromResult(new GpsFrame
         {
@@ -218,11 +279,24 @@ public class H02ProtocolHandler : IProtocolHandler
 /// </summary>
 public class TK103ProtocolHandler : IProtocolHandler
 {
+    /// <summary>The protocol type this handler is responsible for.</summary>
     public ProtocolType Protocol => ProtocolType.TK103;
 
+    /// <summary>
+    /// Determines whether the preamble starts with the TK103 signature
+    /// (a parenthesis, <c>(</c>, byte value 0x28).
+    /// </summary>
+    /// <param name="preamble">The leading bytes of the incoming data to inspect.</param>
+    /// <returns><c>true</c> when the first byte is the TK103 start marker; otherwise, <c>false</c>.</returns>
     public bool CanHandle(byte[] preamble) =>
         preamble.Length >= 1 && preamble[0] == ProtocolConstants.TK103_START_MARKER;
 
+    /// <summary>
+    /// Creates a <see cref="GpsFrame"/> for the TK103 protocol from raw connection data.
+    /// </summary>
+    /// <param name="data">The raw frame bytes received from the device.</param>
+    /// <param name="sourceAddress">The network address of the device that sent the data.</param>
+    /// <returns>A task that resolves to the constructed TK103 <see cref="GpsFrame"/>.</returns>
     public Task<GpsFrame> CreateFrameAsync(byte[] data, string sourceAddress) =>
         Task.FromResult(new GpsFrame
         {
