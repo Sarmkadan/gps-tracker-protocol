@@ -25,6 +25,7 @@ public class GeoJsonFormatter : IGeoJsonFormatter
 {
     public string FormatLocation(LocationData location)
     {
+        ArgumentNullException.ThrowIfNull(location);
         var feature = new GeoJsonFeature
         {
             Type = "Feature",
@@ -51,6 +52,7 @@ public class GeoJsonFormatter : IGeoJsonFormatter
 
     public string FormatTrack(Journey journey)
     {
+        ArgumentNullException.ThrowIfNull(journey);
         var coordinates = journey.Waypoints
             .Select(w => new[] { w.Longitude, w.Latitude })
             .Cast<object>()
@@ -82,6 +84,7 @@ public class GeoJsonFormatter : IGeoJsonFormatter
 
     public string FormatLocationCollection(IEnumerable<LocationData> locations)
     {
+        ArgumentNullException.ThrowIfNull(locations);
         var features = locations.Select(location => new GeoJsonFeature
         {
             Type = "Feature",
