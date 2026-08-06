@@ -43,6 +43,8 @@ public class WebhookClient : ExternalApiClient, IWebhookClient
             return;
         }
 
+        ArgumentNullException.ThrowIfNull(location);
+
         var payload = new WebhookPayload
         {
             EventType = "location_update",
@@ -81,6 +83,8 @@ public class WebhookClient : ExternalApiClient, IWebhookClient
             _logger.LogWarning("Webhook URL is empty");
             return;
         }
+
+        ArgumentNullException.ThrowIfNull(journey);
 
         var payload = new WebhookPayload
         {
@@ -121,6 +125,8 @@ public class WebhookClient : ExternalApiClient, IWebhookClient
             return;
         }
 
+        ArgumentNullException.ThrowIfNull(device);
+
         var payload = new WebhookPayload
         {
             EventType = "device_status",
@@ -158,6 +164,8 @@ public class WebhookClient : ExternalApiClient, IWebhookClient
             _logger.LogWarning("Webhook URL is empty");
             return;
         }
+
+        ArgumentNullException.ThrowIfNull(payload);
 
         var envelope = new WebhookPayload
         {
