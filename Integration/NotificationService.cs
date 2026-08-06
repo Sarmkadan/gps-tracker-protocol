@@ -33,8 +33,6 @@ public class NotificationService : INotificationService
         {
             if (string.IsNullOrWhiteSpace(deviceId))
                 throw new ArgumentException("Device ID cannot be null or empty", nameof(deviceId));
-            if (speedLimit == 0)
-                throw new ArgumentException("Speed limit cannot be null", nameof(speedLimit));
             var notification = new Notification
             {
                 Id = Guid.NewGuid().ToString(),
@@ -44,35 +42,17 @@ public class NotificationService : INotificationService
                 Timestamp = DateTime.UtcNow,
                 IsRead = false
             };
+
             _notifications.Add(notification);
             _logger.LogWarning("Speeding alert: {Message}", notification.Message);
+
             return Task.CompletedTask;
         }
-    {
-        var notification = new Notification
-        {
-            Id = Guid.NewGuid().ToString(),
-            Type = NotificationType.SpeedingViolation,
-            DeviceId = deviceId,
-            Message = $"Device {deviceId} exceeded speed limit: {speed:F1}km/h (limit: {speedLimit:F1}km/h)",
-            Timestamp = DateTime.UtcNow,
-            IsRead = false
-        };
-
-        _notifications.Add(notification);
-        _logger.LogWarning("Speeding alert: {Message}", notification.Message);
-
-        return Task.CompletedTask;
-    }
 
     public Task SendGeofenceAlertAsync(string deviceId, double latitude, double longitude)
         {
             if (string.IsNullOrWhiteSpace(deviceId))
                 throw new ArgumentException("Device ID cannot be null or empty", nameof(deviceId));
-            if (double.IsNaN(latitude))
-                throw new ArgumentException("Latitude cannot be null", nameof(latitude));
-            if (double.IsNaN(longitude))
-                throw new ArgumentException("Longitude cannot be null", nameof(longitude));
             var notification = new Notification
             {
                 Id = Guid.NewGuid().ToString(),
@@ -82,26 +62,12 @@ public class NotificationService : INotificationService
                 Timestamp = DateTime.UtcNow,
                 IsRead = false
             };
+
             _notifications.Add(notification);
             _logger.LogWarning("Geofence alert: {Message}", notification.Message);
+
             return Task.CompletedTask;
         }
-    {
-        var notification = new Notification
-        {
-            Id = Guid.NewGuid().ToString(),
-            Type = NotificationType.GeofenceBreach,
-            DeviceId = deviceId,
-            Message = $"Device {deviceId} breached geofence at {latitude:F6}, {longitude:F6}",
-            Timestamp = DateTime.UtcNow,
-            IsRead = false
-        };
-
-        _notifications.Add(notification);
-        _logger.LogWarning("Geofence alert: {Message}", notification.Message);
-
-        return Task.CompletedTask;
-    }
 
     public Task SendOfflineAlertAsync(string deviceId)
         {
@@ -116,26 +82,12 @@ public class NotificationService : INotificationService
                 Timestamp = DateTime.UtcNow,
                 IsRead = false
             };
+
             _notifications.Add(notification);
             _logger.LogCritical("Offline alert: {Message}", notification.Message);
+
             return Task.CompletedTask;
         }
-    {
-        var notification = new Notification
-        {
-            Id = Guid.NewGuid().ToString(),
-            Type = NotificationType.DeviceOffline,
-            DeviceId = deviceId,
-            Message = $"Device {deviceId} has gone offline",
-            Timestamp = DateTime.UtcNow,
-            IsRead = false
-        };
-
-        _notifications.Add(notification);
-        _logger.LogCritical("Offline alert: {Message}", notification.Message);
-
-        return Task.CompletedTask;
-    }
 
     public IEnumerable<Notification> GetNotifications(string deviceId = null)
     {
