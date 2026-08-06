@@ -41,7 +41,9 @@ public class CsvFormatter : ICsvFormatter
 
     public string FormatLocationHistory(IEnumerable<LocationData> locations)
     {
-        if (locations is null || !locations.Any())
+        if (locations is null)
+            throw new ArgumentNullException(nameof(locations));
+        if (!locations.Any())
             return LocationHeader;
 
         var sb = new StringBuilder();
@@ -57,7 +59,9 @@ public class CsvFormatter : ICsvFormatter
 
     public string FormatJourney(Journey journey)
     {
-        if (journey is null || !journey.Waypoints.Any())
+        if (journey is null)
+            throw new ArgumentNullException(nameof(journey));
+        if (!journey.Waypoints.Any())
             return JourneyHeader;
 
         var sb = new StringBuilder();
@@ -88,7 +92,9 @@ public class CsvFormatter : ICsvFormatter
 
     public string FormatDevices(IEnumerable<Device> devices)
     {
-        if (devices is null || !devices.Any())
+        if (devices is null)
+            throw new ArgumentNullException(nameof(devices));
+        if (!devices.Any())
             return DeviceHeader;
 
         var sb = new StringBuilder();
@@ -104,7 +110,9 @@ public class CsvFormatter : ICsvFormatter
 
     public string FormatDailyDistanceReport(IEnumerable<DailyDistanceRecord> records)
     {
-        if (records is null || !records.Any())
+        if (records is null)
+            throw new ArgumentNullException(nameof(records));
+        if (!records.Any())
             return DailyDistanceHeader;
 
         var sb = new StringBuilder();
@@ -126,8 +134,9 @@ public class CsvFormatter : ICsvFormatter
     public void WriteLocationHistory(TextWriter writer, IEnumerable<LocationData> locations)
     {
         if (writer is null) throw new ArgumentNullException(nameof(writer));
+        if (locations is null) throw new ArgumentNullException(nameof(locations));
 
-        if (locations is null || !locations.Any())
+        if (!locations.Any())
         {
             writer.WriteLine(LocationHeader);
             return;
@@ -143,8 +152,9 @@ public class CsvFormatter : ICsvFormatter
     public void WriteJourney(TextWriter writer, Journey journey)
     {
         if (writer is null) throw new ArgumentNullException(nameof(writer));
+        if (journey is null) throw new ArgumentNullException(nameof(journey));
 
-        if (journey is null || !journey.Waypoints.Any())
+        if (!journey.Waypoints.Any())
         {
             writer.WriteLine(JourneyHeader);
             return;
@@ -174,8 +184,9 @@ public class CsvFormatter : ICsvFormatter
     public void WriteDevices(TextWriter writer, IEnumerable<Device> devices)
     {
         if (writer is null) throw new ArgumentNullException(nameof(writer));
+        if (devices is null) throw new ArgumentNullException(nameof(devices));
 
-        if (devices is null || !devices.Any())
+        if (!devices.Any())
         {
             writer.WriteLine(DeviceHeader);
             return;
@@ -191,8 +202,9 @@ public class CsvFormatter : ICsvFormatter
     public void WriteDailyDistanceReport(TextWriter writer, IEnumerable<DailyDistanceRecord> records)
     {
         if (writer is null) throw new ArgumentNullException(nameof(writer));
+        if (records is null) throw new ArgumentNullException(nameof(records));
 
-        if (records is null || !records.Any())
+        if (!records.Any())
         {
             writer.WriteLine(DailyDistanceHeader);
             return;
