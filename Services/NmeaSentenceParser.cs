@@ -21,6 +21,7 @@ public class NmeaSentenceParser
     /// </summary>
     public bool ValidateChecksum(string sentence)
     {
+        ArgumentException.ThrowIfNullOrEmpty(sentence);
         if (string.IsNullOrWhiteSpace(sentence))
             return false;
 
@@ -47,6 +48,8 @@ public class NmeaSentenceParser
     /// </summary>
     public LocationData ParseSentence(string sentence, string deviceId)
     {
+        ArgumentException.ThrowIfNullOrEmpty(sentence);
+        ArgumentException.ThrowIfNullOrEmpty(deviceId);
         if (string.IsNullOrWhiteSpace(sentence))
             throw new ParseException("Sentence cannot be null or empty", ProtocolType.Unknown);
 
@@ -73,6 +76,8 @@ public class NmeaSentenceParser
     /// </summary>
     public IReadOnlyList<LocationData> ParseBuffer(string rawText, string deviceId)
     {
+        ArgumentException.ThrowIfNullOrEmpty(rawText);
+        ArgumentException.ThrowIfNullOrEmpty(deviceId);
         var results = new List<LocationData>();
 
         if (string.IsNullOrWhiteSpace(rawText))
@@ -102,6 +107,7 @@ public class NmeaSentenceParser
     /// </summary>
     public static double ConvertNmeaCoordinate(string value, char hemisphere)
     {
+        ArgumentException.ThrowIfNullOrEmpty(value);
         if (string.IsNullOrWhiteSpace(value))
             throw new ArgumentException("Value cannot be null or empty", nameof(value));
 
