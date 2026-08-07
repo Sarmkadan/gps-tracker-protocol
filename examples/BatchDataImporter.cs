@@ -39,6 +39,7 @@ public class BatchDataImporter
     /// <summary>Imports locations from CSV file (DeviceId,Latitude,Longitude,Speed,Timestamp)</summary>
     public async Task ImportCsvAsync(string filePath)
     {
+        ArgumentException.ThrowIfNullOrEmpty(filePath);
         _successCount = 0;
         _errorCount = 0;
 
@@ -96,6 +97,7 @@ public class BatchDataImporter
     /// <summary>Imports locations from JSON file (array of location objects)</summary>
     public async Task ImportJsonAsync(string filePath)
     {
+        ArgumentException.ThrowIfNullOrEmpty(filePath);
         _successCount = 0;
         _errorCount = 0;
 
@@ -174,6 +176,7 @@ public class BatchDataImporter
     /// <summary>Imports devices from CSV file (IMEI,DeviceName,Protocol)</summary>
     public async Task ImportDevicesAsync(string filePath)
     {
+        ArgumentException.ThrowIfNullOrEmpty(filePath);
         int count = 0;
 
         if (!File.Exists(filePath))
