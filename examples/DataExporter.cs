@@ -37,6 +37,8 @@ public class DataExporter
     /// <summary>Exports locations to JSON format</summary>
     public async Task ExportToJsonAsync(string deviceId, string outputPath)
     {
+        ArgumentException.ThrowIfNullOrEmpty(deviceId);
+        ArgumentException.ThrowIfNullOrEmpty(outputPath);
         var locations = await _locationService.GetLocationHistoryAsync(deviceId, 10000).ConfigureAwait(false);
         var locList = locations.ToList();
 
@@ -71,6 +73,8 @@ public class DataExporter
     /// <summary>Exports locations to CSV format</summary>
     public async Task ExportToCsvAsync(string deviceId, string outputPath)
     {
+        ArgumentException.ThrowIfNullOrEmpty(deviceId);
+        ArgumentException.ThrowIfNullOrEmpty(outputPath);
         var locations = await _locationService.GetLocationHistoryAsync(deviceId, 10000).ConfigureAwait(false);
         var locList = locations.ToList();
 
@@ -91,6 +95,8 @@ public class DataExporter
     /// <summary>Exports locations to GeoJSON format (suitable for mapping libraries)</summary>
     public async Task ExportToGeoJsonAsync(string deviceId, string outputPath)
     {
+        ArgumentException.ThrowIfNullOrEmpty(deviceId);
+        ArgumentException.ThrowIfNullOrEmpty(outputPath);
         var device = await _deviceService.GetDeviceAsync(deviceId).ConfigureAwait(false);
         var locations = await _locationService.GetLocationHistoryAsync(deviceId, 10000).ConfigureAwait(false);
         var locList = locations.ToList();
