@@ -21,6 +21,8 @@ public class GpxFormatter : IGpxFormatter
     /// <summary>Each location becomes a <wpt lat lon> with <ele>, <time> (ISO 8601 UTC), <sat>, and <name> = LocationData.Id.</summary>
     public string FormatWaypoints(IEnumerable<LocationData> locations)
     {
+        ArgumentNullException.ThrowIfNull(locations);
+
         var gpx = new XDocument(
             new XElement("gpx",
                 new XAttribute("version", "1.1"),
@@ -42,6 +44,9 @@ public class GpxFormatter : IGpxFormatter
     /// <summary>One <trk> with <name> and a single <trkseg> of <trkpt> elements ordered by Timestamp; speed/bearing go into <extensions>.</summary>
     public string FormatTrack(IEnumerable<LocationData> trackPoints, string trackName)
     {
+        ArgumentNullException.ThrowIfNull(trackPoints);
+        ArgumentException.ThrowIfNullOrEmpty(trackName);
+
         var orderedTrackPoints = trackPoints.OrderBy(tp => tp.Timestamp);
 
         var gpx = new XDocument(
@@ -72,6 +77,8 @@ public class GpxFormatter : IGpxFormatter
     /// <summary>One <trk> per dictionary entry (key = track name); useful for exporting several devices or journeys into a single file.</summary>
     public string FormatMultiTrack(IReadOnlyDictionary<string, IEnumerable<LocationData>> tracksByName)
     {
+        ArgumentNullException.ThrowIfNull(tracksByName);
+
         var tracks = tracksByName.Select(kvp => new XElement("trk",
             new XElement("name", kvp.Key),
             new XElement("trkseg",
