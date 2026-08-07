@@ -104,6 +104,7 @@ public class AnalyticsService : IAnalyticsService
 
     public async Task<DeviceAnalytics> GetDeviceAnalyticsAsync(string deviceId)
     {
+        ArgumentException.ThrowIfNullOrEmpty(deviceId);
         var locations = await _locationService.GetLocationHistoryAsync(deviceId, 1000).ConfigureAwait(false);
         var journeys = await _journeyService.GetJourneyHistoryAsync(deviceId).ConfigureAwait(false);
         var completedJourneys = journeys.Where(j => j.Status == 1).ToList();
@@ -150,6 +151,7 @@ public class AnalyticsService : IAnalyticsService
 
     public async Task<RouteAnalytics> GetRouteAnalyticsAsync(string journeyId)
     {
+        ArgumentException.ThrowIfNullOrEmpty(journeyId);
         var journeys = await _journeyService.GetJourneyHistoryAsync("").ConfigureAwait(false);
         var journey = journeys.FirstOrDefault(j => j.Id == journeyId);
 
@@ -202,9 +204,7 @@ public class AnalyticsService : IAnalyticsService
     /// <returns>A journey with idle periods.</returns>
     public async Task<JourneyWithIdlePeriods> GetJourneyWithIdlePeriodsAsync(string journeyId)
     {
-        if (string.IsNullOrWhiteSpace(journeyId))
-            throw new ArgumentException("Journey ID cannot be empty", nameof(journeyId));
-
+        ArgumentException.ThrowIfNullOrEmpty(journeyId);
         var journey = await _journeyService.GetJourneyAsync(journeyId).ConfigureAwait(false);
         if (journey is null)
             throw new KeyNotFoundException($"Journey {journeyId} not found");
