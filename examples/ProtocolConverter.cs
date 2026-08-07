@@ -204,7 +204,6 @@ public class ProtocolConverter
     public async Task ConvertFileAsync(string inputPath, ProtocolType sourceProtocol,
         ProtocolType targetProtocol, string outputPath)
     {
-        ArgumentNullException.ThrowIfNull(sourceData);
         ArgumentException.ThrowIfNullOrEmpty(inputPath);
         ArgumentException.ThrowIfNullOrEmpty(outputPath);
         if (!File.Exists(inputPath))
