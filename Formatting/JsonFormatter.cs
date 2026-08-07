@@ -36,6 +36,7 @@ public class JsonFormatter : IJsonFormatter
 
     public string Format(LocationData location, bool prettyPrint = false)
     {
+        ArgumentNullException.ThrowIfNull(location);
         var dto = new LocationDataDto
         {
             DeviceId = location.DeviceId,
@@ -55,6 +56,7 @@ public class JsonFormatter : IJsonFormatter
 
     public string Format(GpsFrame frame, bool prettyPrint = false)
     {
+        ArgumentNullException.ThrowIfNull(frame);
         var dto = new GpsFrameDto
         {
             FrameId = frame.FrameId,
@@ -71,6 +73,7 @@ public class JsonFormatter : IJsonFormatter
 
     public string Format(Device device, bool prettyPrint = false)
     {
+        ArgumentNullException.ThrowIfNull(device);
         var dto = new DeviceDto
         {
             Id = device.Id,
@@ -87,6 +90,7 @@ public class JsonFormatter : IJsonFormatter
 
     public string Format(Journey journey, bool prettyPrint = false)
     {
+        ArgumentNullException.ThrowIfNull(journey);
         var dto = new JourneyDto
         {
             Id = journey.Id,
@@ -106,6 +110,7 @@ public class JsonFormatter : IJsonFormatter
 
     public T Deserialize<T>(string json)
     {
+        ArgumentException.ThrowIfNullOrEmpty(nameof(json));
         try
         {
             return JsonSerializer.Deserialize<T>(json) ?? throw new InvalidOperationException("Deserialization returned null");
