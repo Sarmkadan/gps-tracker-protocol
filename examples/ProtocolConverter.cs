@@ -37,6 +37,7 @@ public class ProtocolConverter
     public async Task<byte[]?> ConvertFrameAsync(byte[] sourceData,
         ProtocolType sourceProtocol, ProtocolType targetProtocol)
     {
+        ArgumentNullException.ThrowIfNull(sourceData);
         // Parse source frame
         var sourceFrame = new GpsFrame
         {
@@ -203,6 +204,9 @@ public class ProtocolConverter
     public async Task ConvertFileAsync(string inputPath, ProtocolType sourceProtocol,
         ProtocolType targetProtocol, string outputPath)
     {
+        ArgumentNullException.ThrowIfNull(sourceData);
+        ArgumentException.ThrowIfNullOrEmpty(inputPath);
+        ArgumentException.ThrowIfNullOrEmpty(outputPath);
         if (!File.Exists(inputPath))
         {
             _logger.LogError("Input file not found: {0}", inputPath);
