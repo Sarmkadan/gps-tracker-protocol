@@ -11,19 +11,55 @@ namespace GpsTrackerProtocol.Domain.Models;
 /// </summary>
 public class GpsFrame
 {
+    /// <summary>
+    /// Gets or sets the unique identifier of the frame.
+    /// </summary>
     public string FrameId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the protocol type used by the frame.
+    /// </summary>
     public ProtocolType Protocol { get; set; }
+
+    /// <summary>
+    /// Gets or sets the raw byte data of the frame as received from the device.
+    /// </summary>
     public byte[] RawData { get; set; } = [];
+
+    /// <summary>
+    /// Gets or sets the timestamp when the frame was received.
+    /// </summary>
     public DateTime ReceivedAt { get; set; }
+
+    /// <summary>
+    /// Gets or sets the source address of the device that sent the frame.
+    /// </summary>
     public string SourceAddress { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the source port of the device that sent the frame.
+    /// </summary>
     public int SourcePort { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the frame checksum has been validated successfully.
+    /// </summary>
     public bool IsValidChecksum { get; set; }
+
+    /// <summary>
+    /// Gets or sets the checksum value extracted from the frame, if present.
+    /// </summary>
     public string? ChecksumValue { get; set; }
+
+    /// <summary>
+    /// Gets or sets additional protocol-specific headers associated with the frame.
+    /// </summary>
     public Dictionary<string, string> Headers { get; set; } = [];
 
     /// <summary>
     /// Validates frame structure and integrity.
     /// </summary>
+    /// <returns><c>true</c> if the frame has a valid structure and checksum; otherwise, <c>false</c>.</returns>
     public bool IsValid()
     {
         if (RawData.Length == 0)
@@ -157,6 +193,7 @@ public class GpsFrame
     /// <summary>
     /// Gets hex representation of raw data.
     /// </summary>
+    /// <returns>A hexadecimal string representation of <see cref="RawData"/> without separators.</returns>
     public string ToHex()
     {
         return BitConverter.ToString(RawData).Replace("-", "");
@@ -165,6 +202,10 @@ public class GpsFrame
     /// <summary>
     /// Extracts a substring from raw data at specified byte offset.
     /// </summary>
+    /// <param name="offset">The zero-based byte offset at which to start extracting.</param>
+    /// <param name="length">The number of bytes to extract.</param>
+    /// <returns>A new byte array containing the extracted bytes.</returns>
+    /// <exception cref="ArgumentException">Thrown when the offset or length falls outside the bounds of the raw data.</exception>
     public byte[] ExtractBytes(int offset, int length)
     {
         if (offset < 0 || offset + length > RawData.Length)
@@ -178,6 +219,11 @@ public class GpsFrame
     /// <summary>
     /// Parses a value from raw data at specified offset with given length.
     /// </summary>
+    /// <param name="offset">The zero-based byte offset at which to start extracting.</param>
+    /// <param name="length">The number of bytes to extract.</param>
+    /// <param name="reverseBytes">Whether to reverse the byte order before converting to a string.</param>
+    /// <returns>The ASCII string representation of the extracted bytes, with null characters trimmed.</returns>
+    /// <exception cref="ArgumentException">Thrown when the offset or length falls outside the bounds of the raw data.</exception>
     public string ExtractString(int offset, int length, bool reverseBytes = false)
     {
         var bytes = ExtractBytes(offset, length);
@@ -186,6 +232,7 @@ public class GpsFrame
         return System.Text.Encoding.ASCII.GetString(bytes).Trim('\0');
     }
 
+    /// <inheritdoc />
     public override string ToString() =>
         $"GpsFrame({Protocol}) - {RawData.Length} bytes - {ReceivedAt:O} from {SourceAddress}:{SourcePort}";
 }
