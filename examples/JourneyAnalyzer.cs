@@ -38,6 +38,7 @@ public class JourneyAnalyzer
     /// <summary>Analyzes a single device's journey statistics</summary>
     public async Task AnalyzeDeviceAsync(string deviceId)
     {
+        ArgumentException.ThrowIfNullOrEmpty(deviceId);
         var device = await _deviceService.GetDeviceAsync(deviceId).ConfigureAwait(false);
         if (device is null)
         {
@@ -89,6 +90,7 @@ public class JourneyAnalyzer
     /// <summary>Creates a new journey and simulates tracking</summary>
     public async Task SimulateJourneyAsync(string deviceId, int waypointCount = 10)
     {
+        ArgumentException.ThrowIfNullOrEmpty(deviceId);
         var device = await _deviceService.GetDeviceAsync(deviceId).ConfigureAwait(false);
         if (device is null)
         {
@@ -174,6 +176,7 @@ public class JourneyAnalyzer
 
     public static async Task Main(string[] args)
     {
+        ArgumentNullException.ThrowIfNull(args);
         var analyzer = new JourneyAnalyzer();
 
         if (args.Length == 0)
