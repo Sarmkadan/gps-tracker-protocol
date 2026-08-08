@@ -101,6 +101,8 @@ public class ProtocolAutoDetector : IProtocolAutoDetector
         ILogger<ProtocolAutoDetector> logger,
         ProtocolType defaultProtocol = ProtocolType.Unknown)
     {
+        ArgumentNullException.ThrowIfNull(handlers);
+        ArgumentNullException.ThrowIfNull(logger);
         _handlers = handlers.ToList();
         _logger = logger;
         _defaultProtocol = defaultProtocol;
@@ -211,10 +213,13 @@ public class GT06ProtocolHandler : IProtocolHandler
     /// </summary>
     /// <param name="preamble">The leading bytes of the incoming data to inspect.</param>
     /// <returns><c>true</c> when the first two bytes match a GT06 signature; otherwise, <c>false</c>.</returns>
-    public bool CanHandle(byte[] preamble) =>
-        preamble.Length >= 2 &&
-        ((preamble[0] == 0x78 && preamble[1] == 0x78) ||
-         (preamble[0] == 0x79 && preamble[1] == 0x79));
+    public bool CanHandle(byte[] preamble)
+    {
+        ArgumentNullException.ThrowIfNull(preamble);
+        return preamble.Length >= 2 &&
+               ((preamble[0] == 0x78 && preamble[1] == 0x78) ||
+                (preamble[0] == 0x79 && preamble[1] == 0x79));
+    }
 
     /// <summary>
     /// Creates a <see cref="GpsFrame"/> for the GT06 protocol from raw connection data.
@@ -222,14 +227,18 @@ public class GT06ProtocolHandler : IProtocolHandler
     /// <param name="data">The raw frame bytes received from the device.</param>
     /// <param name="sourceAddress">The network address of the device that sent the data.</param>
     /// <returns>A task that resolves to the constructed GT06 <see cref="GpsFrame"/>.</returns>
-    public Task<GpsFrame> CreateFrameAsync(byte[] data, string sourceAddress) =>
-        Task.FromResult(new GpsFrame
+    public Task<GpsFrame> CreateFrameAsync(byte[] data, string sourceAddress)
+    {
+        ArgumentNullException.ThrowIfNull(data);
+        ArgumentException.ThrowIfNullOrEmpty(sourceAddress);
+        return Task.FromResult(new GpsFrame
         {
             RawData = data,
             Protocol = ProtocolType.GT06,
             ReceivedAt = DateTime.UtcNow,
             SourceAddress = sourceAddress
         });
+    }
 }
 
 /// <summary>
@@ -249,6 +258,7 @@ public class H02ProtocolHandler : IProtocolHandler
     /// <returns><c>true</c> when the preamble starts with an H02 marker; otherwise, <c>false</c>.</returns>
     public bool CanHandle(byte[] preamble)
     {
+        ArgumentNullException.ThrowIfNull(preamble);
         if (preamble.Length < 3)
             return false;
 
@@ -263,14 +273,18 @@ public class H02ProtocolHandler : IProtocolHandler
     /// <param name="data">The raw frame bytes received from the device.</param>
     /// <param name="sourceAddress">The network address of the device that sent the data.</param>
     /// <returns>A task that resolves to the constructed H02 <see cref="GpsFrame"/>.</returns>
-    public Task<GpsFrame> CreateFrameAsync(byte[] data, string sourceAddress) =>
-        Task.FromResult(new GpsFrame
+    public Task<GpsFrame> CreateFrameAsync(byte[] data, string sourceAddress)
+    {
+        ArgumentNullException.ThrowIfNull(data);
+        ArgumentException.ThrowIfNullOrEmpty(sourceAddress);
+        return Task.FromResult(new GpsFrame
         {
             RawData = data,
             Protocol = ProtocolType.H02,
             ReceivedAt = DateTime.UtcNow,
             SourceAddress = sourceAddress
         });
+    }
 }
 
 /// <summary>
@@ -288,8 +302,11 @@ public class TK103ProtocolHandler : IProtocolHandler
     /// </summary>
     /// <param name="preamble">The leading bytes of the incoming data to inspect.</param>
     /// <returns><c>true</c> when the first byte is the TK103 start marker; otherwise, <c>false</c>.</returns>
-    public bool CanHandle(byte[] preamble) =>
-        preamble.Length >= 1 && preamble[0] == ProtocolConstants.TK103_START_MARKER;
+    public bool CanHandle(byte[] preamble)
+    {
+        ArgumentNullException.ThrowIfNull(preamble);
+        return preamble.Length >= 1 && preamble[0] == ProtocolConstants.TK103_START_MARKER;
+    }
 
     /// <summary>
     /// Creates a <see cref="GpsFrame"/> for the TK103 protocol from raw connection data.
@@ -297,12 +314,16 @@ public class TK103ProtocolHandler : IProtocolHandler
     /// <param name="data">The raw frame bytes received from the device.</param>
     /// <param name="sourceAddress">The network address of the device that sent the data.</param>
     /// <returns>A task that resolves to the constructed TK103 <see cref="GpsFrame"/>.</returns>
-    public Task<GpsFrame> CreateFrameAsync(byte[] data, string sourceAddress) =>
-        Task.FromResult(new GpsFrame
+    public Task<GpsFrame> CreateFrameAsync(byte[] data, string sourceAddress)
+    {
+        ArgumentNullException.ThrowIfNull(data);
+        ArgumentException.ThrowIfNullOrEmpty(sourceAddress);
+        return Task.FromResult(new GpsFrame
         {
             RawData = data,
             Protocol = ProtocolType.TK103,
             ReceivedAt = DateTime.UtcNow,
             SourceAddress = sourceAddress
         });
+    }
 }
