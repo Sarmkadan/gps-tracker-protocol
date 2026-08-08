@@ -82,6 +82,7 @@ public class InMemoryDeviceRepository : IDeviceRepository
 
     public async Task<Device?> GetByImeiAsync(string imei)
     {
+        ArgumentException.ThrowIfNullOrEmpty(imei);
         return _store.Values.FirstOrDefault(d => d.Imei == imei) is Device device ? CreateSnapshot(device) : null;
     }
 
@@ -303,6 +304,7 @@ public class InMemoryJourneyRepository : IJourneyRepository
 
     public async Task<IEnumerable<Journey>> GetByDeviceIdAsync(string deviceId)
     {
+        ArgumentException.ThrowIfNullOrEmpty(deviceId);
         return _store.Values.Where(j => j.DeviceId == deviceId).Select(CreateSnapshot).ToList();
     }
 
@@ -321,11 +323,13 @@ public class InMemoryJourneyRepository : IJourneyRepository
 
     public async Task<Journey?> GetOngoingJourneyAsync(string deviceId)
     {
+        ArgumentException.ThrowIfNullOrEmpty(deviceId);
         return _store.Values.FirstOrDefault(j => j.DeviceId == deviceId && j.Status == 0) is Journey journey ? CreateSnapshot(journey) : null;
     }
 
     public async Task<double> GetTotalDistanceAsync(string deviceId)
     {
+        ArgumentException.ThrowIfNullOrEmpty(deviceId);
         return _store.Values
             .Where(j => j.DeviceId == deviceId && j.Status == 1)
             .Sum(j => j.GetTotalDistance());
@@ -451,6 +455,7 @@ public class InMemoryCommandRepository : ICommandRepository
 
     public async Task<IEnumerable<Command>> GetByDeviceIdAsync(string deviceId)
     {
+        ArgumentException.ThrowIfNullOrEmpty(deviceId);
         return _store.Values.Where(c => c.DeviceId == deviceId).Select(CreateSnapshot).ToList();
     }
 
