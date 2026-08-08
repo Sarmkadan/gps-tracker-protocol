@@ -35,6 +35,7 @@ public class CachingService : ICachingService
 
     public void Set<T>(string key, T value, TimeSpan? ttl = null)
     {
+        ArgumentException.ThrowIfNullOrEmpty(key);
         lock (_lock)
         {
             var expiresAt = ttl.HasValue ? (DateTime?)DateTime.UtcNow.Add(ttl.Value) : null;
@@ -52,6 +53,7 @@ public class CachingService : ICachingService
 
     public bool TryGet<T>(string key, out T value)
     {
+        ArgumentException.ThrowIfNullOrEmpty(key);
         lock (_lock)
         {
             if (_cache.TryGetValue(key, out var entry))
@@ -76,6 +78,7 @@ public class CachingService : ICachingService
 
     public void Remove(string key)
     {
+        ArgumentException.ThrowIfNullOrEmpty(key);
         lock (_lock)
         {
             if (_cache.Remove(key))
