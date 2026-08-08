@@ -34,11 +34,13 @@ public class PerformanceMonitor : IPerformanceMonitor
 
     public IDisposable MeasureOperation(string operationName)
     {
+        ArgumentException.ThrowIfNullOrEmpty(operationName);
         return new OperationTimer(this, operationName);
     }
 
     public void RecordOperation(string operationName, TimeSpan duration)
     {
+        ArgumentException.ThrowIfNullOrEmpty(operationName);
         lock (_lock)
         {
             if (!_operationTimes.ContainsKey(operationName))
@@ -50,6 +52,7 @@ public class PerformanceMonitor : IPerformanceMonitor
 
     public OperationMetrics GetMetrics(string operationName)
     {
+        ArgumentException.ThrowIfNullOrEmpty(operationName);
         lock (_lock)
         {
             if (!_operationTimes.TryGetValue(operationName, out var times) || times.Count == 0)
