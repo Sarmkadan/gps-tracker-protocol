@@ -94,7 +94,7 @@ namespace V2BasicUsage
         /// </summary>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for the task to complete.</param>
         /// <returns>A <see cref="Task"/> that represents the asynchronous operation.</returns>
-        public Task StartAsync(CancellationToken cancellationToken)
+        public Task StartAsync(CancellationToken cancellationToken)\n        {\n            _logger.LogInformation("Starting GPS Tracker Protocol v2.0");\n            _logger.LogInformation("Starting GPS Tracker Protocol v2.0 with {ServiceName}", nameof(GpsTrackerHostedService));\n            // Start the GPS tracker service\n            _gpsTrackerService.Start();\n\n            // Start the fleet dashboard analytics\n            _fleetDashboardService.StartAnalytics();\n            _logger.LogInformation("Started GPS Tracker Protocol v2.0 with {ServiceName}", nameof(GpsTrackerHostedService));\n            return Task.CompletedTask;\n        }
         {
             _logger.LogInformation("Starting GPS Tracker Protocol v2.0");
 
