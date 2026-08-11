@@ -40,6 +40,7 @@ public class LocationAggregationWorker : RecurringBackgroundWorker
     protected override async Task ExecuteAsync()
     {
         var devices = await _deviceService.GetAllDevicesAsync().ConfigureAwait(false);
+        _logger.LogInformation("Starting location aggregation for {DeviceCount} devices", devices.Count());
 
         foreach (var device in devices)
         {
@@ -52,6 +53,7 @@ public class LocationAggregationWorker : RecurringBackgroundWorker
                 _logger.LogError(ex, "Error aggregating locations for device {DeviceId}", device.Id);
             }
         }
+        _logger.LogInformation("Completed location aggregation cycle");
     }
 
     private async Task AggregateDeviceLocationAsync(string deviceId)
