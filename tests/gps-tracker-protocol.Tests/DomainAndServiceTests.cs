@@ -395,13 +395,15 @@ public class DomainAndServiceTests
     [Fact]
     public void GeofenceService_IsInsideGeofence_PointAtExactCenter_ReturnsTrue()
     {
-        var mockLogger = Substitute.For<ILogger<GeofenceService>>(); // Changed from Mock
-        var service = new GeofenceService(mockLogger); // Changed from mockLogger.Object
+        var _logger = Substitute.For<ILogger<GeofenceService>>(); // Changed from Mock
+        var service = new GeofenceService(_logger); // Changed from mockLogger.Object
+        _logger.LogInformation("GeofenceService_IsInsideGeofence_PointAtExactCenter_ReturnsTrue called with {GeofenceId}, {Latitude}, {Longitude}", "zone-london", 51.5074, -0.1278);
         service.AddGeofence("zone-london", 51.5074, -0.1278, 1.0);
 
         var result = service.IsInsideGeofence("zone-london", 51.5074, -0.1278);
 
         result.Should().BeTrue();
+        _logger.LogInformation("GeofenceService_IsInsideGeofence_PointAtExactCenter_ReturnsTrue completed with {Result}", result);
     }
 
     /// <summary>
@@ -412,8 +414,8 @@ public class DomainAndServiceTests
     [Fact]
     public void GeofenceService_IsInsideGeofence_PointFarOutside_ReturnsFalse()
     {
-        var mockLogger = Substitute.For<ILogger<GeofenceService>>(); // Changed from Mock
-        var service = new GeofenceService(mockLogger); // Changed from mockLogger.Object
+        var _logger = Substitute.For<ILogger<GeofenceService>>(); // Changed from Mock
+        var service = new GeofenceService(_logger); // Changed from mockLogger.Object
         service.AddGeofence("zone-london", 51.5074, -0.1278, 1.0);
 
         // Paris is ~340 km from London — far beyond 1 km radius
@@ -429,8 +431,8 @@ public class DomainAndServiceTests
     [Fact]
     public void GeofenceService_IsInsideGeofence_UnknownGeofenceId_ReturnsFalse()
     {
-        var mockLogger = Substitute.For<ILogger<GeofenceService>>(); // Changed from Mock
-        var service = new GeofenceService(mockLogger); // Changed from mockLogger.Object
+        var _logger = Substitute.For<ILogger<GeofenceService>>(); // Changed from Mock
+        var service = new GeofenceService(_logger); // Changed from mockLogger.Object
 
         var result = service.IsInsideGeofence("nonexistent-zone", 51.5074, -0.1278);
 
@@ -445,8 +447,8 @@ public class DomainAndServiceTests
     [Fact]
     public void GeofenceService_GetNearbyGeofences_SearchRadiusEncompassesGeofence_ReturnsItsId()
     {
-        var mockLogger = Substitute.For<ILogger<GeofenceService>>(); // Changed from Mock
-        var service = new GeofenceService(mockLogger); // Changed from mockLogger.Object
+        var _logger = Substitute.For<ILogger<GeofenceService>>(); // Changed from Mock
+        var service = new GeofenceService(_logger); // Changed from mockLogger.Object
         service.AddGeofence("depot", 51.5, -0.1, 0.5);
 
         // Search from 0.3 km away with 1 km radius — depot is within searchRadius + depot.RadiusKm
@@ -462,8 +464,8 @@ public class DomainAndServiceTests
     [Fact]
     public void GeofenceService_AddGeofence_WithInvalidCoordinates_DoesNotAddGeofence()
     {
-        var mockLogger = Substitute.For<ILogger<GeofenceService>>(); // Changed from Mock
-        var service = new GeofenceService(mockLogger); // Changed from mockLogger.Object
+        var _logger = Substitute.For<ILogger<GeofenceService>>(); // Changed from Mock
+        var service = new GeofenceService(_logger); // Changed from mockLogger.Object
 
         // Invalid coordinates: latitude 200, longitude 300
         service.AddGeofence("bad-zone", 200, 300, 1.0);
