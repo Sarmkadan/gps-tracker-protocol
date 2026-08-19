@@ -109,10 +109,10 @@ public class AdvancedUsage
         // Error Handling
         // =============
         Console.WriteLine("--- Error Handling Examples ---\n");
+        _logger.LogInformation("Starting AdvancedUsage.Run");
 
         try
         {
-            // Example: Try to register a device with invalid IMEI
             var invalidDevice = new Device
             {
                 Imei = "INVALID",
