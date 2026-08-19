@@ -40,6 +40,7 @@ public class JourneyAnalyticsWorker : RecurringBackgroundWorker
     protected override async Task ExecuteAsync()
     {
         var devices = await _deviceService.GetAllDevicesAsync().ConfigureAwait(false);
+        _logger.LogInformation("Starting journey analytics for {DeviceCount} devices", devices.Count());
 
         foreach (var device in devices)
         {
@@ -52,6 +53,7 @@ public class JourneyAnalyticsWorker : RecurringBackgroundWorker
                 _logger.LogError(ex, "Error analyzing journeys for device {DeviceId}", device.Id);
             }
         }
+        _logger.LogInformation("Finished journey analytics");
     }
 
     private async Task AnalyzeDeviceJourneysAsync(string deviceId)
