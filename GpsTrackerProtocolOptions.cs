@@ -61,6 +61,8 @@ public class GpsTrackerProtocolOptions
 
     public ProtocolSettings Protocol { get; set; } = new ProtocolSettings();
 
+    public override string ToString() => $"GpsTrackerProtocolOptions {{ DefaultProtocol = {DefaultProtocol}, MaxDevices = {MaxDevices}, LocationHistoryLimit = {LocationHistoryLimit}, CacheExpirationMinutes = {CacheExpirationMinutes}, RateLimitPerMinute = {RateLimitPerMinute}, LoggingLevel = {LoggingLevel} }}";
+
     /// <summary>
     /// Contains protocol-specific configuration settings for each supported GPS tracker protocol.
     /// Each protocol has its own timeout, maximum frame size, and enable/disable flag.
