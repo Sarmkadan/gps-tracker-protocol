@@ -87,6 +87,9 @@ public class DeviceDiagnosticsReport
 
     /// <summary>Gets or sets when this report was generated.</summary>
     public DateTime GeneratedAt { get; set; } = DateTime.UtcNow;
+
+    public override string ToString() =>
+        $"DeviceDiagnosticsReport {{ DeviceId = {DeviceId}, DeviceName = {DeviceName}, Imei = {Imei}, Protocol = {Protocol}, Status = {Status}, IsOnline = {IsOnline} }}";
 }
 
 /// <summary>
