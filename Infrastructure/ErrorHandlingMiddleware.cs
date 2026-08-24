@@ -83,4 +83,6 @@ public record ErrorResponse
     public string CorrelationId { get; set; }
     public DateTime Timestamp { get; set; }
     public string StackTrace { get; set; }
+
+    public override string ToString() => $"ErrorHandlingMiddleware {{ ErrorCode = {ErrorCode}, Message = {Message}, CorrelationId = {CorrelationId}, Timestamp = {Timestamp}, StackTrace = {StackTrace} }}";
 }
