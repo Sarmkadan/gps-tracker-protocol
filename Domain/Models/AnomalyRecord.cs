@@ -21,4 +21,6 @@ public sealed class AnomalyRecord
     /// How long the drop occurred over.
     /// </summary>
     public TimeSpan Duration { get; set; }
+
+    public override string ToString() => $"AnomalyRecord {{ Timestamp = {Timestamp}, DropAmountLiters = {DropAmountLiters}, Duration = {Duration} }}";
 }
