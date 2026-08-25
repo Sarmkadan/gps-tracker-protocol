@@ -111,4 +111,9 @@ public class LocationAggregation
     public double MinSpeed { get; set; }
     public double AverageSpeed { get; set; }
     public double TotalDistance { get; set; }
+
+    public override string ToString()
+    {
+        return $"LocationAggregationWorker {{ DeviceId = {DeviceId}, AggregationTime = {AggregationTime}, LocationCount = {LocationCount}, TimeSpan = {TimeSpan}, MaxSpeed = {MaxSpeed}, MinSpeed = {MinSpeed} }}";
+    }
 }
