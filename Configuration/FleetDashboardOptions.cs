@@ -83,4 +83,6 @@ public sealed class FleetDashboardOptions
     /// <para>Default: 10 L.</para>
     /// </summary>
     public double LowFuelThresholdLiters { get; set; } = 10.0;
+
+    public override string ToString() => $"FleetDashboardOptions {{ DefaultAlgorithm = {DefaultAlgorithm}, DefaultFuelPricePerLiter = {DefaultFuelPricePerLiter}, AverageRoadSpeedKmh = {AverageRoadSpeedKmh}, MaxStopsPerRoute = {MaxStopsPerRoute}, MaxFleetSize = {MaxFleetSize}, SnapshotCacheTtl = {SnapshotCacheTtl} }}";
 }
