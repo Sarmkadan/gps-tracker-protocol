@@ -280,6 +280,8 @@ public class AdvancedUsage
 
         Console.WriteLine("=== Advanced Usage Complete ===");
     }
+
+    public override string ToString() => $"AdvancedUsage {{ Start = {Start}, End = {End} }}";
 }
 
 // Helper class for date range
