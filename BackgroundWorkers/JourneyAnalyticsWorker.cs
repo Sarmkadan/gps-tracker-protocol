@@ -37,6 +37,11 @@ public class JourneyAnalyticsWorker : RecurringBackgroundWorker
         _interval = TimeSpan.FromMinutes(15);
     }
 
+    public override string ToString()
+    {
+        return $"JourneyAnalyticsWorker {{ DeviceId = {{DeviceId}}, AnalysisTime = {{AnalysisTime}}, TotalJourneys = {{TotalJourneys}}, TotalDistanceKm = {{TotalDistanceKm}}, TotalDurationHours = {{TotalDurationHours}}, AverageSpeedKmh = {{AverageSpeedKmh}} }}";
+    }
+
     protected override async Task ExecuteAsync()
     {
         var devices = await _deviceService.GetAllDevicesAsync().ConfigureAwait(false);
@@ -135,4 +140,9 @@ public class JourneyAnalytics
     public double AverageSpeedKmh { get; set; }
     public int SpeedingIncidents { get; set; }
     public double IdleTimePercentage { get; set; }
+
+    public override string ToString()
+    {
+        return $"JourneyAnalytics {{ DeviceId = {DeviceId}, AnalysisTime = {AnalysisTime}, TotalJourneys = {TotalJourneys}, TotalDistanceKm = {TotalDistanceKm}, TotalDurationHours = {TotalDurationHours}, AverageSpeedKmh = {AverageSpeedKmh} }}";
+    }
 }
