@@ -167,7 +167,9 @@ public class KalmanLocationSmoother
         };
     }
 
-    private class DeviceState
+    public override string ToString() => $"KalmanLocationSmoother {{ ProcessNoiseMetersPerSecond = {ProcessNoiseMetersPerSecond}, MaxPlausibleSpeedKmh = {MaxPlausibleSpeedKmh}, DefaultAccuracyMeters = {DefaultAccuracyMeters}, Latitude = {Latitude}, Longitude = {Longitude}, LatVariance = {LatVariance} }}";
+
+    public override string ToString() => $"KalmanLocationSmoother {{ ProcessNoiseMetersPerSecond = {ProcessNoiseMetersPerSecond}, MaxPlausibleSpeedKmh = {MaxPlausibleSpeedKmh}, DefaultAccuracyMeters = {DefaultAccuracyMeters}, Latitude = {Latitude}, Longitude = {Longitude}, LatVariance = {LatVariance} }}";
     {
         public double Latitude { get; set; }
         public double Longitude { get; set; }
