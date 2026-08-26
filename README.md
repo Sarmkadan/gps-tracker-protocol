@@ -2773,3 +2773,54 @@ public class JourneyServiceTestsExample
     }
 }
 ```
+
+## GeofenceServiceTests
+
+The `GeofenceServiceTests` class provides comprehensive unit tests for the `GeofenceService` class, ensuring the reliability of geofence creation, boundary detection, and proximity lookups. It covers scenarios like adding geofences with valid and invalid coordinates or radii, verifying whether points lie inside, outside, or exactly on the boundary of circular geofences, and resolving nearby geofences within a given search radius.
+
+Example usage for running/referencing test scenarios:
+```csharp
+using GpsTrackerProtocol.Tests;
+
+public class GeofenceServiceTestsExample
+{
+    private readonly GeofenceServiceTests _tests = new();
+
+    public void RunTestScenarios()
+    {
+        // Validate adding geofences with valid coordinates
+        _tests.AddGeofence_WithValidCoordinates_AddsGeofenceSuccessfully();
+
+        // Validate rejection of invalid coordinates
+        _tests.AddGeofence_WithInvalidLatitude_DoesNotAddGeofence();
+        _tests.AddGeofence_WithInvalidLongitude_DoesNotAddGeofence();
+
+        // Validate radius edge cases
+        _tests.AddGeofence_WithNegativeRadius_AddsGeofence();
+        _tests.AddGeofence_WithZeroRadius_AddsGeofence();
+
+        // Validate point containment checks
+        _tests.IsInsideGeofence_WithNonExistentGeofence_ReturnsFalse();
+        _tests.IsInsideGeofence_WithPointInsideCircle_ReturnsTrue();
+        _tests.IsInsideGeofence_WithPointOnBoundary_ReturnsTrue();
+        _tests.IsInsideGeofence_WithPointJustOutsideBoundary_ReturnsFalse();
+
+        // Validate nearby geofence lookups
+        _tests.GetNearbyGeofences_WithPointNearGeofence_ReturnsGeofenceId();
+        _tests.GetNearbyGeofences_WithMultipleNearbyGeofences_ReturnsAllIds();
+        _tests.GetNearbyGeofences_WithSearchRadiusSmallerThanGeofenceRadius_ReturnsGeofence();
+
+        // Validate model state and logging behavior
+        _tests.Geofence_PropertiesAreSetCorrectly();
+        _tests.AddGeofence_WithValidCoordinates_LogsInformation();
+    }
+
+    public static void Main(string[] args)
+    {
+        Console.WriteLine("Starting GeofenceServiceTests example...");
+        var example = new GeofenceServiceTestsExample();
+        example.RunTestScenarios();
+        Console.WriteLine("GeofenceServiceTests example completed!");
+    }
+}
+```
