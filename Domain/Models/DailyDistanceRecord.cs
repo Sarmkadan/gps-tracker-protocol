@@ -25,4 +25,8 @@ public class DailyDistanceRecord
     /// Total distance in kilometres travelled on that day.
     /// </summary>
     public double DistanceKm { get; set; }
+
+    /// <inheritdoc />
+    public override string ToString() =>
+        $"DailyDistanceRecord {{ DeviceId = {DeviceId}, Day = {Day}, DistanceKm = {DistanceKm} }}";
 }
