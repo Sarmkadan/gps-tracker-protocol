@@ -1753,6 +1753,61 @@ public class KalmanLocationSmootherExample
 }
 ```
 
+## KalmanLocationSmootherTests
+
+The `KalmanLocationSmootherTests` class provides comprehensive unit tests for the `KalmanLocationSmoother` class, ensuring the reliability of GPS location smoothing, outlier rejection, and per-device filter state management. It covers scenarios such as first-fix passthrough with raw values recorded in ExtendedData, progressive smoothing between consecutive fixes, rejection of physically impossible jumps versus acceptance of high-but-plausible speeds, and correct handling of null fixes and zero or negative time deltas. It also validates device state resets (`Reset`, `ResetAll`), multi-device state isolation, the static `DistanceMeters` helper, and the independent-copy semantics used when producing smoothed locations.
+
+Example usage for running/referencing test scenarios:
+```csharp
+using GpsTrackerProtocol.Tests;
+
+public class KalmanLocationSmootherTestsExample
+{
+    private readonly KalmanLocationSmootherTests _tests = new();
+
+    public void RunTestScenarios()
+    {
+        // Validate first-fix behavior
+        _tests.Smooth_FirstFixForDevice_ReturnsUnchangedLocationWithRawValuesInExtendedData();
+        _tests.Smooth_FirstFixWithZeroAccuracy_UsesDefaultAccuracy();
+
+        // Validate smoothing and outlier rejection
+        _tests.Smooth_ConsecutiveFixes_SmoothsTowardsSecondPoint();
+        _tests.Smooth_OutlierFixWithImpossiblyHighSpeed_ReturnsNull();
+        _tests.Smooth_OutlierFixWithHighButPlausibleSpeed_ReturnsSmoothedResult();
+
+        // Validate edge cases
+        _tests.Smooth_NullFix_ReturnsNull();
+        _tests.Smooth_NegativeTimeDelta_ReturnsUnchangedLocation();
+        _tests.Smooth_ZeroTimeDelta_ReturnsUnchangedLocation();
+
+        // Validate reset behavior
+        _tests.Reset_ClearsStateForSpecificDevice();
+        _tests.ResetAll_ClearsAllDeviceStates();
+        _tests.Reset_NullDeviceId_DoesNotThrow();
+
+        // Validate distance calculation
+        _tests.DistanceMeters_CalculatesCorrectDistance();
+        _tests.DistanceMeters_SamePoint_ReturnsZero();
+
+        // Validate copy semantics
+        _tests.CopyLocationData_CreatesIndependentCopy();
+        _tests.CopyLocationData_NullInput_ThrowsArgumentNullException();
+
+        // Validate multi-device state isolation
+        _tests.Smooth_MultipleDevices_MaintainsSeparateStates();
+    }
+
+    public static void Main(string[] args)
+    {
+        Console.WriteLine("Starting KalmanLocationSmootherTests example...");
+        var example = new KalmanLocationSmootherTestsExample();
+        example.RunTestScenarios();
+        Console.WriteLine("KalmanLocationSmootherTests example completed!");
+    }
+}
+```
+
 ## StringExtensionsValidation
 
 The `StringExtensionsValidation` class provides comprehensive validation methods for string operations and parsed values from the `StringExtensions` class. It includes validation methods that return detailed error lists, boolean validation checks, and methods that throw exceptions when validation fails. This validation system ensures data integrity when parsing device identifiers, IMEIs, coordinates, and other string-based inputs from GPS tracker protocols.
