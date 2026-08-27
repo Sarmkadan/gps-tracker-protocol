@@ -6,6 +6,7 @@
 
 namespace GpsTrackerProtocol.Integration;
 
+using GpsTrackerProtocol.Domain;
 using Microsoft.Extensions.Logging;
 using System.Globalization;
 using System.Text.Json.Serialization;
@@ -30,7 +31,7 @@ public class WeatherApiClient : ExternalApiClient, IWeatherApiClient
 
     public async Task<WeatherData> GetWeatherAsync(double latitude, double longitude)
     {
-        return await ExecuteWithRetryAsync(async () =>
+        try
         {
             var parameters = new Dictionary<string, string>
             {
@@ -41,7 +42,9 @@ public class WeatherApiClient : ExternalApiClient, IWeatherApiClient
             };
 
             var url = OpenMeteoUrl + BuildQueryString(parameters);
-            var response = await _httpClient.GetAsync(url).ConfigureAwait(false);
+            
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+            using var response = await _httpClient.GetAsync(url, cts.Token).ConfigureAwait(false);
             response.EnsureSuccessStatusCode();
 
             var json = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
@@ -60,7 +63,12 @@ public class WeatherApiClient : ExternalApiClient, IWeatherApiClient
                 Description = GetWeatherDescription(weatherResponse.Current.WeatherCode),
                 Timestamp = DateTime.UtcNow
             };
-        });
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogError(ex, "Failed to fetch weather data");
+            throw new GpsTrackerException($"Failed to fetch weather data for ({latitude}, {longitude})", ex);
+        }
     }
 
     private string GetWeatherDescription(int weatherCode)
