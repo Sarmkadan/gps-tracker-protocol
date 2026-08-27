@@ -8,17 +8,30 @@ using Xunit;
 
 namespace GpsTrackerProtocol.Tests.Services;
 
+/// <summary>
+/// Test class for GeofenceService that verifies geofence management functionality.
+/// Tests cover adding geofences, checking if points are inside geofences,
+/// and finding nearby geofences based on location.
+/// </summary>
 public class GeofenceServiceTests
 {
     private readonly ILogger<GeofenceService> _logger;
     private readonly GeofenceService _service;
 
+    /// <summary>
+    /// Initializes a new instance of the GeofenceServiceTests class.
+    /// Sets up a mock logger and creates a GeofenceService instance for testing.
+    /// </summary>
     public GeofenceServiceTests()
     {
         _logger = Substitute.For<ILogger<GeofenceService>>();
         _service = new GeofenceService(_logger);
     }
 
+    /// <summary>
+    /// Tests that adding a geofence with valid latitude, longitude, and radius succeeds.
+    /// Verifies the geofence can be detected by checking if its center point is inside.
+    /// </summary>
     [Fact]
     public void AddGeofence_WithValidCoordinates_AddsGeofenceSuccessfully()
     {
@@ -30,6 +43,10 @@ public class GeofenceServiceTests
         _service.IsInsideGeofence("test-zone", 40.7128, -74.0060).Should().BeTrue();
     }
 
+    /// <summary>
+    /// Tests that adding a geofence with invalid latitude (outside -90 to 90 range) is rejected.
+    /// Verifies that a warning is logged and the geofence is not added to the service.
+    /// </summary>
     [Fact]
     public void AddGeofence_WithInvalidLatitude_DoesNotAddGeofence()
     {
@@ -45,6 +62,10 @@ public class GeofenceServiceTests
             Arg.Any<Func<object, Exception?, string>>());
     }
 
+    /// <summary>
+    /// Tests that adding a geofence with invalid longitude (outside -180 to 180 range) is rejected.
+    /// Verifies that a warning is logged and the geofence is not added to the service.
+    /// </summary>
     [Fact]
     public void AddGeofence_WithInvalidLongitude_DoesNotAddGeofence()
     {
@@ -60,6 +81,10 @@ public class GeofenceServiceTests
             Arg.Any<Func<object, Exception?, string>>());
     }
 
+    /// <summary>
+    /// Tests that adding a geofence with negative radius still adds the geofence to the service.
+    /// Verifies behavior where negative radius makes the center point appear outside the geofence.
+    /// </summary>
     [Fact]
     public void AddGeofence_WithNegativeRadius_AddsGeofence()
     {
@@ -72,6 +97,10 @@ public class GeofenceServiceTests
             .Should().BeFalse("With negative radius, center point (distance 0) is outside the fence");
     }
 
+    /// <summary>
+    /// Tests that adding a geofence with zero radius creates a point geofence.
+    /// Verifies that only the exact center point is considered inside the geofence.
+    /// </summary>
     [Fact]
     public void AddGeofence_WithZeroRadius_AddsGeofence()
     {
@@ -85,6 +114,10 @@ public class GeofenceServiceTests
             .Should().BeFalse("A point slightly away should be outside a zero-radius geofence");
     }
 
+    /// <summary>
+    /// Tests that checking if a point is inside a non-existent geofence returns false.
+    /// Verifies the service handles missing geofences gracefully by returning false.
+    /// </summary>
     [Fact]
     public void IsInsideGeofence_WithNonExistentGeofence_ReturnsFalse()
     {
@@ -95,6 +128,10 @@ public class GeofenceServiceTests
         result.Should().BeFalse();
     }
 
+    /// <summary>
+    /// Tests that a point at the center of a geofence returns true when checked.
+    /// Verifies the IsInsideGeofence method correctly identifies points inside the geofence.
+    /// </summary>
     [Fact]
     public void IsInsideGeofence_WithPointInsideCircle_ReturnsTrue()
     {
@@ -108,6 +145,10 @@ public class GeofenceServiceTests
         result.Should().BeTrue();
     }
 
+    /// <summary>
+    /// Tests that a point outside a geofence's radius returns false when checked.
+    /// Verifies the IsInsideGeofence method correctly identifies points outside the geofence.
+    /// </summary>
     [Fact]
     public void IsInsideGeofence_WithPointOutsideCircle_ReturnsFalse()
     {
@@ -121,6 +162,10 @@ public class GeofenceServiceTests
         result.Should().BeFalse();
     }
 
+    /// <summary>
+    /// Tests that a point at the center of a geofence (distance 0) returns true when checked.
+    /// Verifies the boundary condition where distance equals 0 is considered inside.
+    /// </summary>
     [Fact]
     public void IsInsideGeofence_WithPointOnBoundary_ReturnsTrue()
     {
@@ -136,6 +181,10 @@ public class GeofenceServiceTests
         result.Should().BeTrue("Center point should be inside the geofence");
     }
 
+    /// <summary>
+    /// Tests that a point just inside a geofence boundary returns true when checked.
+    /// Verifies the IsInsideGeofence method correctly identifies points near the edge but still inside.
+    /// </summary>
     [Fact]
     public void IsInsideGeofence_WithPointJustInsideBoundary_ReturnsTrue()
     {
@@ -149,6 +198,10 @@ public class GeofenceServiceTests
         result.Should().BeTrue();
     }
 
+    /// <summary>
+    /// Tests that a point just outside a geofence boundary returns false when checked.
+    /// Verifies the IsInsideGeofence method correctly identifies points near the edge but outside.
+    /// </summary>
     [Fact]
     public void IsInsideGeofence_WithPointJustOutsideBoundary_ReturnsFalse()
     {
@@ -162,6 +215,10 @@ public class GeofenceServiceTests
         result.Should().BeFalse();
     }
 
+    /// <summary>
+    /// Tests that the service correctly handles multiple geofences and returns appropriate results for each.
+    /// Verifies that points are correctly identified as inside or outside each specific geofence.
+    /// </summary>
     [Fact]
     public void IsInsideGeofence_WithMultipleGeofences_ReturnsCorrectResultForEach()
     {
@@ -176,6 +233,10 @@ public class GeofenceServiceTests
         _service.IsInsideGeofence("zone2", 40.7128, -74.0060).Should().BeFalse();
     }
 
+    /// <summary>
+    /// Tests that GetNearbyGeofences returns an empty list when the point is far from all geofences.
+    /// Verifies the service correctly returns no results when no geofences are within the search radius.
+    /// </summary>
     [Fact]
     public void GetNearbyGeofences_WithPointFarFromAll_ReturnsEmptyList()
     {
@@ -190,6 +251,10 @@ public class GeofenceServiceTests
         result.Should().BeEmpty();
     }
 
+    /// <summary>
+    /// Tests that GetNearbyGeofences returns the ID of a geofence when the point is near it.
+    /// Verifies the service correctly identifies geofences within the search radius.
+    /// </summary>
     [Fact]
     public void GetNearbyGeofences_WithPointNearGeofence_ReturnsGeofenceId()
     {
@@ -203,6 +268,10 @@ public class GeofenceServiceTests
         result.Should().Contain("nyc");
     }
 
+    /// <summary>
+    /// Tests that GetNearbyGeofences returns all geofence IDs when multiple geofences are near the point.
+    /// Verifies the service correctly identifies and returns all geofences within the search radius.
+    /// </summary>
     [Fact]
     public void GetNearbyGeofences_WithMultipleNearbyGeofences_ReturnsAllIds()
     {
@@ -221,6 +290,10 @@ public class GeofenceServiceTests
         result.Should().Contain("zone3");
     }
 
+    /// <summary>
+    /// Tests that GetNearbyGeofences returns a geofence when the search radius is smaller than the geofence radius.
+    /// Verifies the service uses the combined distance check (distance <= searchRadius + geofenceRadius).
+    /// </summary>
     [Fact]
     public void GetNearbyGeofences_WithSearchRadiusSmallerThanGeofenceRadius_ReturnsGeofence()
     {
@@ -234,6 +307,10 @@ public class GeofenceServiceTests
         result.Should().Contain("large-zone");
     }
 
+    /// <summary>
+    /// Tests that geofence properties are correctly set when adding a geofence.
+    /// Verifies the service properly stores and uses the geofence's ID, center coordinates, and radius.
+    /// </summary>
     [Fact]
     public void Geofence_PropertiesAreSetCorrectly()
     {
@@ -250,6 +327,10 @@ public class GeofenceServiceTests
         _service.IsInsideGeofence(geofenceId, centerLat, centerLon).Should().BeTrue();
     }
 
+    /// <summary>
+    /// Tests that adding a geofence with valid coordinates logs an information message.
+    /// Verifies the service logs successful geofence addition while verifying the geofence was added.
+    /// </summary>
     [Fact]
     public void AddGeofence_WithValidCoordinates_LogsInformation()
     {
@@ -266,6 +347,10 @@ public class GeofenceServiceTests
         _service.IsInsideGeofence(geofenceId, centerLat, centerLon).Should().BeTrue();
     }
 
+    /// <summary>
+    /// Tests that IsInsideGeofence handles invalid latitude/longitude coordinates correctly.
+    /// Verifies the actual behavior where invalid coordinates (treated as distance 0) return true when within radius.
+    /// </summary>
     [Fact]
     public void IsInsideGeofence_WithInvalidCoordinates_ReturnsFalse()
     {
@@ -284,6 +369,10 @@ public class GeofenceServiceTests
         result2.Should().BeTrue("Invalid coordinates return distance of 0 which is <= radius");
     }
 
+    /// <summary>
+    /// Tests that GetNearbyGeofences works correctly with negative search radius.
+    /// Verifies the service handles edge cases where searchRadiusKm is negative.
+    /// </summary>
     [Fact]
     public void GetNearbyGeofences_WithNegativeSearchRadius_ReturnsGeofenceAtCenter()
     {
@@ -299,6 +388,10 @@ public class GeofenceServiceTests
         result.Should().Contain("test-zone");
     }
 
+    /// <summary>
+    /// Tests that IsInsideGeofence works correctly after adding multiple geofences.
+    /// Verifies the service can manage and correctly report status for several geofences simultaneously.
+    /// </summary>
     [Fact]
     public void IsInsideGeofence_AfterAddingMultipleGeofences_WorksCorrectly()
     {
