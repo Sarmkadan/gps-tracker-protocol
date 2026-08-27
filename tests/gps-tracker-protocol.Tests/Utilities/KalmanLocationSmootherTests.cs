@@ -7,10 +7,18 @@ using Xunit;
 
 namespace GpsTrackerProtocol.Tests.Utilities;
 
+/// <summary>
+/// Contains unit tests for the KalmanLocationSmoother class, which implements
+/// a Kalman filter for smoothing GPS location data while handling outliers
+/// and maintaining separate states for different devices.
+/// </summary>
 public class KalmanLocationSmootherTests
 {
     private readonly KalmanLocationSmoother _smoother = new();
 
+    /// <summary>
+    /// Tests that the first location fix for a device is returned unchanged with raw values stored in ExtendedData.
+    /// </summary>
     [Fact]
     public void Smooth_FirstFixForDevice_ReturnsUnchangedLocationWithRawValuesInExtendedData()
     {
@@ -51,6 +59,9 @@ public class KalmanLocationSmootherTests
         result.ExtendedData["kalman.rawLon"].Should().Be(13.4050);
     }
 
+    /// <summary>
+    /// Tests that when the first fix has zero accuracy, the smoother uses a default accuracy value.
+    /// </summary>
     [Fact]
     public void Smooth_FirstFixWithZeroAccuracy_UsesDefaultAccuracy()
     {
@@ -75,6 +86,9 @@ public class KalmanLocationSmootherTests
         result.Longitude.Should().BeApproximately(2.3522, 0.00001);
     }
 
+    /// <summary>
+    /// Tests that passing a null location fix returns null.
+    /// </summary>
     [Fact]
     public void Smooth_NullFix_ReturnsNull()
     {
@@ -88,6 +102,9 @@ public class KalmanLocationSmootherTests
         result.Should().BeNull();
     }
 
+    /// <summary>
+    /// Tests that consecutive fixes for the same device are smoothed, with the second point adjusted towards the first.
+    /// </summary>
     [Fact]
     public void Smooth_ConsecutiveFixes_SmoothsTowardsSecondPoint()
     {
@@ -137,6 +154,9 @@ public class KalmanLocationSmootherTests
         secondResult.ExtendedData["kalman.rawLon"].Should().Be(secondFix.Longitude);
     }
 
+    /// <summary>
+    /// Tests that an impossibly high speed outlier (e.g., NY to LA in 1 second) results in a null return.
+    /// </summary>
     [Fact]
     public void Smooth_OutlierFixWithImpossiblyHighSpeed_ReturnsNull()
     {
@@ -173,9 +193,12 @@ public class KalmanLocationSmootherTests
         secondResult.Should().BeNull("because the device cannot travel from NY to LA in 1 second");
     }
 
-    [Fact]
-    public void Smooth_OutlierFixWithHighButPlausibleSpeed_ReturnsSmoothedResult()
-    {
+    /// <summary>
+/// Tests that a high but plausible speed (at the boundary of MaxPlausibleSpeedKmh) results in a smoothed location.
+/// </summary>
+[Fact]
+public void Smooth_OutlierFixWithHighButPlausibleSpeed_ReturnsSmoothedResult()
+{
         // Arrange - test at the boundary of MaxPlausibleSpeedKmh (300 km/h)
         var deviceId = "device-005";
         var firstFix = new LocationData
@@ -218,6 +241,10 @@ public class KalmanLocationSmootherTests
         secondResult!.Latitude.Should().NotBe(secondFix.Latitude);
     }
 
+    /// <summary>
+    /// Tests that when a location fix has an earlier timestamp than the previous fix (negative time delta),
+    /// the smoother returns the unchanged location.
+    /// </summary>
     [Fact]
     public void Smooth_NegativeTimeDelta_ReturnsUnchangedLocation()
     {
@@ -254,6 +281,10 @@ public class KalmanLocationSmootherTests
         secondResult.Longitude.Should().Be(secondFix.Longitude);
     }
 
+    /// <summary>
+    /// Tests that when two location fixes have the same timestamp (zero time delta),
+    /// the smoother returns the unchanged location for the second fix.
+    /// </summary>
     [Fact]
     public void Smooth_ZeroTimeDelta_ReturnsUnchangedLocation()
     {
@@ -278,7 +309,10 @@ public class KalmanLocationSmootherTests
         secondResult.Longitude.Should().Be(fix.Longitude);
     }
 
-    [Fact]
+    /// <summary>
+/// Tests that calling Reset with a device ID clears the state for that device, causing subsequent fixes to be treated as first fixes.
+/// </summary>
+[Fact]
     public void Reset_ClearsStateForSpecificDevice()
     {
         // Arrange
@@ -326,7 +360,10 @@ public class KalmanLocationSmootherTests
         thirdResult.Longitude.Should().BeApproximately(thirdFix.Longitude, 0.00001);
     }
 
-    [Fact]
+    /// <summary>
+/// Tests that calling ResetAll clears the state for all devices, causing subsequent fixes for any device to be treated as first fixes.
+/// </summary>
+[Fact]
     public void ResetAll_ClearsAllDeviceStates()
     {
         // Arrange
@@ -368,7 +405,10 @@ public class KalmanLocationSmootherTests
         newResult2!.Latitude.Should().BeApproximately(device2.Latitude, 0.00001);
     }
 
-    [Fact]
+    /// <summary>
+/// Tests that calling Reset with a null device ID does not throw an exception.
+/// </summary>
+[Fact]
     public void Reset_NullDeviceId_DoesNotThrow()
     {
         // Act - should not throw
@@ -378,7 +418,10 @@ public class KalmanLocationSmootherTests
         _smoother.ResetAll(); // Also test that this doesn't throw
     }
 
-    [Fact]
+    /// <summary>
+/// Tests that the DistanceMeters method correctly calculates the distance between two geographical points.
+/// </summary>
+[Fact]
     public void DistanceMeters_CalculatesCorrectDistance()
     {
         // Arrange
@@ -393,7 +436,10 @@ public class KalmanLocationSmootherTests
         distance.Should().BeLessThan(900000);
     }
 
-    [Fact]
+    /// <summary>
+/// Tests that the DistanceMeters method returns zero when the two points are the same.
+/// </summary>
+[Fact]
     public void DistanceMeters_SamePoint_ReturnsZero()
     {
         // Arrange
@@ -406,7 +452,11 @@ public class KalmanLocationSmootherTests
         distance.Should().Be(0);
     }
 
-    [Fact]
+    /// <summary>
+/// Tests that the CopyLocationData method creates an independent copy of the location data,
+/// including a deep copy of the ExtendedData dictionary.
+/// </summary>
+[Fact]
     public void CopyLocationData_CreatesIndependentCopy()
     {
         // Arrange
@@ -441,7 +491,10 @@ public class KalmanLocationSmootherTests
         original.ExtendedData.Should().NotContainKey("key3");
     }
 
-    [Fact]
+    /// <summary>
+/// Tests that the CopyLocationData method throws an ArgumentNullException when the input is null.
+/// </summary>
+[Fact]
     public void CopyLocationData_NullInput_ThrowsArgumentNullException()
     {
         // Act
@@ -451,7 +504,11 @@ public class KalmanLocationSmootherTests
         act.Should().Throw<ArgumentNullException>();
     }
 
-    [Fact]
+    /// <summary>
+/// Tests that the smoother maintains separate states for multiple devices,
+/// processing each device's location fixes independently.
+/// </summary>
+[Fact]
     public void Smooth_MultipleDevices_MaintainsSeparateStates()
     {
         // Arrange
