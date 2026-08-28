@@ -2879,3 +2879,49 @@ public class GeofenceServiceTestsExample
     }
 }
 ```
+## NmeaSentenceParserTests
+
+The `NmeaSentenceParserTests` class provides unit tests for the NMEA sentence parser, covering valid GPGGA and GPRMC sentences, coordinate conversion for southern and western hemispheres, and error handling for malformed checksums and empty strings.
+
+Example usage for running/referencing test scenarios:
+
+
+## NmeaSentenceParserTests
+
+The `NmeaSentenceParserTests` class provides unit tests for the NMEA sentence parser, covering valid GPGGA and GPRMC sentences, coordinate conversion for southern and western hemispheres, and error handling for malformed checksums and empty strings.
+
+Example usage for running/referencing test scenarios:
+```csharp
+using gps_tracker_protocol.Tests;
+
+public class NmeaSentenceParserTestsExample
+{
+    private readonly NmeaSentenceParserTests _tests = new();
+
+    public void RunTestScenarios()
+    {
+        // Parse a valid GPGGA sentence
+        _tests.ParseGpgga_ValidSentence_ReturnsExpectedLocationData();
+
+        // Parse a valid GPRMC sentence
+        _tests.ParseGprmc_ValidSentence_ReturnsExpectedLocationData();
+
+        // Convert NMEA coordinate for southern and western hemisphere
+        _tests.ConvertNmeaCoordinate_SouthernAndWesternHemisphere_ReturnsNegativeValues();
+
+        // Test malformed checksum throws exception
+        _tests.ParseSentence_MalformedChecksum_ThrowsParseException();
+
+        // Test empty string throws exception
+        _tests.ParseSentence_EmptyString_ThrowsParseException();
+    }
+
+    public static void Main(string[] args)
+    {
+        Console.WriteLine("Starting NmeaSentenceParserTests example...");
+        var example = new NmeaSentenceParserTestsExample();
+        example.RunTestScenarios();
+        Console.WriteLine("NmeaSentenceParserTests example completed!");
+    }
+}
+```
