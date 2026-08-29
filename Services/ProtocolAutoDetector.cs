@@ -80,7 +80,7 @@ public interface IProtocolAutoDetector
 /// Falls back to a configurable default protocol (or logs and returns
 /// <see cref="ProtocolType.Unknown"/> when no default is set).
 /// </summary>
-public class ProtocolAutoDetector : IProtocolAutoDetector
+public partial class ProtocolAutoDetector : IProtocolAutoDetector
 {
     private readonly IReadOnlyList<IProtocolHandler> _handlers;
     private readonly ILogger<ProtocolAutoDetector> _logger;
@@ -158,7 +158,9 @@ public class ProtocolAutoDetector : IProtocolAutoDetector
         if (matchingHandlers.Count == 1)
         {
             // Clear conclusive detection
-            return ProtocolDetection.Detected(matchingHandlers[0].Protocol, data.Length);
+            var protocol = matchingHandlers[0].Protocol;
+            LogDetectionSucceeded(_logger, protocol, data.Length);
+            return ProtocolDetection.Detected(protocol, data.Length);
         }
 
         if (matchingHandlers.Count > 1)
@@ -175,16 +177,26 @@ public class ProtocolAutoDetector : IProtocolAutoDetector
         // No handlers match - check if we should use default or return unknown
         if (_defaultProtocol != ProtocolType.Unknown)
         {
-            _logger.LogWarning(
-                "Unknown protocol signature in {Length}-byte preamble, falling back to default protocol {Default}",
-                data.Length,
-                _defaultProtocol);
+            if (_logger.IsEnabled(LogLevel.Warning))
+            {
+                LogUnknownPreamble(_logger, GetPreambleHex(data));
+            }
+
+            LogDetectionSucceeded(_logger, _defaultProtocol, data.Length);
+
+            if (!_handlers.Any(handler => handler.Protocol == _defaultProtocol))
+            {
+                LogNoHandlerRegistered(_logger, _defaultProtocol);
+            }
+
             return ProtocolDetection.Detected(_defaultProtocol, data.Length);
         }
 
-        _logger.LogWarning(
-            "Unknown protocol signature in {Length}-byte preamble; no default configured",
-            data.Length);
+        if (_logger.IsEnabled(LogLevel.Warning))
+        {
+            LogUnknownPreamble(_logger, GetPreambleHex(data));
+        }
+
         return ProtocolDetection.Unknown(data.Length);
     }
 
@@ -194,8 +206,34 @@ public class ProtocolAutoDetector : IProtocolAutoDetector
     /// </summary>
     /// <param name="data">The data to check for protocol compatibility.</param>
     /// <returns>The matching handler or null if no match.</returns>
-    public IProtocolHandler? GetHandler(byte[] data) =>
-        _handlers.FirstOrDefault(h => h.CanHandle(data));
+    public IProtocolHandler? GetHandler(byte[] data)
+    {
+        var handler = _handlers.FirstOrDefault(h => h.CanHandle(data));
+        if (handler is not null)
+        {
+            LogHandlerRouted(_logger, handler.Protocol);
+        }
+
+        return handler;
+    }
+
+    private static string GetPreambleHex(byte[] data) =>
+        Convert.ToHexString(data.AsSpan(0, Math.Min(data.Length, 8)));
+
+    [LoggerMessage(1000, LogLevel.Debug, "Detected protocol {Protocol} from a {PreambleLength}-byte preamble")]
+    private static partial void LogDetectionSucceeded(
+        ILogger logger,
+        ProtocolType protocol,
+        int preambleLength);
+
+    [LoggerMessage(1001, LogLevel.Warning, "Protocol detection failed for preamble {PreambleHex}")]
+    private static partial void LogUnknownPreamble(ILogger logger, string preambleHex);
+
+    [LoggerMessage(1002, LogLevel.Debug, "Routed protocol {Protocol} to its registered handler")]
+    private static partial void LogHandlerRouted(ILogger logger, ProtocolType protocol);
+
+    [LoggerMessage(1003, LogLevel.Warning, "No handler registered for detected protocol {Protocol}")]
+    private static partial void LogNoHandlerRegistered(ILogger logger, ProtocolType protocol);
 }
 
 /// <summary>
