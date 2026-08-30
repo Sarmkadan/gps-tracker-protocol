@@ -45,6 +45,11 @@ public class WebhookClient : ExternalApiClient, IWebhookClient
 
         ArgumentNullException.ThrowIfNull(location);
 
+        if (!TryGetWebhookUri(webhookUrl, out var webhookUri))
+        {
+            return;
+        }
+
         var payload = new WebhookPayload
         {
             EventType = "location_update",
@@ -68,7 +73,7 @@ public class WebhookClient : ExternalApiClient, IWebhookClient
                 System.Text.Encoding.UTF8,
                 "application/json");
 
-            var response = await _httpClient.PostAsync(webhookUrl, content).ConfigureAwait(false);
+            var response = await _httpClient.PostAsync(webhookUri, content).ConfigureAwait(false);
             response.EnsureSuccessStatusCode();
 
             _logger.LogInformation("Webhook sent successfully to {Url}", webhookUrl);
@@ -85,6 +90,11 @@ public class WebhookClient : ExternalApiClient, IWebhookClient
         }
 
         ArgumentNullException.ThrowIfNull(journey);
+
+        if (!TryGetWebhookUri(webhookUrl, out var webhookUri))
+        {
+            return;
+        }
 
         var payload = new WebhookPayload
         {
@@ -109,7 +119,7 @@ public class WebhookClient : ExternalApiClient, IWebhookClient
                 System.Text.Encoding.UTF8,
                 "application/json");
 
-            var response = await _httpClient.PostAsync(webhookUrl, content).ConfigureAwait(false);
+            var response = await _httpClient.PostAsync(webhookUri, content).ConfigureAwait(false);
             response.EnsureSuccessStatusCode();
 
             _logger.LogInformation("Journey webhook sent to {Url}", webhookUrl);
@@ -126,6 +136,11 @@ public class WebhookClient : ExternalApiClient, IWebhookClient
         }
 
         ArgumentNullException.ThrowIfNull(device);
+
+        if (!TryGetWebhookUri(webhookUrl, out var webhookUri))
+        {
+            return;
+        }
 
         var payload = new WebhookPayload
         {
@@ -149,7 +164,7 @@ public class WebhookClient : ExternalApiClient, IWebhookClient
                 System.Text.Encoding.UTF8,
                 "application/json");
 
-            var response = await _httpClient.PostAsync(webhookUrl, content).ConfigureAwait(false);
+            var response = await _httpClient.PostAsync(webhookUri, content).ConfigureAwait(false);
             response.EnsureSuccessStatusCode();
 
             _logger.LogInformation("Device status webhook sent to {Url}", webhookUrl);
@@ -166,6 +181,11 @@ public class WebhookClient : ExternalApiClient, IWebhookClient
         }
 
         ArgumentNullException.ThrowIfNull(payload);
+
+        if (!TryGetWebhookUri(webhookUrl, out var webhookUri))
+        {
+            return;
+        }
 
         var envelope = new WebhookPayload
         {
@@ -190,13 +210,27 @@ public class WebhookClient : ExternalApiClient, IWebhookClient
                 System.Text.Encoding.UTF8,
                 "application/json");
 
-            var response = await _httpClient.PostAsync(webhookUrl, content).ConfigureAwait(false);
+            var response = await _httpClient.PostAsync(webhookUri, content).ConfigureAwait(false);
             response.EnsureSuccessStatusCode();
 
             _logger.LogInformation("Geofence webhook sent to {Url}: {EventType}",
                 webhookUrl, payload.EventType);
             return true;
         });
+    }
+
+    private bool TryGetWebhookUri(string webhookUrl, out Uri webhookUri)
+    {
+        if (Uri.TryCreate(webhookUrl, UriKind.Absolute, out var parsedUri) &&
+            (parsedUri.Scheme == Uri.UriSchemeHttp || parsedUri.Scheme == Uri.UriSchemeHttps))
+        {
+            webhookUri = parsedUri;
+            return true;
+        }
+
+        _logger.LogWarning("Webhook URL is not a valid absolute HTTP or HTTPS URI: {Url}", webhookUrl);
+        webhookUri = null!;
+        return false;
     }
 }
 
