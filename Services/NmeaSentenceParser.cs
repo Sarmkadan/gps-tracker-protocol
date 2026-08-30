@@ -16,6 +16,20 @@ namespace GpsTrackerProtocol.Services;
 /// </summary>
 public class NmeaSentenceParser
 {
+    private const string GprmcSentenceType = "$GPRMC";
+    private const string GpggaSentenceType = "$GPGGA";
+    private const string GpgllSentenceType = "$GPGLL";
+    private const char SentenceStartCharacter = '$';
+    private const char ChecksumDelimiter = '*';
+    private const int ChecksumHexLength = 2;
+    private const int MinimumSentenceFieldCount = 2;
+    private const int GprmcMinFieldCount = 12;
+    private const int GpggaMinFieldCount = 15;
+    private const int GpgllMinFieldCount = 7;
+
+    // One international knot equals exactly 1.852 kilometres per hour.
+    private const double KnotsToKilometersPerHour = 1.852;
+
     /// <summary>
     /// Returns true if the line starts with '$', has a '*' checksum section, and the XOR checksum of chars between '$' and '*' matches the two hex digits after '*'.
     /// </summary>
@@ -25,15 +39,15 @@ public class NmeaSentenceParser
         if (string.IsNullOrWhiteSpace(sentence))
             return false;
 
-        if (!sentence.StartsWith('$'))
+        if (!sentence.StartsWith(SentenceStartCharacter))
             return false;
 
-        var asteriskIndex = sentence.IndexOf('*');
-        if (asteriskIndex <= 0 || asteriskIndex >= sentence.Length - 3)
+        var asteriskIndex = sentence.IndexOf(ChecksumDelimiter);
+        if (asteriskIndex <= 0 || asteriskIndex >= sentence.Length - ChecksumHexLength - 1)
             return false;
 
         var checksumPart = sentence.Substring(asteriskIndex + 1);
-        if (checksumPart.Length != 2)
+        if (checksumPart.Length != ChecksumHexLength)
             return false;
 
         var dataPart = sentence.Substring(1, asteriskIndex - 1);
@@ -57,16 +71,16 @@ public class NmeaSentenceParser
             throw new ChecksumException("Invalid checksum", "", ProtocolType.Unknown);
 
         var parts = sentence.Split(',');
-        if (parts.Length < 2)
+        if (parts.Length < MinimumSentenceFieldCount)
             throw new ParseException("Sentence has insufficient parts", ProtocolType.Unknown);
 
         var sentenceType = parts[0];
 
         return sentenceType switch
         {
-            "$GPRMC" => ParseGprmc(parts, deviceId),
-            "$GPGGA" => ParseGpgga(parts, deviceId),
-            "$GPGLL" => ParseGpgll(parts, deviceId),
+            GprmcSentenceType => ParseGprmc(parts, deviceId),
+            GpggaSentenceType => ParseGpgga(parts, deviceId),
+            GpgllSentenceType => ParseGpgll(parts, deviceId),
             _ => throw new ParseException($"Unsupported sentence type: {sentenceType}", ProtocolType.Unknown)
         };
     }
@@ -132,7 +146,7 @@ public class NmeaSentenceParser
     {
         // $GPRMC,hhmmss.ss,A,ddmm.mmmm,N,dddmm.mmmm,E,ssss.s,ddd,ddmmyy,dd,mmmm,M,,*hh
         // 0      1      2 3            4 5            6 7        8 9      10 11
-        if (parts.Length < 12)
+        if (parts.Length < GprmcMinFieldCount)
             throw new ParseException("GPRMC sentence has insufficient parts", ProtocolType.Unknown);
 
         var timePart = parts[1];
@@ -183,7 +197,7 @@ public class NmeaSentenceParser
         // Parse speed (knots to km/h)
         if (double.TryParse(speedKnots, NumberStyles.Float | NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var speedKnotsValue))
         {
-            locationData.Speed = speedKnotsValue * 1.852; // 1 knot = 1.852 km/h
+            locationData.Speed = speedKnotsValue * KnotsToKilometersPerHour;
         }
 
         // Parse bearing
@@ -203,7 +217,7 @@ public class NmeaSentenceParser
     {
         // $GPGGA,hhmmss.ss,ddmm.mmmm,N,dddmm.mmmm,E,x,xx,x.x,x.x,M,x.x,M,x.x,xxxx*hh
         // 0      1      2 3            4 5            6 7 8  9  10 11 12 13
-        if (parts.Length < 15)
+        if (parts.Length < GpggaMinFieldCount)
             throw new ParseException("GPGGA sentence has insufficient parts", ProtocolType.Unknown);
 
         var timePart = parts[1];
@@ -272,7 +286,7 @@ public class NmeaSentenceParser
     {
         // $GPGLL,ddmm.mmmm,N,dddmm.mmmm,E,hhmmss.ss,A*hh
         // 0      1 2            3 4          5        6
-        if (parts.Length < 7)
+        if (parts.Length < GpgllMinFieldCount)
             throw new ParseException("GPGLL sentence has insufficient parts", ProtocolType.Unknown);
 
         var latitudePart = parts[1];
