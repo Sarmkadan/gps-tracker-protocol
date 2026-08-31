@@ -36,6 +36,8 @@ public class NmeaSentenceParser
     public bool ValidateChecksum(string sentence)
     {
         ArgumentException.ThrowIfNullOrEmpty(sentence);
+        sentence = sentence.TrimEnd('\r', '\n');
+
         if (string.IsNullOrWhiteSpace(sentence))
             return false;
 
@@ -43,11 +45,11 @@ public class NmeaSentenceParser
             return false;
 
         var asteriskIndex = sentence.IndexOf(ChecksumDelimiter);
-        if (asteriskIndex <= 0 || asteriskIndex >= sentence.Length - ChecksumHexLength - 1)
+        if (asteriskIndex <= 0 || asteriskIndex > sentence.Length - ChecksumHexLength - 1)
             return false;
 
         var checksumPart = sentence.Substring(asteriskIndex + 1);
-        if (checksumPart.Length != ChecksumHexLength)
+        if (checksumPart.Length != ChecksumHexLength || !checksumPart.All(Uri.IsHexDigit))
             return false;
 
         var dataPart = sentence.Substring(1, asteriskIndex - 1);
@@ -64,6 +66,8 @@ public class NmeaSentenceParser
     {
         ArgumentException.ThrowIfNullOrEmpty(sentence);
         ArgumentException.ThrowIfNullOrEmpty(deviceId);
+        sentence = sentence.TrimEnd('\r', '\n');
+
         if (string.IsNullOrWhiteSpace(sentence))
             throw new ParseException("Sentence cannot be null or empty", ProtocolType.Unknown);
 
