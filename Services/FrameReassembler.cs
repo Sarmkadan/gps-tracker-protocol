@@ -6,7 +6,6 @@
 
 namespace GpsTrackerProtocol.Services;
 
-using System.Buffers;
 using GpsTrackerProtocol.Domain;
 using GpsTrackerProtocol.Domain.Models;
 using GpsTrackerProtocol.Parsers;
@@ -31,7 +30,9 @@ public sealed class FrameReassembler
     /// </summary>
     public const int MaxBufferSizeBytes = 8192;
 
-    private readonly List<byte> _buffer = new();
+    private byte[] _buffer = Array.Empty<byte>();
+    private int _head;
+    private int _count;
 
     /// <summary>
     /// Feeds a chunk of freshly-read socket bytes into the reassembler and
@@ -48,7 +49,9 @@ public sealed class FrameReassembler
     {
         if (!chunk.IsEmpty)
         {
-            _buffer.AddRange(chunk.ToArray());
+            EnsureCapacity(chunk.Length);
+            chunk.CopyTo(_buffer.AsSpan(_head + _count));
+            _count += chunk.Length;
         }
 
         var frames = new List<ReadOnlyMemory<byte>>();
@@ -61,9 +64,9 @@ public sealed class FrameReassembler
         // the buffer bounded by each protocol's own max frame size, cap the
         // residual buffer so a stream that never resembles any known start
         // marker cannot grow memory unboundedly.
-        if (_buffer.Count > MaxBufferSizeBytes)
+        if (_count > MaxBufferSizeBytes)
         {
-            _buffer.Clear();
+            Reset();
         }
 
         return frames;
@@ -73,7 +76,11 @@ public sealed class FrameReassembler
     /// Discards any bytes currently buffered for this connection, forcing the
     /// next call to <see cref="ExtractFrames"/> to resynchronize from scratch.
     /// </summary>
-    public void Reset() => _buffer.Clear();
+    public void Reset()
+    {
+        _head = 0;
+        _count = 0;
+    }
 
     /// <summary>
     /// Attempts to slice a single complete frame off the front of the internal
@@ -87,25 +94,25 @@ public sealed class FrameReassembler
     {
         frame = default;
 
-        while (_buffer.Count > 0)
+        while (_count > 0)
         {
-            byte marker = _buffer[0];
+            byte marker = _buffer[_head];
 
             if (marker is ProtocolConstants.GT06_START_MARKER or ProtocolConstants.GT06_EXTENDED_START_MARKER)
             {
-                if (_buffer.Count < 2)
+                if (_count < 2)
                     return false; // need the doubled marker byte
 
-                if (_buffer[1] != marker)
+                if (_buffer[_head + 1] != marker)
                 {
                     DropBytes(1);
                     continue;
                 }
 
-                if (_buffer.Count < 3)
+                if (_count < 3)
                     return false; // need the length byte
 
-                int declaredLength = _buffer[2];
+                int declaredLength = _buffer[_head + 2];
                 int totalLength = declaredLength + 7;
 
                 if (totalLength < ProtocolConstants.GT06_MIN_FRAME_SIZE || totalLength > ProtocolConstants.GT06_MAX_FRAME_SIZE)
@@ -114,11 +121,11 @@ public sealed class FrameReassembler
                     continue;
                 }
 
-                if (_buffer.Count < totalLength)
+                if (_count < totalLength)
                     return false; // frame not fully arrived yet
 
                 // Validate end markers before extracting
-                if (_buffer[totalLength - 2] != ProtocolConstants.GT06_END_MARKER || _buffer[totalLength - 1] != 0x0A)
+                if (_buffer[_head + totalLength - 2] != ProtocolConstants.GT06_END_MARKER || _buffer[_head + totalLength - 1] != 0x0A)
                 {
                     DropBytes(1);
                     continue;
@@ -141,7 +148,7 @@ public sealed class FrameReassembler
                     return true;
                 }
 
-                if (_buffer.Count > maxFrameSize)
+                if (_count > maxFrameSize)
                 {
                     DropBytes(1);
                     continue;
@@ -164,9 +171,9 @@ public sealed class FrameReassembler
     /// <returns>The index of the <c>0x0D</c> byte, or -1 if no CRLF is buffered yet.</returns>
     private int FindCrLf()
     {
-        for (int i = 0; i < _buffer.Count - 1; i++)
+        for (int i = 0; i < _count - 1; i++)
         {
-            if (_buffer[i] == 0x0D && _buffer[i + 1] == 0x0A)
+            if (_buffer[_head + i] == 0x0D && _buffer[_head + i + 1] == 0x0A)
                 return i;
         }
 
@@ -176,11 +183,43 @@ public sealed class FrameReassembler
     /// <summary>Removes and returns the first <paramref name="length"/> bytes of the buffer.</summary>
     private ReadOnlyMemory<byte> TakeFrame(int length)
     {
-        var data = _buffer.GetRange(0, length).ToArray();
-        _buffer.RemoveRange(0, length);
+        var data = _buffer.AsSpan(_head, length).ToArray();
+        DropBytes(length);
         return data;
     }
 
     /// <summary>Discards the first <paramref name="count"/> bytes of the buffer without yielding them.</summary>
-    private void DropBytes(int count) => _buffer.RemoveRange(0, count);
+    private void DropBytes(int count)
+    {
+        _head += count;
+        _count -= count;
+
+        if (_count == 0)
+        {
+            _head = 0;
+        }
+    }
+
+    /// <summary>Ensures the buffer has contiguous space for newly arrived bytes.</summary>
+    private void EnsureCapacity(int additionalCount)
+    {
+        int requiredCount = checked(_count + additionalCount);
+        if (requiredCount <= _buffer.Length - _head)
+        {
+            return;
+        }
+
+        if (requiredCount <= _buffer.Length)
+        {
+            _buffer.AsSpan(_head, _count).CopyTo(_buffer);
+            _head = 0;
+            return;
+        }
+
+        int newCapacity = Math.Max(requiredCount, Math.Max(256, _buffer.Length * 2));
+        var newBuffer = new byte[newCapacity];
+        _buffer.AsSpan(_head, _count).CopyTo(newBuffer);
+        _buffer = newBuffer;
+        _head = 0;
+    }
 }
