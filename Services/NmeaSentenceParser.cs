@@ -16,9 +16,9 @@ namespace GpsTrackerProtocol.Services;
 /// </summary>
 public class NmeaSentenceParser
 {
-    private const string GprmcSentenceType = "$GPRMC";
-    private const string GpggaSentenceType = "$GPGGA";
-    private const string GpgllSentenceType = "$GPGLL";
+    private const string RmcSentenceTypeSuffix = "RMC";
+    private const string GgaSentenceTypeSuffix = "GGA";
+    private const string GllSentenceTypeSuffix = "GLL";
     private const char SentenceStartCharacter = '$';
     private const char ChecksumDelimiter = '*';
     private const int ChecksumHexLength = 2;
@@ -82,11 +82,23 @@ public class NmeaSentenceParser
 
         return sentenceType switch
         {
-            GprmcSentenceType => ParseGprmc(parts, deviceId),
-            GpggaSentenceType => ParseGpgga(parts, deviceId),
-            GpgllSentenceType => ParseGpgll(parts, deviceId),
+            _ when IsSupportedSentenceType(sentenceType, RmcSentenceTypeSuffix) => ParseGprmc(parts, deviceId),
+            _ when IsSupportedSentenceType(sentenceType, GgaSentenceTypeSuffix) => ParseGpgga(parts, deviceId),
+            _ when IsSupportedSentenceType(sentenceType, GllSentenceTypeSuffix) => ParseGpgll(parts, deviceId),
             _ => throw new ParseException($"Unsupported sentence type: {sentenceType}", ProtocolType.Unknown)
         };
+    }
+
+    private static bool IsSupportedSentenceType(string sentenceType, string typeSuffix)
+    {
+        if (sentenceType.Length != 6 || sentenceType[0] != SentenceStartCharacter ||
+            !sentenceType.EndsWith(typeSuffix, StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        return (sentenceType[1], sentenceType[2]) is
+            ('G', 'P') or ('G', 'N') or ('G', 'L') or ('G', 'A') or ('B', 'D');
     }
 
     /// <summary>
