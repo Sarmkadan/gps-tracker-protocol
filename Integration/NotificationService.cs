@@ -21,6 +21,14 @@ public interface INotificationService
 
 public class NotificationService : INotificationService
 {
+    private const string DeviceIdErrorMessage = "Device ID cannot be null or empty";
+    private const string SpeedingAlertMessageFormat = "Device {0} exceeded speed limit: {1:F1}km/h (limit: {2:F1}km/h)";
+    private const string GeofenceAlertMessageFormat = "Device {0} breached geofence at {1:F6}, {2:F6}";
+    private const string OfflineAlertMessageFormat = "Device {0} has gone offline";
+    private const string SpeedingAlertLogMessage = "Speeding alert: {Message}";
+    private const string GeofenceAlertLogMessage = "Geofence alert: {Message}";
+    private const string OfflineAlertLogMessage = "Offline alert: {Message}";
+
     private readonly ILogger<NotificationService> _logger;
     private readonly List<Notification> _notifications = new();
 
@@ -32,19 +40,19 @@ public class NotificationService : INotificationService
     public Task SendSpeedingAlertAsync(string deviceId, double speed, double speedLimit)
         {
             if (string.IsNullOrWhiteSpace(deviceId))
-                throw new ArgumentException("Device ID cannot be null or empty", nameof(deviceId));
+                throw new ArgumentException(DeviceIdErrorMessage, nameof(deviceId));
             var notification = new Notification
             {
                 Id = Guid.NewGuid().ToString(),
                 Type = NotificationType.SpeedingViolation,
                 DeviceId = deviceId,
-                Message = $"Device {deviceId} exceeded speed limit: {speed:F1}km/h (limit: {speedLimit:F1}km/h)",
+                Message = string.Format(SpeedingAlertMessageFormat, deviceId, speed, speedLimit),
                 Timestamp = DateTime.UtcNow,
                 IsRead = false
             };
 
             _notifications.Add(notification);
-            _logger.LogWarning("Speeding alert: {Message}", notification.Message);
+            _logger.LogWarning(SpeedingAlertLogMessage, notification.Message);
 
             return Task.CompletedTask;
         }
@@ -52,19 +60,19 @@ public class NotificationService : INotificationService
     public Task SendGeofenceAlertAsync(string deviceId, double latitude, double longitude)
         {
             if (string.IsNullOrWhiteSpace(deviceId))
-                throw new ArgumentException("Device ID cannot be null or empty", nameof(deviceId));
+                throw new ArgumentException(DeviceIdErrorMessage, nameof(deviceId));
             var notification = new Notification
             {
                 Id = Guid.NewGuid().ToString(),
                 Type = NotificationType.GeofenceBreach,
                 DeviceId = deviceId,
-                Message = $"Device {deviceId} breached geofence at {latitude:F6}, {longitude:F6}",
+                Message = string.Format(GeofenceAlertMessageFormat, deviceId, latitude, longitude),
                 Timestamp = DateTime.UtcNow,
                 IsRead = false
             };
 
             _notifications.Add(notification);
-            _logger.LogWarning("Geofence alert: {Message}", notification.Message);
+            _logger.LogWarning(GeofenceAlertLogMessage, notification.Message);
 
             return Task.CompletedTask;
         }
@@ -72,19 +80,19 @@ public class NotificationService : INotificationService
     public Task SendOfflineAlertAsync(string deviceId)
         {
             if (string.IsNullOrWhiteSpace(deviceId))
-                throw new ArgumentException("Device ID cannot be null or empty", nameof(deviceId));
+                throw new ArgumentException(DeviceIdErrorMessage, nameof(deviceId));
             var notification = new Notification
             {
                 Id = Guid.NewGuid().ToString(),
                 Type = NotificationType.DeviceOffline,
                 DeviceId = deviceId,
-                Message = $"Device {deviceId} has gone offline",
+                Message = string.Format(OfflineAlertMessageFormat, deviceId),
                 Timestamp = DateTime.UtcNow,
                 IsRead = false
             };
 
             _notifications.Add(notification);
-            _logger.LogCritical("Offline alert: {Message}", notification.Message);
+            _logger.LogCritical(OfflineAlertLogMessage, notification.Message);
 
             return Task.CompletedTask;
         }
