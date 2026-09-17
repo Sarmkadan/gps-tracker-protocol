@@ -36,6 +36,22 @@ public static class ByteExtensions
     }
 
     /// <summary>
+    /// Converts byte array to hexadecimal string using a custom separator.
+    /// </summary>
+    /// <param name="data">The byte array to convert.</param>
+    /// <param name="separator">The separator to insert between each byte.</param>
+    /// <returns>Hexadecimal string representation of the byte array.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="data"/> is null.</exception>
+    public static string ToHexString(this byte[] data, string separator)
+    {
+        ArgumentNullException.ThrowIfNull(data);
+
+        return data.Length == 0
+            ? string.Empty
+            : BitConverter.ToString(data).Replace("-", separator);
+    }
+
+    /// <summary>
     /// Extracts a 16-bit unsigned integer from bytes in big-endian format.
     /// </summary>
     /// <param name="data">The byte array containing the data.</param>
