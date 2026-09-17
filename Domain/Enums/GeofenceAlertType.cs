@@ -11,7 +11,16 @@ namespace GpsTrackerProtocol.Domain.Enums;
 /// </summary>
 public enum GeofenceAlertType
 {
+    /// <summary>
+    /// Indicates entering a geofence.
+    /// </summary>
     Enter = 1,
+    /// <summary>
+    /// Indicates exiting a geofence.
+    /// </summary>
     Exit = 2,
+    /// <summary>
+    /// Indicates dwelling within a geofence for a specified time.
+    /// </summary>
     DwellTime = 3
 }
