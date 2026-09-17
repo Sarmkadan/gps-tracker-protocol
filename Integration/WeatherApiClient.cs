@@ -6,10 +6,11 @@
 
 namespace GpsTrackerProtocol.Integration;
 
-using GpsTrackerProtocol.Domain;
-using Microsoft.Extensions.Logging;
 using System.Globalization;
 using System.Text.Json.Serialization;
+
+using GpsTrackerProtocol.Domain;
+using Microsoft.Extensions.Logging;
 
 /// <summary>
 /// Weather API integration for getting weather conditions at GPS locations.
@@ -42,7 +43,7 @@ public class WeatherApiClient : ExternalApiClient, IWeatherApiClient
             };
 
             var url = OpenMeteoUrl + BuildQueryString(parameters);
-            
+
             using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
             using var response = await _httpClient.GetAsync(url, cts.Token).ConfigureAwait(false);
             response.EnsureSuccessStatusCode();
