@@ -25,5 +25,6 @@ public sealed class AnomalyRecord
     /// <value>How long the drop occurred over.</value>
     public TimeSpan Duration { get; set; }
 
-    public override string ToString() => $"AnomalyRecord {{ Timestamp = {Timestamp}, DropAmountLiters = {DropAmountLiters}, Duration = {Duration} }}";
+    public override string ToString() =>
+        $"FuelLevelAnomaly at {Timestamp:O}: {DropAmountLiters:F1} L dropped over {Duration}";
 }
