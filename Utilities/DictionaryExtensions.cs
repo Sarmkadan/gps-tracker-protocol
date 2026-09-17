@@ -91,6 +91,35 @@ public static class DictionaryExtensions
     }
 
     /// <summary>
+    /// Safely gets and parses value to long.
+    /// </summary>
+    /// <typeparam name="TKey">The type of keys in the dictionary.</typeparam>
+    /// <param name="dict">The dictionary to search.</param>
+    /// <param name="key">The key to look up.</param>
+    /// <param name="defaultValue">The default value to return if parsing fails.</param>
+    /// <returns>The parsed long value, or the default value if parsing fails.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="dict"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentNullException"><paramref name="key"/> is <see langword="null"/>.</exception>
+    public static long GetLongOrDefault<TKey>(this Dictionary<TKey, object> dict, TKey key, long defaultValue = 0)
+    where TKey : notnull
+    {
+        ArgumentNullException.ThrowIfNull(dict);
+        ArgumentNullException.ThrowIfNull(key);
+
+        if (dict.TryGetValue(key, out var value))
+        {
+            return value switch
+            {
+                long longVal => longVal,
+                _ when long.TryParse(value?.ToString(), out var longVal) => longVal,
+                _ => defaultValue
+            };
+        }
+
+        return defaultValue;
+    }
+
+    /// <summary>
     /// Safely gets and parses value to string.
     /// </summary>
     /// <typeparam name="TKey">The type of keys in the dictionary.</typeparam>
