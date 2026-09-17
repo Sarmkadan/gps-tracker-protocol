@@ -13,15 +13,45 @@ namespace GpsTrackerProtocol.Domain.Models;
 /// </summary>
 public class ResponseMessage
 {
+    /// <summary>
+    /// Unique identifier for the response message.
+    /// </summary>
     public string Id { get; set; } = Guid.NewGuid().ToString();
+    /// <summary>
+    /// Identifier of the device that sent the response.
+    /// </summary>
     public string DeviceId { get; set; } = string.Empty;
+    /// <summary>
+    /// Identifier of the command that this response is for, if any.
+    /// </summary>
     public string? CommandId { get; set; }
+    /// <summary>
+    /// Type of the response message.
+    /// </summary>
     public MessageType Type { get; set; }
+    /// <summary>
+    /// Indicates whether the response indicates success.
+    /// </summary>
     public bool IsSuccess { get; set; }
+    /// <summary>
+    /// Raw content of the response message.
+    /// </summary>
     public string Content { get; set; } = string.Empty;
+    /// <summary>
+    /// Parsed data from the response message, keyed by string.
+    /// </summary>
     public Dictionary<string, object> ParsedData { get; set; } = [];
+    /// <summary>
+    /// Timestamp when the response was received (in UTC).
+    /// </summary>
     public DateTime ReceivedAt { get; set; } = DateTime.UtcNow;
+    /// <summary>
+    /// Numeric error code if the response indicates an error, otherwise 0.
+    /// </summary>
     public int ErrorCode { get; set; } = 0;
+    /// <summary>
+    /// Descriptive error message if the response indicates an error, otherwise null.
+    /// </summary>
     public string? ErrorMessage { get; set; }
 
     /// <summary>
@@ -60,6 +90,9 @@ public class ResponseMessage
         }
     }
 
+    /// <summary>
+    /// Parses an acknowledgment response.
+    /// </summary>
     private void ParseAck(string[] parts)
     {
         IsSuccess = true;
@@ -67,6 +100,9 @@ public class ResponseMessage
             ParsedData["sequence"] = parts[1];
     }
 
+    /// <summary>
+    /// Parses an error response.
+    /// </summary>
     private void ParseError(string[] parts)
     {
         IsSuccess = false;
@@ -77,6 +113,9 @@ public class ResponseMessage
         }
     }
 
+    /// <summary>
+    /// Parses a location update response.
+    /// </summary>
     private void ParseLocationUpdate(string[] parts)
     {
         try
@@ -98,6 +137,9 @@ public class ResponseMessage
         }
     }
 
+    /// <summary>
+    /// Parses a status response.
+    /// </summary>
     private void ParseStatus(string[] parts)
     {
         try
@@ -117,6 +159,9 @@ public class ResponseMessage
         }
     }
 
+    /// <summary>
+    /// Gets the error message string for a given error code.
+    /// </summary>
     private string GetErrorMessage(int code)
     {
         return code switch
@@ -130,6 +175,9 @@ public class ResponseMessage
         };
     }
 
+    /// <summary>
+    /// Returns a string representation of the response message.
+    /// </summary>
     public override string ToString() =>
         $"Response({Type}) - Device: {DeviceId} - Success: {IsSuccess}";
 }
