@@ -176,8 +176,17 @@ public class ResponseMessage
     }
 
     /// <summary>
-    /// Returns a string representation of the response message.
+    /// Returns a readable string representation of the response message.
     /// </summary>
-    public override string ToString() =>
-        $"Response({Type}) - Device: {DeviceId} - Success: {IsSuccess}";
+    public override string ToString()
+    {
+        var status = IsSuccess ? "Success" : "Failure";
+        var error = string.IsNullOrEmpty(ErrorMessage)
+            ? (ErrorCode != 0 ? $" (code {ErrorCode})" : string.Empty)
+            : $" ({ErrorMessage})";
+
+        return $"ResponseMessage {{ Id: {Id}, Device: {DeviceId}, Command: {CommandId ?? "(none)"}, " +
+               $"Type: {Type}, Status: {status}{error}, ReceivedAt: " +
+               $"{ReceivedAt.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)} UTC }}";
+    }
 }
