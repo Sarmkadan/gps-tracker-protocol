@@ -15,7 +15,7 @@ using GpsTrackerProtocol.Domain.Models;
 /// </summary>
 public interface ILocationDataService
 {
-/// <summary>
+    /// <summary>
     /// Stores a new location data point.
     /// </summary>
     /// <param name="location">The location data to store.</param>
