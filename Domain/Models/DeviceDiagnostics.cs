@@ -89,7 +89,12 @@ public class DeviceDiagnosticsReport
     public DateTime GeneratedAt { get; set; } = DateTime.UtcNow;
 
     public override string ToString() =>
-        $"DeviceDiagnosticsReport {{ DeviceId = {DeviceId}, DeviceName = {DeviceName}, Imei = {Imei}, Protocol = {Protocol}, Status = {Status}, IsOnline = {IsOnline} }}";
+        $"DeviceDiagnosticsReport {{ DeviceId = {DeviceId}, DeviceName = {DeviceName}, Imei = {Imei}, " +
+        $"Protocol = {Protocol}, Status = {Status}, IsOnline = {IsOnline}, LastSeen = {LastSeen:O}, " +
+        $"TimeSinceLastContact = {TimeSinceLastContact}, BatteryLevel = {BatteryLevel}%, " +
+        $"SignalStrength = {SignalStrength} dBm ({SignalQuality}), TotalPacketsReceived = {TotalPacketsReceived}, " +
+        $"TotalLocationPoints = {TotalLocationPoints}, TotalDistanceKm = {TotalDistanceKm:F1}, " +
+        $"TotalJourneys = {TotalJourneys}, ActiveJourneys = {ActiveJourneys}, GeneratedAt = {GeneratedAt:O} }}";
 }
 
 /// <summary>
