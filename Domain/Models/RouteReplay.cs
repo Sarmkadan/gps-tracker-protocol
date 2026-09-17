@@ -36,6 +36,9 @@ public class ReplayOptions
     /// journey timestamps are preserved.
     /// </summary>
     public DateTime? RebaseToUtc { get; set; }
+    /// <summary>
+    /// Returns a string representation of the ReplayOptions object.
+    /// </summary>
     public override string ToString() => $"ReplayOptions {{ SpeedMultiplier = {SpeedMultiplier}, StartIndex = {StartIndex}, EndIndex = {EndIndex}, RebaseToUtc = {RebaseToUtc} }}";
 }
 
