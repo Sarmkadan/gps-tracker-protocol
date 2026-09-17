@@ -94,4 +94,17 @@ public static class GeofenceAlertRuleExtensions
         return string.Equals(rule.DeviceId, deviceId, StringComparison.OrdinalIgnoreCase) &&
                string.Equals(rule.GeofenceId, geofenceId, StringComparison.OrdinalIgnoreCase);
     }
+
+    /// <summary>
+    /// Determines whether this rule fires on a boundary crossing (enter or exit) rather than dwell time.
+    /// </summary>
+    /// <param name="rule">The geofence alert rule to check.</param>
+    /// <returns>True if the rule fires on an enter or exit event; otherwise, false.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="rule"/> is <see langword="null"/>.</exception>
+    public static bool IsBoundaryCrossing(this GeofenceAlertRule rule)
+    {
+        ArgumentNullException.ThrowIfNull(rule);
+
+        return rule.AlertType is GeofenceAlertType.Enter or GeofenceAlertType.Exit;
+    }
 }
