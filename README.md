@@ -2996,3 +2996,55 @@ public class WeatherApiClientExample
     }
 }
 ```
+
+## EventPublisher / IEventPublisher
+
+The `IEventPublisher` interface (in the `GpsTrackerProtocol.Events` namespace) defines an in-process, in-memory event bus for domain events. It lets components publish and subscribe to strongly-typed events without coupling publishers to subscribers. The `EventPublisher` class is the default implementation.
+
+Purpose:
+
+- **Decoupling** — producers raise events via `PublishAsync<T>` without knowing who handles them; consumers register handlers via `Subscribe<T>` and receive only the event types they care about.
+- **Strong typing** — events and handlers are typed against `IDomainEvent`, so a handler for `LocationUpdatedEvent` never receives a `JourneyStartedEvent`.
+- **Thread safety** — subscriber registration and dispatch are guarded by a lock, making the publisher safe to share across concurrent producers/consumers.
+- **Subscription lifecycle** — `Subscribe<T>` returns an `IDisposable`; disposing it unsubscribes the handler, so consumers can clean up when they no longer want notifications.
+
+Public API:
+
+- `Task PublishAsync<T>(T @event) where T : IDomainEvent` — dispatches the event to all subscribers registered for type `T`. If no subscribers exist, it logs and returns. Handler exceptions are caught and logged so one failing handler does not break the others.
+- `IDisposable Subscribe<T>(Func<T, Task> handler) where T : IDomainEvent` — registers an async handler for events of type `T` and returns an `IDisposable` that removes the handler when disposed.
+
+The `EventPublisher` constructor takes an `ILogger<EventPublisher>` for logging publish/subscribe activity.
+
+Example usage:
+
+```csharp
+using GpsTrackerProtocol.Events;
+using Microsoft.Extensions.Logging.Abstractions;
+
+public class EventPublisherExample
+{
+    public async Task RunAsync()
+    {
+        var publisher = new EventPublisher(NullLogger<EventPublisher>.Instance);
+
+        // Subscribe to location updates
+        using var subscription = publisher.Subscribe<LocationUpdatedEvent>(async evt =>
+        {
+            Console.WriteLine($"Device {evt.DeviceId} at ({evt.Location.Latitude}, {evt.Location.Longitude})");
+            await Task.CompletedTask;
+        });
+
+        // Publish a location update
+        await publisher.PublishAsync(new LocationUpdatedEvent
+        {
+            DeviceId = "device-001",
+            Location = new LocationData { Latitude = 40.7128, Longitude = -74.0060 }
+        });
+
+        // Disposing the subscription unsubscribes the handler
+        subscription.Dispose();
+    }
+}
+```
+
+Built-in event types defined alongside the publisher include `LocationUpdatedEvent`, `JourneyStartedEvent`, `JourneyCompletedEvent`, `DeviceRegisteredEvent`, `CommandExecutedEvent`, and `SpeedLimitExceededEvent`. Custom events can be added by implementing `IDomainEvent`.
