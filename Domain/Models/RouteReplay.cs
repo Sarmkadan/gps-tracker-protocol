@@ -120,4 +120,11 @@ public class RouteReplayResult
     /// Gets or sets the UTC timestamp when this replay result was produced.
     /// </summary>
     public DateTime GeneratedAt { get; set; } = DateTime.UtcNow;
+
+    /// <summary>
+    /// Returns a string representation of the <see cref="RouteReplayResult"/> object.
+    /// </summary>
+    /// <returns>A string representation of the <see cref="RouteReplayResult"/> object.</returns>
+    public override string ToString() =>
+        $"RouteReplayResult {{ JourneyId = {JourneyId}, DeviceId = {DeviceId}, Frames = {Frames.Count}, TotalDistanceKm = {TotalDistanceKm:F2}, OriginalDuration = {OriginalDuration}, ReplayDuration = {ReplayDuration}, GeneratedAt = {GeneratedAt:O} }}";
 }
