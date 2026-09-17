@@ -4,10 +4,10 @@
 // CTO & Software Architect
 // =============================================================================
 
-namespace GpsTrackerProtocol.Events;
-
-using Microsoft.Extensions.Logging;
 using GpsTrackerProtocol.Domain.Models;
+using Microsoft.Extensions.Logging;
+
+namespace GpsTrackerProtocol.Events;
 
 public class EventPublisher : IEventPublisher
 {
