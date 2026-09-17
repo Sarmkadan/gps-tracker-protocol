@@ -13,6 +13,14 @@ namespace GpsTrackerProtocol.Configuration;
 /// </summary>
 public sealed class FleetDashboardOptionsValidator : IValidateOptions<FleetDashboardOptions>
 {
+    /// <summary>
+    /// Validates the specified <see cref="FleetDashboardOptions"/> instance.
+    /// </summary>
+    /// <param name="name">The name of the options instance being validated, or null for default options.</param>
+    /// <param name="options">The <see cref="FleetDashboardOptions"/> instance to validate. May be null.</param>
+    /// <returns>
+    /// <see cref="ValidateOptionsResult.Success"/> if validation passes; otherwise, a failure result with error messages.
+    /// </returns>
     public ValidateOptionsResult Validate(string? name, FleetDashboardOptions? options)
     {
         if (options is null)
