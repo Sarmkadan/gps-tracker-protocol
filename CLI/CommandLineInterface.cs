@@ -281,40 +281,43 @@ public class CommandLineInterface : ICommandLineInterface
         switch (sub)
         {
             case SubCommandList:
-            {
-                if (args.Length < 2) { Console.WriteLine("Usage: alerts list <device-id>"); return 1; }
-                var deviceId = args[1];
-                var active = _geofenceAlerting.GetActiveAlerts(deviceId);
-                if (!active.Any())
                 {
-                    Console.WriteLine($"No active alerts for device {deviceId}");
+                    if (args.Length < 2)
+                    { Console.WriteLine("Usage: alerts list <device-id>"); return 1; }
+                    var deviceId = args[1];
+                    var active = _geofenceAlerting.GetActiveAlerts(deviceId);
+                    if (!active.Any())
+                    {
+                        Console.WriteLine($"No active alerts for device {deviceId}");
+                        return 0;
+                    }
+                    foreach (var a in active)
+                        Console.WriteLine($"  [{a.Id[..AlertIdDisplayLength]}] {a.AlertType} geofence={a.GeofenceId} at {a.FiredAt:u}");
                     return 0;
                 }
-                foreach (var a in active)
-                    Console.WriteLine($"  [{a.Id[..AlertIdDisplayLength]}] {a.AlertType} geofence={a.GeofenceId} at {a.FiredAt:u}");
-                return 0;
-            }
 
             case SubCommandAdd:
-            {
-                if (args.Length < 4) { Console.WriteLine("Usage: alerts add <device-id> <geofence-id> <enter|exit>"); return 1; }
-                var deviceId   = args[1];
-                var geofenceId = args[2];
-                var direction  = args[3].ToLower();
-                var alertType  = direction == DirectionExit ? GeofenceAlertType.Exit : GeofenceAlertType.Enter;
-                var rule = _geofenceAlerting.CreateAlertRule(deviceId, geofenceId, alertType);
-                Console.WriteLine($"Alert rule created: {rule.Id[..AlertIdDisplayLength]} ({alertType} on {geofenceId} for {deviceId})");
-                return 0;
-            }
+                {
+                    if (args.Length < 4)
+                    { Console.WriteLine("Usage: alerts add <device-id> <geofence-id> <enter|exit>"); return 1; }
+                    var deviceId = args[1];
+                    var geofenceId = args[2];
+                    var direction = args[3].ToLower();
+                    var alertType = direction == DirectionExit ? GeofenceAlertType.Exit : GeofenceAlertType.Enter;
+                    var rule = _geofenceAlerting.CreateAlertRule(deviceId, geofenceId, alertType);
+                    Console.WriteLine($"Alert rule created: {rule.Id[..AlertIdDisplayLength]} ({alertType} on {geofenceId} for {deviceId})");
+                    return 0;
+                }
 
             case SubCommandAck:
-            {
-                if (args.Length < 2) { Console.WriteLine("Usage: alerts ack <alert-id>"); return 1; }
-                var notes = args.Length > 2 ? string.Join(" ", args.Skip(2)) : "";
-                var ok = _geofenceAlerting.AcknowledgeAlert(args[1], notes);
-                Console.WriteLine(ok ? $"Alert {args[1]} acknowledged." : $"Alert {args[1]} not found.");
-                return ok ? 0 : 1;
-            }
+                {
+                    if (args.Length < 2)
+                    { Console.WriteLine("Usage: alerts ack <alert-id>"); return 1; }
+                    var notes = args.Length > 2 ? string.Join(" ", args.Skip(2)) : "";
+                    var ok = _geofenceAlerting.AcknowledgeAlert(args[1], notes);
+                    Console.WriteLine(ok ? $"Alert {args[1]} acknowledged." : $"Alert {args[1]} not found.");
+                    return ok ? 0 : 1;
+                }
 
             default:
                 Console.Error.WriteLine($"Unknown alerts sub-command: {sub}");
@@ -342,7 +345,7 @@ public class CommandLineInterface : ICommandLineInterface
         try
         {
             var options = new ReplayOptions { SpeedMultiplier = multiplier };
-            var result  = await _routeReplay.ReplayJourneyAsync(journeyId, options).ConfigureAwait(false);
+            var result = await _routeReplay.ReplayJourneyAsync(journeyId, options).ConfigureAwait(false);
 
             Console.WriteLine($"Route replay for journey {result.JourneyId} (device: {result.DeviceId})");
             Console.WriteLine($"  Frames        : {result.Frames.Count}");
