@@ -2925,3 +2925,43 @@ public class NmeaSentenceParserTestsExample
     }
 }
 ```
+
+## NotificationService
+
+The `NotificationService` class (in the `GpsTrackerProtocol.Integration` namespace) raises alerts for notable device events such as speed violations, geofence breaches, and devices going offline. It implements the `INotificationService` interface and is designed to be extended later with email, SMS, or push delivery. Each alert is recorded as an in-memory `Notification` and logged through `ILogger<NotificationService>`.
+
+Public API:
+
+- `Task SendSpeedingAlertAsync(string deviceId, double speed, double speedLimit)` — records a `SpeedingViolation` notification when a device exceeds its speed limit.
+- `Task SendGeofenceAlertAsync(string deviceId, double latitude, double longitude)` — records a `GeofenceBreach` notification when a device leaves a geofence.
+- `Task SendOfflineAlertAsync(string deviceId)` — records a `DeviceOffline` notification when a device stops reporting.
+- `IEnumerable<Notification> GetNotifications(string deviceId = null)` — returns all notifications, optionally filtered by device ID.
+- `void MarkAsRead(string notificationId)` — marks a single notification as read.
+
+All send methods throw `ArgumentException` when `deviceId` is null or whitespace.
+
+Example usage:
+```csharp
+using Microsoft.Extensions.Logging.Abstractions;
+using GpsTrackerProtocol.Integration;
+
+public class NotificationServiceExample
+{
+    public async Task RunAsync()
+    {
+        var service = new NotificationService(NullLogger<NotificationService>.Instance);
+
+        await service.SendSpeedingAlertAsync("device-001", 95.0, 60.0);
+        await service.SendGeofenceAlertAsync("device-001", 50.4501, 30.5234);
+        await service.SendOfflineAlertAsync("device-002");
+
+        var deviceAlerts = service.GetNotifications("device-001");
+        foreach (var notification in deviceAlerts)
+        {
+            Console.WriteLine($"[{notification.Timestamp}] {notification.Type}: {notification.Message}");
+        }
+
+        service.MarkAsRead(deviceAlerts.First().Id);
+    }
+}
+```
