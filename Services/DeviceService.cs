@@ -15,7 +15,7 @@ using GpsTrackerProtocol.Domain.Models;
 /// </summary>
 public interface IDeviceService
 {
-/// <summary>
+    /// <summary>
     /// Registers a new device in the system.
     /// </summary>
     /// <param name="device">The device to register.</param>
