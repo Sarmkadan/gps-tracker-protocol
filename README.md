@@ -2965,3 +2965,34 @@ public class NotificationServiceExample
     }
 }
 ```
+
+## WeatherApiClient
+
+The `WeatherApiClient` class (in the `GpsTrackerProtocol.Integration` namespace) fetches current weather conditions for a GPS coordinate. It implements the `IWeatherApiClient` interface and uses the free [Open-Meteo](https://open-meteo.com) forecast API, which requires no authentication key. It derives from `ExternalApiClient` (retry/query-string helpers) and wraps any failure in a `GpsTrackerException`.
+
+Public API:
+
+- `Task<WeatherData> GetWeatherAsync(double latitude, double longitude)` — returns current weather at the given coordinate. Throws `GpsTrackerException` on failure (including invalid responses).
+
+The returned `WeatherData` exposes: `Latitude`, `Longitude`, `Temperature` (celsius), `WindSpeed`, `WeatherCode` (Open-Meteo WMO code), `Description` (human-readable, e.g. "Clear sky"), and `Timestamp` (UTC).
+
+Example usage:
+```csharp
+using Microsoft.Extensions.Logging.Abstractions;
+using GpsTrackerProtocol.Integration;
+
+public class WeatherApiClientExample
+{
+    public async Task RunAsync()
+    {
+        var httpClient = new HttpClient();
+        var client = new WeatherApiClient(httpClient, NullLogger<WeatherApiClient>.Instance);
+
+        // Kyiv coordinates
+        var weather = await client.GetWeatherAsync(50.4501, 30.5234);
+
+        Console.WriteLine($"[{weather.Timestamp}] {weather.Description}, " +
+                          $"{weather.Temperature}°C, wind {weather.WindSpeed} km/h");
+    }
+}
+```
