@@ -188,4 +188,15 @@ public static class CollectionExtensions
             yield return items.Skip(i).Take(windowSize);
         }
     }
+
+    /// <summary>
+    /// Determines whether a sequence is null or contains no elements.
+    /// </summary>
+    /// <typeparam name="T">The type of elements in the sequence.</typeparam>
+    /// <param name="source">The source sequence to check.</param>
+    /// <returns><see langword="true"/> if <paramref name="source"/> is <see langword="null"/> or empty; otherwise, <see langword="false"/>.</returns>
+    public static bool IsNullOrEmpty<T>(this IEnumerable<T>? source)
+    {
+        return source is null || !source.Any();
+    }
 }
