@@ -116,7 +116,7 @@ public class DeviceSelfTestResult
     /// <summary>Gets or sets the list of human-readable warnings raised during the test.</summary>
     public IReadOnlyList<string> Warnings { get; set; } = [];
 
-    /// <summary>Gets or sets whether all checks passed with no warnings.</summary>
+    /// <summary>Gets a value indicating whether all checks passed with no warnings.</summary>
     public bool AllOk => ConnectivityOk && BatteryOk && SignalOk && LocationDataOk && !Warnings.Any();
 }
 
