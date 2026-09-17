@@ -67,9 +67,9 @@ public sealed class ParserMetrics : IParserMetrics, IDisposable
     }
 
     /// <summary>
-    /// Records a successful frame parse.
+    /// Records a successful frame parse and its parse duration.
     /// </summary>
-    /// <param name="protocol">The protocol type.</param>
+    /// <param name="protocol">The protocol type of the successfully parsed frame.</param>
     /// <param name="durationMs">Parse duration in milliseconds.</param>
     public void RecordParseSuccess(ProtocolType protocol, double durationMs)
     {
@@ -78,10 +78,10 @@ public sealed class ParserMetrics : IParserMetrics, IDisposable
     }
 
     /// <summary>
-    /// Records a failed frame parse.
+    /// Records a failed frame parse and its parse duration.
     /// </summary>
-    /// <param name="protocol">The protocol type.</param>
-    /// <param name="errorCode">The error code.</param>
+    /// <param name="protocol">The protocol type of the failed frame.</param>
+    /// <param name="errorCode">The error code describing the parse failure.</param>
     /// <param name="durationMs">Parse duration in milliseconds.</param>
     public void RecordParseFailure(ProtocolType protocol, string errorCode, double durationMs)
     {
@@ -90,7 +90,7 @@ public sealed class ParserMetrics : IParserMetrics, IDisposable
     }
 
     /// <summary>
-    /// Records a frame with unknown protocol.
+    /// Records a frame with an unknown protocol and its parse duration.
     /// </summary>
     /// <param name="durationMs">Parse duration in milliseconds.</param>
     public void RecordUnknownProtocol(double durationMs)
@@ -137,8 +137,8 @@ public sealed class ParserMetrics : IParserMetrics, IDisposable
     /// <summary>
     /// Gets the last N failed frames for diagnostics.
     /// </summary>
-    /// <param name="count">Maximum number of frames to return.</param>
-    /// <returns>List of failed frames with metadata.</returns>
+    /// <param name="count">Maximum number of frames to return. Must be greater than zero.</param>
+    /// <returns>An ordered list of the most recent failed frames, or an empty list if none are captured.</returns>
     public IReadOnlyList<FailedFrameCapture> GetFailedFrames(int count)
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(count);
