@@ -4,9 +4,9 @@
 // CTO & Software Architect
 // =============================================================================
 
-namespace GpsTrackerProtocol.Integration;
-
 using Microsoft.Extensions.Logging;
+
+namespace GpsTrackerProtocol.Integration;
 
 /// <summary>
 /// Notification service for alerting about speed violations, geofence breaches, etc.
@@ -38,64 +38,64 @@ public class NotificationService : INotificationService
     }
 
     public Task SendSpeedingAlertAsync(string deviceId, double speed, double speedLimit)
+    {
+        if (string.IsNullOrWhiteSpace(deviceId))
+            throw new ArgumentException(DeviceIdErrorMessage, nameof(deviceId));
+        var notification = new Notification
         {
-            if (string.IsNullOrWhiteSpace(deviceId))
-                throw new ArgumentException(DeviceIdErrorMessage, nameof(deviceId));
-            var notification = new Notification
-            {
-                Id = Guid.NewGuid().ToString(),
-                Type = NotificationType.SpeedingViolation,
-                DeviceId = deviceId,
-                Message = string.Format(SpeedingAlertMessageFormat, deviceId, speed, speedLimit),
-                Timestamp = DateTime.UtcNow,
-                IsRead = false
-            };
+            Id = Guid.NewGuid().ToString(),
+            Type = NotificationType.SpeedingViolation,
+            DeviceId = deviceId,
+            Message = string.Format(SpeedingAlertMessageFormat, deviceId, speed, speedLimit),
+            Timestamp = DateTime.UtcNow,
+            IsRead = false
+        };
 
-            _notifications.Add(notification);
-            _logger.LogWarning(SpeedingAlertLogMessage, notification.Message);
+        _notifications.Add(notification);
+        _logger.LogWarning(SpeedingAlertLogMessage, notification.Message);
 
-            return Task.CompletedTask;
-        }
+        return Task.CompletedTask;
+    }
 
     public Task SendGeofenceAlertAsync(string deviceId, double latitude, double longitude)
+    {
+        if (string.IsNullOrWhiteSpace(deviceId))
+            throw new ArgumentException(DeviceIdErrorMessage, nameof(deviceId));
+        var notification = new Notification
         {
-            if (string.IsNullOrWhiteSpace(deviceId))
-                throw new ArgumentException(DeviceIdErrorMessage, nameof(deviceId));
-            var notification = new Notification
-            {
-                Id = Guid.NewGuid().ToString(),
-                Type = NotificationType.GeofenceBreach,
-                DeviceId = deviceId,
-                Message = string.Format(GeofenceAlertMessageFormat, deviceId, latitude, longitude),
-                Timestamp = DateTime.UtcNow,
-                IsRead = false
-            };
+            Id = Guid.NewGuid().ToString(),
+            Type = NotificationType.GeofenceBreach,
+            DeviceId = deviceId,
+            Message = string.Format(GeofenceAlertMessageFormat, deviceId, latitude, longitude),
+            Timestamp = DateTime.UtcNow,
+            IsRead = false
+        };
 
-            _notifications.Add(notification);
-            _logger.LogWarning(GeofenceAlertLogMessage, notification.Message);
+        _notifications.Add(notification);
+        _logger.LogWarning(GeofenceAlertLogMessage, notification.Message);
 
-            return Task.CompletedTask;
-        }
+        return Task.CompletedTask;
+    }
 
     public Task SendOfflineAlertAsync(string deviceId)
+    {
+        if (string.IsNullOrWhiteSpace(deviceId))
+            throw new ArgumentException(DeviceIdErrorMessage, nameof(deviceId));
+        var notification = new Notification
         {
-            if (string.IsNullOrWhiteSpace(deviceId))
-                throw new ArgumentException(DeviceIdErrorMessage, nameof(deviceId));
-            var notification = new Notification
-            {
-                Id = Guid.NewGuid().ToString(),
-                Type = NotificationType.DeviceOffline,
-                DeviceId = deviceId,
-                Message = string.Format(OfflineAlertMessageFormat, deviceId),
-                Timestamp = DateTime.UtcNow,
-                IsRead = false
-            };
+            Id = Guid.NewGuid().ToString(),
+            Type = NotificationType.DeviceOffline,
+            DeviceId = deviceId,
+            Message = string.Format(OfflineAlertMessageFormat, deviceId),
+            Timestamp = DateTime.UtcNow,
+            IsRead = false
+        };
 
-            _notifications.Add(notification);
-            _logger.LogCritical(OfflineAlertLogMessage, notification.Message);
+        _notifications.Add(notification);
+        _logger.LogCritical(OfflineAlertLogMessage, notification.Message);
 
-            return Task.CompletedTask;
-        }
+        return Task.CompletedTask;
+    }
 
     public IEnumerable<Notification> GetNotifications(string deviceId = null)
     {
