@@ -4,11 +4,11 @@
 // CTO & Software Architect
 // =============================================================================
 
-namespace GpsTrackerProtocol.Services;
-
 using GpsTrackerProtocol.Data;
 using GpsTrackerProtocol.Domain;
 using GpsTrackerProtocol.Domain.Models;
+
+namespace GpsTrackerProtocol.Services;
 
 /// <summary>
 /// Service for managing device commands.
