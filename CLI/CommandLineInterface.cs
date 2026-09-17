@@ -35,6 +35,32 @@ public class CommandLineInterface : ICommandLineInterface
     private readonly IRouteReplayService _routeReplay;
     private readonly IDeviceDiagnosticsService _diagnostics;
 
+    private const string CommandParse = "parse";
+    private const string CommandDevices = "devices";
+    private const string CommandLocation = "location";
+    private const string CommandJourney = "journey";
+    private const string CommandExport = "export";
+    private const string CommandAlerts = "alerts";
+    private const string CommandReplay = "replay";
+    private const string CommandDiagnostics = "diagnostics";
+    private const string CommandHelp = "help";
+
+    private const string SubCommandList = "list";
+    private const string SubCommandAdd = "add";
+    private const string SubCommandAck = "ack";
+
+    private const string FlagSelfTest = "--selftest";
+    private const string DirectionExit = "exit";
+
+    private const string FormatJson = "json";
+    private const string FormatCsv = "csv";
+
+    private const int DefaultLocationCount = 10;
+    private const double DefaultReplayMultiplier = 1.0;
+    private const int AlertIdDisplayLength = 8;
+    private const int SelfTestWarnExitCode = 2;
+    private const int JourneyStatusActive = 1;
+
     public CommandLineInterface(
         ILogger<CommandLineInterface> logger,
         IProtocolParserService parserService,
@@ -74,15 +100,15 @@ public class CommandLineInterface : ICommandLineInterface
 
             return command switch
             {
-                "parse" => await ParseFrameCommandAsync(commandArgs),
-                "devices" => await ListDevicesCommandAsync(commandArgs),
-                "location" => await GetLocationCommandAsync(commandArgs),
-                "journey" => await GetJourneyCommandAsync(commandArgs),
-                "export" => await ExportCommandAsync(commandArgs),
-                "alerts" => await AlertsCommandAsync(commandArgs),
-                "replay" => await ReplayCommandAsync(commandArgs),
-                "diagnostics" => await DiagnosticsCommandAsync(commandArgs),
-                "help" => HandleHelpCommand(commandArgs),
+                CommandParse => await ParseFrameCommandAsync(commandArgs),
+                CommandDevices => await ListDevicesCommandAsync(commandArgs),
+                CommandLocation => await GetLocationCommandAsync(commandArgs),
+                CommandJourney => await GetJourneyCommandAsync(commandArgs),
+                CommandExport => await ExportCommandAsync(commandArgs),
+                CommandAlerts => await AlertsCommandAsync(commandArgs),
+                CommandReplay => await ReplayCommandAsync(commandArgs),
+                CommandDiagnostics => await DiagnosticsCommandAsync(commandArgs),
+                CommandHelp => HandleHelpCommand(commandArgs),
                 _ => HandleUnknownCommand(command)
             };
         }
@@ -165,7 +191,7 @@ public class CommandLineInterface : ICommandLineInterface
         }
 
         var deviceId = args[0];
-        var count = args.Length > 1 && int.TryParse(args[1], out var c) ? c : 10;
+        var count = args.Length > 1 && int.TryParse(args[1], out var c) ? c : DefaultLocationCount;
 
         var locations = await _locationService.GetLocationHistoryAsync(deviceId, count).ConfigureAwait(false);
 
@@ -198,7 +224,7 @@ public class CommandLineInterface : ICommandLineInterface
             return 0;
         }
 
-        foreach (var journey in journeys.Where(j => j.Status == 1))
+        foreach (var journey in journeys.Where(j => j.Status == JourneyStatusActive))
         {
             Console.WriteLine($"Journey {journey.Id}: {journey.Waypoints.Count} waypoints, {journey.GetTotalDistance():F2}km");
         }
@@ -229,8 +255,8 @@ public class CommandLineInterface : ICommandLineInterface
 
         var content = format switch
         {
-            "json" => locations.Select(l => _jsonFormatter.Format(l)).First(),
-            "csv" => _csvFormatter.FormatLocationHistory(locations),
+            FormatJson => locations.Select(l => _jsonFormatter.Format(l)).First(),
+            FormatCsv => _csvFormatter.FormatLocationHistory(locations),
             _ => throw new InvalidOperationException($"Unsupported format: {format}")
         };
 
@@ -254,7 +280,7 @@ public class CommandLineInterface : ICommandLineInterface
 
         switch (sub)
         {
-            case "list":
+            case SubCommandList:
             {
                 if (args.Length < 2) { Console.WriteLine("Usage: alerts list <device-id>"); return 1; }
                 var deviceId = args[1];
@@ -265,23 +291,23 @@ public class CommandLineInterface : ICommandLineInterface
                     return 0;
                 }
                 foreach (var a in active)
-                    Console.WriteLine($"  [{a.Id[..8]}] {a.AlertType} geofence={a.GeofenceId} at {a.FiredAt:u}");
+                    Console.WriteLine($"  [{a.Id[..AlertIdDisplayLength]}] {a.AlertType} geofence={a.GeofenceId} at {a.FiredAt:u}");
                 return 0;
             }
 
-            case "add":
+            case SubCommandAdd:
             {
                 if (args.Length < 4) { Console.WriteLine("Usage: alerts add <device-id> <geofence-id> <enter|exit>"); return 1; }
                 var deviceId   = args[1];
                 var geofenceId = args[2];
                 var direction  = args[3].ToLower();
-                var alertType  = direction == "exit" ? GeofenceAlertType.Exit : GeofenceAlertType.Enter;
+                var alertType  = direction == DirectionExit ? GeofenceAlertType.Exit : GeofenceAlertType.Enter;
                 var rule = _geofenceAlerting.CreateAlertRule(deviceId, geofenceId, alertType);
-                Console.WriteLine($"Alert rule created: {rule.Id[..8]} ({alertType} on {geofenceId} for {deviceId})");
+                Console.WriteLine($"Alert rule created: {rule.Id[..AlertIdDisplayLength]} ({alertType} on {geofenceId} for {deviceId})");
                 return 0;
             }
 
-            case "ack":
+            case SubCommandAck:
             {
                 if (args.Length < 2) { Console.WriteLine("Usage: alerts ack <alert-id>"); return 1; }
                 var notes = args.Length > 2 ? string.Join(" ", args.Skip(2)) : "";
@@ -306,7 +332,7 @@ public class CommandLineInterface : ICommandLineInterface
         }
 
         var journeyId = args[0];
-        double multiplier = 1.0;
+        double multiplier = DefaultReplayMultiplier;
         if (args.Length > 1 && !double.TryParse(args[1], out multiplier))
         {
             Console.Error.WriteLine("Invalid speed multiplier; must be a positive number.");
@@ -349,7 +375,7 @@ public class CommandLineInterface : ICommandLineInterface
         }
 
         var deviceId = args[0];
-        var runSelfTest = args.Contains("--selftest");
+        var runSelfTest = args.Contains(FlagSelfTest);
 
         if (runSelfTest)
         {
@@ -362,7 +388,7 @@ public class CommandLineInterface : ICommandLineInterface
             Console.WriteLine($"Self-test for {deviceId}: {(selfTest.AllOk ? "PASS" : "WARN")}");
             foreach (var w in selfTest.Warnings)
                 Console.WriteLine($"  ⚠ {w}");
-            return selfTest.AllOk ? 0 : 2;
+            return selfTest.AllOk ? 0 : SelfTestWarnExitCode;
         }
 
         var report = await _diagnostics.GetDiagnosticsAsync(deviceId).ConfigureAwait(false);
