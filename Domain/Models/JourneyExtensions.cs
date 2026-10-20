@@ -12,8 +12,7 @@ public static class JourneyExtensions
     /// </summary>
     public static double TotalDistanceKm(this Journey journey)
     {
-        if (journey is null)
-            throw new ArgumentNullException(nameof(journey));
+        ArgumentNullException.ThrowIfNull(journey);
 
         return journey.GetTotalDistance();
     }
@@ -23,8 +22,7 @@ public static class JourneyExtensions
     /// </summary>
     public static double AverageSpeedKmh(this Journey journey)
     {
-        if (journey is null)
-            throw new ArgumentNullException(nameof(journey));
+        ArgumentNullException.ThrowIfNull(journey);
 
         return journey.GetAverageSpeed();
     }
@@ -34,8 +32,7 @@ public static class JourneyExtensions
     /// </summary>
     public static TimeSpan Duration(this Journey journey)
     {
-        if (journey is null)
-            throw new ArgumentNullException(nameof(journey));
+        ArgumentNullException.ThrowIfNull(journey);
 
         return journey.GetDuration();
     }
