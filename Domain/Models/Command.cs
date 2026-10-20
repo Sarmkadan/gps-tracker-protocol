@@ -11,14 +11,31 @@ namespace GpsTrackerProtocol.Domain.Models;
 /// </summary>
 public class Command
 {
+    /// <summary>Unique identifier for this command instance.</summary>
     public string Id { get; set; } = Guid.NewGuid().ToString();
+
+    /// <summary>Identifier of the target tracking device.</summary>
     public string DeviceId { get; set; } = string.Empty;
+
+    /// <summary>Strongly-typed command type indicating the action to perform.</summary>
     public CommandType Type { get; set; }
+
+    /// <summary>Key-value parameters required by the command type.</summary>
     public Dictionary<string, object> Parameters { get; set; } = [];
+
+    /// <summary>UTC timestamp when the command was created.</summary>
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    /// <summary>UTC timestamp when the command was executed, or <c>null</c> if not yet executed.</summary>
     public DateTime? ExecutedAt { get; set; }
+
+    /// <summary>Current execution status of the command.</summary>
     public CommandStatus Status { get; set; } = CommandStatus.Pending;
+
+    /// <summary>Execution priority; lower values indicate higher priority.</summary>
     public int Priority { get; set; } = 0;
+
+    /// <summary>Number of retry attempts made so far.</summary>
     public int RetryCount { get; set; } = 0;
 
     /// <summary>Free-form command type label, distinct from the strongly-typed <see cref="Type"/> enum.</summary>
@@ -38,6 +55,7 @@ public class Command
 
     /// <summary>UTC timestamp when the device acknowledged the command.</summary>
     public DateTime? AcknowledgedTime { get; set; }
+    /// <summary>Maximum number of retry attempts before the command is marked as failed.</summary>
     public int MaxRetries { get; set; } = 3;
 
     /// <summary>
