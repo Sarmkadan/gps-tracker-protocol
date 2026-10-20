@@ -131,6 +131,36 @@ public static class LocationDataExtensions
         return $"{source.Latitude}, {source.Longitude}";
     }
 
+    /// <summary>
+    /// Calculates the average speed required to travel from the source location to the
+    /// destination, based on the great-circle distance and the elapsed time between their
+    /// timestamps. Returns the result in kilometers per hour.
+    /// </summary>
+    /// <param name="source">The earlier location point.</param>
+    /// <param name="other">The later location point.</param>
+    /// <returns>
+    /// Average speed in km/h. Returns 0 when the timestamps are identical or either
+    /// coordinate is invalid.
+    /// </returns>
+    /// <exception cref="ArgumentNullException">If <paramref name="source"/> or <paramref name="other"/> is null.</exception>
+    public static double AverageSpeedTo(this LocationData source, LocationData other)
+    {
+        if (source is null) throw new ArgumentNullException(nameof(source));
+        if (other is null) throw new ArgumentNullException(nameof(other));
+
+        var elapsedSeconds = Math.Abs((other.Timestamp - source.Timestamp).TotalSeconds);
+        if (elapsedSeconds == 0)
+            return 0;
+
+        var distanceMeters = source.DistanceTo(other);
+        if (distanceMeters == 0)
+            return 0;
+
+        var distanceKm = distanceMeters / 1000.0;
+        var elapsedHours = elapsedSeconds / 3600.0;
+        return distanceKm / elapsedHours;
+    }
+
     // Helper to validate latitude/longitude ranges.
     private static bool IsValidCoordinate(double latitude, double longitude)
     {
