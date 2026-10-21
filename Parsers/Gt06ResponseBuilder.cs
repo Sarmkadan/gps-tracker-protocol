@@ -174,8 +174,8 @@ public static class Gt06ResponseBuilder
                 return false;
             }
 
-            // Validate packet length
-            if (frameData[2] != 0x0C)
+            // Validate packet length (must match the length written by CreateAck)
+            if (frameData[2] != 0x0B)
             {
                 return false;
             }

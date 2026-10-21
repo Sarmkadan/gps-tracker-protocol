@@ -46,6 +46,7 @@ public interface IProtocolParserService
 public class ProtocolParserService : IProtocolParserService
 {
     private const int MaxDetectionBufferSize = 16 * 1024; // 16KB max for protocol detection
+    private const int GT06MinPayloadLength = 24; // Covers the satellite count byte at index 23
 
     /// <summary>
     /// Parses a GPS frame into location data based on protocol type.
@@ -99,12 +100,6 @@ public class ProtocolParserService : IProtocolParserService
         const int tk103MinBytes = 1;
         int minDetectionBytes = Math.Max(Math.Max(gt06MinBytes, h02MinBytes), tk103MinBytes);
 
-        // Check if we have enough data for reliable detection
-        if (rawData.Length < minDetectionBytes)
-        {
-            return ProtocolDetection.NeedMoreData(rawData.Length, minDetectionBytes);
-        }
-
         // GT06: standard packets start with 0x78 0x78; extended packets with 0x79 0x79
         bool isGt06 = rawData.Length >= gt06MinBytes &&
             (rawData[0] == ProtocolConstants.GT06_START_MARKER ||
@@ -140,6 +135,12 @@ public class ProtocolParserService : IProtocolParserService
         {
             // Multiple protocols match - this is ambiguous
             return ProtocolDetection.Ambiguous(matchingProtocols, rawData.Length);
+        }
+
+        // Not enough bytes to rule out the longer protocol signatures yet
+        if (rawData.Length < minDetectionBytes)
+        {
+            return ProtocolDetection.NeedMoreData(rawData.Length, minDetectionBytes);
         }
 
         // No protocols match
@@ -186,9 +187,9 @@ public class ProtocolParserService : IProtocolParserService
             };
 
             // Extract GPS data from specific byte positions
-            if (data.Length >= 30)
+            if (data.Length >= GT06MinPayloadLength)
             {
-                location.Timestamp = ExtractTimestamp(data, 5);
+                location.Timestamp = ExtractTimestamp(data, 5, frame.ReceivedAt);
                 // data[20] is assumed to be the "Course and Status" byte based on GT06 protocol variations,
                 // specifically containing hemisphere information (Bit 2 for Latitude, Bit 3 for Longitude).
                 // This byte is located between the 1-byte Speed field (data[19]) and the 2-byte Bearing field (data[21-22]).
@@ -427,9 +428,15 @@ public class ProtocolParserService : IProtocolParserService
 
     private string ExtractGT06DeviceId(GpsFrame frame)
     {
-        if (frame.RawData.Length >= 9)
-        return System.Text.Encoding.ASCII.GetString(frame.RawData, 4, 5).Trim('\0');
-        return "unknown";
+        if (frame.RawData.Length < 9)
+        {
+            return "unknown";
+        }
+
+        var deviceId = System.Text.Encoding.ASCII.GetString(frame.RawData, 4, 5).Trim('\0');
+
+        // Binary bytes that are not printable ASCII do not form a device identifier
+        return deviceId.Length > 0 && deviceId.All(c => c >= '!' && c <= '~') ? deviceId : "unknown";
     }
 
     private string ExtractH02DeviceId(GpsFrame frame)
@@ -448,14 +455,23 @@ public class ProtocolParserService : IProtocolParserService
         return parts.Length > 0 ? parts[0] : "unknown";
     }
 
-    private DateTime ExtractTimestamp(byte[] data, int offset)
+    private static DateTime ExtractTimestamp(byte[] data, int offset, DateTime fallback)
     {
+        // Timestamp fields are binary: year offset from 2000, then month, day, hour, minute, second
         var year = 2000 + data[offset];
         var month = data[offset + 1];
         var day = data[offset + 2];
         var hour = data[offset + 3];
         var minute = data[offset + 4];
         var second = data[offset + 5];
+
+        // Devices can send unset or garbage timestamps; fall back to the receive time instead of failing the frame
+        if (month < 1 || month > 12 || day < 1 || day > DateTime.DaysInMonth(year, month) ||
+            hour > 23 || minute > 59 || second > 59)
+        {
+            return fallback;
+        }
+
         return new DateTime(year, month, day, hour, minute, second, DateTimeKind.Utc);
     }
 
@@ -484,8 +500,8 @@ public class ProtocolParserService : IProtocolParserService
 
     private double ExtractSpeed(byte[] data, int offset)
     {
-        var speed = (ushort)((data[offset] << 8) | data[offset + 1]);
-        return speed * 1.852; // Convert knots to km/h
+        // Speed is a single byte in knots
+        return data[offset] * 1.852; // Convert knots to km/h
     }
 
     private double ExtractBearing(byte[] data, int offset)

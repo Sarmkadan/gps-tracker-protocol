@@ -336,10 +336,14 @@ public class DomainAndServiceTests
     [Fact]
     public void GpsFrame_IsValid_InvalidChecksum_ReturnsFalse()
     {
+        // The checksum byte (index length - 3) must equal the XOR of bytes 2..length-4, which is 0 here
+        var rawData = new byte[20];
+        rawData[^3] = 0x01;
+
         var frame = new GpsFrame
         {
             Protocol = ProtocolType.GT06,
-            RawData = new byte[20],
+            RawData = rawData,
             IsValidChecksum = false
         };
 

@@ -124,7 +124,7 @@ public class RateLimiterTests
 
         // Assert
         Assert.True(device2Allowed);
-        Assert.Equal(5, device2Remaining);
+        Assert.Equal(4, device2Remaining); // One token consumed by the request above
     }
 
     [Fact]
@@ -155,9 +155,9 @@ public class RateLimiterTests
         var oldDeviceAllowed = rateLimiter.AllowRequest(deviceIds[0]);
         var oldDeviceRemaining = rateLimiter.GetRemainingTokens(deviceIds[0]);
 
-        // Assert - old device should get fresh bucket (not rejected)
+        // Assert - old device should get fresh bucket (not rejected), minus the one token this request consumed
         Assert.True(oldDeviceAllowed);
-        Assert.Equal(10, oldDeviceRemaining);
+        Assert.Equal(9, oldDeviceRemaining);
     }
 
     [Fact]

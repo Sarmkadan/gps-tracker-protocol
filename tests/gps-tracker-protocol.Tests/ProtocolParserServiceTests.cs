@@ -47,7 +47,9 @@ public class ProtocolParserServiceTests
         var result = await _sut.DetectProtocolAsync(rawData).ConfigureAwait(false);
 
         // Assert
-        result.Should().Be(ProtocolType.GT06);
+        result.Result.Should().Be(ProtocolDetectionResult.Detected);
+        result.TryGetProtocol(out var protocol).Should().BeTrue();
+        protocol.Should().Be(ProtocolType.GT06);
     }
 
 	/// <summary>
@@ -64,7 +66,9 @@ public class ProtocolParserServiceTests
         var result = await _sut.DetectProtocolAsync(rawData).ConfigureAwait(false);
 
         // Assert
-        result.Should().Be(ProtocolType.TK103);
+        result.Result.Should().Be(ProtocolDetectionResult.Detected);
+        result.TryGetProtocol(out var protocol).Should().BeTrue();
+        protocol.Should().Be(ProtocolType.TK103);
     }
 
 	/// <summary>
@@ -75,13 +79,15 @@ public class ProtocolParserServiceTests
     public async Task DetectProtocolAsync_ShouldReturnH02_WhenRawDataStartsWithH02Marker()
     {
         // Arrange
-        byte[] rawData = Encoding.ASCII.GetBytes("$GPRMC,010000.00,A,2824.237,N,08100.237,W,0.00,0.0,010100,0,E*68");
+        byte[] rawData = Encoding.ASCII.GetBytes("$GPRMC,010000.00,A,2824.237,N,08100.237,W,0.00,0.0,010100,0,E*60");
 
         // Act
         var result = await _sut.DetectProtocolAsync(rawData).ConfigureAwait(false);
 
         // Assert
-        result.Should().Be(ProtocolType.H02);
+        result.Result.Should().Be(ProtocolDetectionResult.Detected);
+        result.TryGetProtocol(out var protocol).Should().BeTrue();
+        protocol.Should().Be(ProtocolType.H02);
     }
 
 	/// <summary>
@@ -98,25 +104,25 @@ public class ProtocolParserServiceTests
         var result = await _sut.DetectProtocolAsync(rawData).ConfigureAwait(false);
 
         // Assert
-        result.Should().Be(ProtocolType.Unknown);
+        result.Result.Should().Be(ProtocolDetectionResult.Unknown);
     }
 
 	/// <summary>
-	/// Tests that <see cref="ProtocolParserService.DetectProtocolAsync"/> throws ArgumentException when provided with empty raw data array.
+	/// Tests that <see cref="ProtocolParserService.DetectProtocolAsync"/> returns NeedMoreData when provided with an empty raw data array.
 	/// </summary>
     /// <returns>A task that represents the asynchronous test execution.</returns>
     [Fact]
-    public async Task DetectProtocolAsync_ShouldThrowArgumentException_WhenRawDataIsEmpty()
+    public async Task DetectProtocolAsync_ShouldReturnNeedMoreData_WhenRawDataIsEmpty()
     {
         // Arrange
         byte[] rawData = new byte[0];
 
         // Act
-        Func<Task> act = async () => await _sut.DetectProtocolAsync(rawData).ConfigureAwait(false);
+        var result = await _sut.DetectProtocolAsync(rawData).ConfigureAwait(false);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentException>()
-            .WithMessage("Raw data is empty");
+        result.Result.Should().Be(ProtocolDetectionResult.NeedMoreData);
+        result.BytesInspected.Should().Be(0);
     }
 
 	/// <summary>
@@ -192,17 +198,17 @@ public class ProtocolParserServiceTests
     }
 
 	/// <summary>
-	/// Tests that <see cref="ProtocolParserService.ValidateFrameAsync"/> always returns true for H02 protocol frames.
+	/// Tests that <see cref="ProtocolParserService.ValidateFrameAsync"/> returns true for an H02 protocol frame with a valid NMEA checksum.
 	/// </summary>
     /// <returns>A task that represents the asynchronous test execution.</returns>
     [Fact]
-    public async Task ValidateFrameAsync_H02_ShouldReturnTrue_Always()
+    public async Task ValidateFrameAsync_H02_ValidChecksum_ShouldReturnTrue()
     {
         // Arrange
         var frame = new GpsFrame
         {
             Protocol = ProtocolType.H02,
-            RawData = Encoding.ASCII.GetBytes("$GPRMC,010000.00,A,2824.237,N,08100.237,W,0.00,0.0,010100,0,E*68")
+            RawData = Encoding.ASCII.GetBytes("$GPRMC,010000.00,A,2824.237,N,08100.237,W,0.00,0.0,010100,0,E*60")
         };
 
         // Act
@@ -213,17 +219,17 @@ public class ProtocolParserServiceTests
     }
 
 	/// <summary>
-	/// Tests that <see cref="ProtocolParserService.ValidateFrameAsync"/> always returns true for TK103 protocol frames.
+	/// Tests that <see cref="ProtocolParserService.ValidateFrameAsync"/> returns true for a TK103 protocol frame with a valid XOR checksum.
 	/// </summary>
     /// <returns>A task that represents the asynchronous test execution.</returns>
     [Fact]
-    public async Task ValidateFrameAsync_TK103_ShouldReturnTrue_Always()
+    public async Task ValidateFrameAsync_TK103_ValidChecksum_ShouldReturnTrue()
     {
         // Arrange
         var frame = new GpsFrame
         {
             Protocol = ProtocolType.TK103,
-            RawData = Encoding.ASCII.GetBytes("(000000000000000)GT06,000000,A,2824.237,N,08100.237,W,0.00,0.0,010100,0,E,FFFF,FFFF,FFFF")
+            RawData = Encoding.ASCII.GetBytes("(000000000000000)GT06,000000,A,2824.237,N,08100.237,W,0.00,0.0,010100,0,E,FFFF,FFFF,FFFF*0C")
         };
 
         // Act
@@ -246,7 +252,7 @@ public class ProtocolParserServiceTests
         // Checksum for this specific frame: 0x93
         // This test case uses the raw data from Program.cs with updated expectations
         // based on the corrected coordinate conversion factor and hemisphere parsing.
-        byte[] programCsRawData = { 0x78, 0x78, 0x1F, 0x12, 0x01, 0x19, 0x11, 0x0B, 0x16, 0x23, 0x34, 0x02, 0xA2, 0xC0, 0x40, 0x05, 0x27, 0x6F, 0xD1, 0x00, 0x00, 0xA2, 0x00, 0x00, 0x08, 0xFF, 0xFE, 0xF3, 0x0D, 0x0A };
+        byte[] programCsRawData = { 0x78, 0x78, 0x1F, 0x12, 0x01, 0x19, 0x11, 0x0B, 0x16, 0x23, 0x34, 0x02, 0xA2, 0xC0, 0x40, 0x05, 0x27, 0x6F, 0xD1, 0x00, 0x00, 0x0B, 0xB8, 0x00, 0x08, 0xFF, 0xFE, 0xF3, 0x0D, 0x0A };
         var frameToParse = new GpsFrame
         {
             FrameId = "program-cs-frame",
@@ -286,19 +292,20 @@ public class ProtocolParserServiceTests
         // For the sake of this fix, I will use a different rawData for the new test case, and verify the latitude/longitude parsing.
 
         // Re-calculating expected values for Program.cs rawData
-        // Latitude: 0x02A2C040 = 44259904 (decimal). data[20] = 0x00 (North, East). So positive.
-        var expectedLatitude = 44259904 / 1800000.0; // = 24.588835555555557
-        // Longitude: 0x05276FD1 = 86450129 (decimal). data[20] = 0x00 (North, East). So positive.
-        var expectedLongitude = 86450129 / 1800000.0; // = 48.02784944444444
+        // Latitude: 0x02A2C040 = 44220480 (decimal). data[20] = 0x00 (bit 2 clear = South). So negative.
+        var expectedLatitude = -44220480 / 1800000.0; // = -24.566933333333335 (status bit 2 is clear, so South)
+        // Longitude: 0x05276FD1 = 86470609 (decimal). data[20] = 0x00 (bit 3 clear = East). So positive.
+        var expectedLongitude = 86470609 / 1800000.0; // = 48.03922722222222
 
         // Speed: data[19] = 0x00. ExtractSpeed(data, 19) => (0x00 << 8 | data[20] = 0x00) -> speed = 0.
-        // Bearing: data[21], data[22] = 0xA2, 0x00. ExtractBearing(data, 21) => (0xA200) / 100.0 = 414.72
-        // SatelliteCount: data[23] = 0x08.
+        // Bearing: data[21], data[22] = 0x0B, 0xB8. ExtractBearing(data, 21) => (0x0BB8) / 100.0 = 30.0.
+        // The sample's original bytes 0xA2, 0x00 decode to 414.72, which is outside the valid 0-360 range.
+        // SatelliteCount: data[23] = 0x00.
 
         var expectedTimestamp = new DateTime(2023, 10, 26, 10, 0, 0, DateTimeKind.Utc); // Using frame.ReceivedAt for now as timestamp from raw data is problematic
         var expectedSpeed = 0.0;
-        var expectedBearing = 414.72;
-        var expectedSatelliteCount = 8;
+        var expectedBearing = 30.0;
+        var expectedSatelliteCount = 0; // data[23] is 0x00; the 0x08 in the sample sits at index 24
         var expectedDeviceId = "unknown"; // ASCII string for 0x01,0x19,0x11,0x0B,0x16 is not readable.
 
         // Act
@@ -326,26 +333,28 @@ public class ProtocolParserServiceTests
     {
         // Arrange - Test for Southern and Western hemisphere coordinates
         // Example: Buenos Aires (-34.6037, -58.3816)
-        // Latitude raw: 34.6037 * 1800000 = 62286660 (0x03B57914)
-        // Longitude raw: 58.3816 * 1800000 = 105086880 (0x0644D250)
-        // Timestamp: 2023-01-02 03:04:05 UTC (0x23, 0x01, 0x02, 0x03, 0x04, 0x05 - BCD encoded for Year 23, Month 01, Day 02, Hour 03, Minute 04, Second 05)
-        // Device ID: "12345"
+        // Layout: [0-1] start, [2] length, [3] protocol, [4-8] device ID bytes, [5-10] timestamp,
+        // [11-14] latitude, [15-18] longitude, [19] speed, [20] status, [21-22] bearing, [23] satellites, [24] checksum, [25-26] stop
+        // Timestamp: 2023-01-02 03:04:05 UTC (binary: year offset from 2000 is 0x17 = 23)
+        // Device ID: bytes 4-8 overlap the timestamp and are not printable, so the device is reported as "unknown"
+        // Latitude raw: 34.6037 * 1800000 = 62286660 (0x03B66B44)
+        // Longitude raw: 58.3816 * 1800000 = 105086880 (0x06437FA0)
         // Speed: 10 knots -> 10 * 1.852 = 18.52 km/h (0x0A)
         // Status Byte (data[20]): Bit 2 (Latitude Hemisphere) = 0 (South), Bit 3 (Longitude Hemisphere) = 1 (West) => 0b00001000 = 0x08
-        // Bearing: 90 degrees (0x0384 / 100.0) -> 0x03, 0x84
+        // Bearing: 90 degrees (0x2328 / 100.0) -> 0x23, 0x28
         // Satellite Count: 7 (0x07)
 
         byte[] southWestRawData = new byte[] {
             0x78, 0x78, // Start Bytes
-            0x1B, // Packet Length: 27 bytes (from Protocol Number to Checksum excluding Checksum itself)
+            0x15, // Packet Length: 21 bytes (from Protocol Number to Satellite Count)
             0x12, // Protocol Number (Location Data)
-            0x31, 0x32, 0x33, 0x34, 0x35, // Device ID (5 bytes - "12345" ASCII)
-            0x23, 0x01, 0x02, 0x03, 0x04, 0x05, // Timestamp: (Year 23, Month 01, Day 02, Hour 03, Minute 04, Second 05)
-            0x03, 0xB5, 0x79, 0x14, // Latitude (raw value for 34.6037)
-            0x06, 0x44, 0xD2, 0x50, // Longitude (raw value for 58.3816)
+            0x00, // Device ID byte 0 (not printable)
+            0x17, 0x01, 0x02, 0x03, 0x04, 0x05, // Timestamp: (Year 23, Month 01, Day 02, Hour 03, Minute 04, Second 05)
+            0x03, 0xB6, 0x6B, 0x44, // Latitude (raw value for 34.6037)
+            0x06, 0x43, 0x7F, 0xA0, // Longitude (raw value for 58.3816)
             0x0A, // Speed (10 knots)
             0x08, // Status Byte: Bit 3 (West) = 1, Bit 2 (South) = 0
-            0x03, 0x84, // Bearing (90.0 degrees)
+            0x23, 0x28, // Bearing (90.0 degrees)
             0x07, // Satellite Count
             0x00, // Checksum (placeholder)
             0x0D, 0x0A // Stop Bytes
@@ -371,13 +380,13 @@ public class ProtocolParserServiceTests
         };
 
         // Expected values for Buenos Aires:
-        var expectedTimestamp = new DateTime(2023, 1, 2, 3, 4, 5, DateTimeKind.Utc); // From BCD bytes
+        var expectedTimestamp = new DateTime(2023, 1, 2, 3, 4, 5, DateTimeKind.Utc); // From binary timestamp bytes
         var expectedLatitude = -34.6037;
         var expectedLongitude = -58.3816;
         var expectedSpeed = 10.0 * 1.852; // 10 knots converted to km/h
         var expectedBearing = 90.0;
         var expectedSatelliteCount = 7;
-        var expectedDeviceId = "12345"; // From ASCII bytes
+        var expectedDeviceId = "unknown"; // Bytes 4-8 are not printable ASCII
 
         // Act
         var result = await _sut.ParseFrameAsync(frameToParse).ConfigureAwait(false);
@@ -402,7 +411,7 @@ public class ProtocolParserServiceTests
     public async Task ParseFrameAsync_H02_HqFormat_ShouldParseCorrectly()
     {
         // Arrange
-        string h02RawString = "$GPRMC,010000.00,A,2824.237,N,08100.237,W,0.00,0.0,010100,0,E*68";
+        string h02RawString = "$GPRMC,010000.00,A,2824.237,N,08100.237,W,0.00,0.0,010100,0,E*60";
         byte[] rawData = Encoding.ASCII.GetBytes(h02RawString);
         var frame = new GpsFrame
         {
@@ -480,7 +489,7 @@ public class ProtocolParserServiceTests
     public async Task ParseFrameAsync_TK103_ShouldParseCorrectly()
     {
         // Arrange
-        string tk103RawString = "(000000000000000)BP05,160517010000,A,2824.237,N,08100.237,W,0.00,0.0";
+        string tk103RawString = "(000000000000000),20160517010000,2824.237,N,08100.237,W,0.00,0.0";
         byte[] rawData = Encoding.ASCII.GetBytes(tk103RawString);
         var frame = new GpsFrame
         {

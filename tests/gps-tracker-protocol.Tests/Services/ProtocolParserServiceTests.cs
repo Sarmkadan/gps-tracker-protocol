@@ -118,27 +118,27 @@ public class ProtocolParserServiceTests
         byte[] gt06Frame = new byte[]
         {
             0x78, 0x78, // Start markers
-            0x1E, // Length
+            0x1B, // Length
             0x01, // Protocol number
             0x30, 0x31, 0x32, 0x33, 0x34, // Device ID "01234"
             0x14, 0x01, 0x02, 0x03, 0x04, 0x05, // Timestamp bytes
-            0x00, 0x00, 0x01, // Latitude
-            0x00, 0x00, 0x02, // Longitude
+            0x00, 0x00, 0x00, 0x01, // Latitude
+            0x00, 0x00, 0x00, 0x02, // Longitude
             0x04, // Status byte
-            0x00, 0x01, // Speed
+            0x01, // Speed (knots)
             0x00, 0x64, // Bearing
             0x08, // Satellite count
             0x00, // Checksum (will be calculated)
             0x0D, 0x0A // Stop bytes
         };
 
-        // Calculate checksum
+        // Calculate checksum: XOR from the length byte up to the byte before the checksum
         byte checksum = 0;
-        for (int i = 2; i <= 29; i++)
+        for (int i = 2; i <= gt06Frame.Length - 4; i++)
         {
             checksum ^= gt06Frame[i];
         }
-        gt06Frame[30] = checksum;
+        gt06Frame[gt06Frame.Length - 3] = checksum;
 
         var frame = new GpsFrame
         {
@@ -196,13 +196,13 @@ public class ProtocolParserServiceTests
     #region H02 Protocol Tests
 
     [Fact]
-    public async Task ValidateFrameAsync_H02_AlwaysReturnsTrue()
+    public async Task ValidateFrameAsync_H02_ValidChecksum_ReturnsTrue()
     {
         // Arrange
         var frame = new GpsFrame
         {
             Protocol = ProtocolType.H02,
-            RawData = Encoding.ASCII.GetBytes("$GPRMC,010000.00,A,2824.237,N,08100.237,W,0.00,0.0,010100,0,E*68")
+            RawData = Encoding.ASCII.GetBytes("$GPRMC,010000.00,A,2824.237,N,08100.237,W,0.00,0.0,010100,0,E*60")
         };
 
         // Act
@@ -298,13 +298,13 @@ public class ProtocolParserServiceTests
     #region TK103 Protocol Tests
 
     [Fact]
-    public async Task ValidateFrameAsync_TK103_AlwaysReturnsTrue()
+    public async Task ValidateFrameAsync_TK103_ValidChecksum_ReturnsTrue()
     {
         // Arrange
         var frame = new GpsFrame
         {
             Protocol = ProtocolType.TK103,
-            RawData = Encoding.ASCII.GetBytes("123456789012345,20240101123045,4812.3456,N,01623.4567,E,45.5,123.4")
+            RawData = Encoding.ASCII.GetBytes("123456789012345,20240101123045,4812.3456,N,01623.4567,E,45.5,123.4*1F")
         };
 
         // Act

@@ -64,12 +64,12 @@ public class NmeaSentenceParser
     /// </summary>
     public LocationData ParseSentence(string sentence, string deviceId)
     {
-        ArgumentException.ThrowIfNullOrEmpty(sentence);
         ArgumentException.ThrowIfNullOrEmpty(deviceId);
-        sentence = sentence.TrimEnd('\r', '\n');
 
         if (string.IsNullOrWhiteSpace(sentence))
             throw new ParseException("Sentence cannot be null or empty", ProtocolType.Unknown);
+
+        sentence = sentence.TrimEnd('\r', '\n');
 
         if (!ValidateChecksum(sentence))
             throw new ChecksumException("Invalid checksum", "", ProtocolType.Unknown);

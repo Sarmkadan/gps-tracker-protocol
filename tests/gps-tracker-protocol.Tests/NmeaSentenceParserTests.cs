@@ -52,8 +52,8 @@ namespace GpsTrackerProtocol.Tests
         [Fact]
         public void ParseGprmc_ValidSentence_ReturnsExpectedLocationData()
         {
-            // Example from NMEA documentation – checksum verified.
-            const string sentence = "$GPRMC,235947.00,A,5133.81,N,00042.25,W,0.13,309.62,120598,,,A*6C";
+            // XOR of the body between '$' and '*' is 0x45 (checksum recomputed for this sentence).
+            const string sentence = "$GPRMC,235947.00,A,5133.81,N,00042.25,W,0.13,309.62,120598,,,A*45";
 
             var result = _parser.ParseSentence(sentence, "device-2");
 
@@ -80,20 +80,20 @@ namespace GpsTrackerProtocol.Tests
             // Longitude 098°12.345' West => -(98 + 12.345/60)
             double lon = NmeaSentenceParser.ConvertNmeaCoordinate("09812.345", 'W');
 
-            Assert.Equal(-(12 + 34.567 / 60), Math.Round(lat, 6));
-            Assert.Equal(-(98 + 12.345 / 60), Math.Round(lon, 6));
+            Assert.Equal(Math.Round(-(12 + 34.567 / 60), 6), Math.Round(lat, 6));
+            Assert.Equal(Math.Round(-(98 + 12.345 / 60), 6), Math.Round(lon, 6));
         }
 
         /// <summary>
-        /// Tests that parsing a sentence with an invalid checksum throws a ParseException with a message containing "Invalid checksum".
+        /// Tests that parsing a sentence with an invalid checksum throws a ChecksumException with a message containing "Invalid checksum".
         /// </summary>
         [Fact]
-        public void ParseSentence_MalformedChecksum_ThrowsParseException()
+        public void ParseSentence_MalformedChecksum_ThrowsChecksumException()
         {
             // Intentionally corrupted checksum (*00)
             const string badChecksum = "$GPRMC,235947.00,A,5133.81,N,00042.25,W,0.13,309.62,120598,,,A*00";
 
-            var ex = Assert.Throws<ParseException>(() => _parser.ParseSentence(badChecksum, "device-3"));
+            var ex = Assert.Throws<ChecksumException>(() => _parser.ParseSentence(badChecksum, "device-3"));
             Assert.Contains("Invalid checksum", ex.Message);
         }
 

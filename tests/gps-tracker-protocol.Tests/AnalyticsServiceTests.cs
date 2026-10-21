@@ -77,11 +77,12 @@ namespace gps_tracker_protocol.Tests
         [Fact]
         public async Task GetAverageJourneyDuration_ShouldReturnCorrectAverage()
         {
-            // Arrange
+            // Arrange - use one timestamp so the durations are exact (separate UtcNow reads drift by microseconds)
+            var now = DateTime.UtcNow;
             _journeyRepository.GetAllAsync().Returns(new List<Journey>
             {
-                new Journey { Id = "journey1", DeviceId = "device1", StartTime = DateTime.UtcNow.AddHours(-2), EndTime = DateTime.UtcNow.AddHours(-1) }, // 1 hour
-                new Journey { Id = "journey2", DeviceId = "device1", StartTime = DateTime.UtcNow.AddHours(-4), EndTime = DateTime.UtcNow.AddHours(-2) }  // 2 hours
+                new Journey { Id = "journey1", DeviceId = "device1", StartTime = now.AddHours(-2), EndTime = now.AddHours(-1) }, // 1 hour
+                new Journey { Id = "journey2", DeviceId = "device1", StartTime = now.AddHours(-4), EndTime = now.AddHours(-2) }  // 2 hours
             });
 
             // Act
