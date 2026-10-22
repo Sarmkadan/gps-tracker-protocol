@@ -158,6 +158,78 @@ Notes:
 - **TCP is a byte stream.** One read can contain part of a frame or several frames. `FrameReassembler` buffers the bytes and returns only complete frames.
 - **Bind address.** `IPAddress.Any` accepts connections from any interface, so restrict port 5000 with a firewall or put it behind a reverse proxy. Use `IPAddress.Loopback` for local testing.
 
+## Parsing Bytes Without a TCP Listener
+
+`PositionDecoder` and `ProtocolParser` work on a `byte[]` you already have, such as a frame from a file, a message queue, or a test. No socket is needed. This example uses the GT06 location frame from `ProtocolParserServiceTests`:
+
+```
+78 78 1F 12 01 19 11 0B 16 23 34 02 A2 C0 40 05 27 6F D1 00 00 0B B8 00 08 FF FE F3 0D 0A
+```
+
+```csharp
+using System.Text;
+using GpsTrackerProtocol.Domain;
+using GpsTrackerProtocol.Services;
+using Microsoft.Extensions.Logging.Abstractions;
+
+// GT06 location frame (0x12) from ProtocolParserServiceTests
+byte[] gt06Frame =
+{
+    0x78, 0x78, 0x1F, 0x12, 0x01, 0x19, 0x11, 0x0B, 0x16, 0x23, 0x34, 0x02,
+    0xA2, 0xC0, 0x40, 0x05, 0x27, 0x6F, 0xD1, 0x00, 0x00, 0x0B, 0xB8, 0x00,
+    0x08, 0xFF, 0xFE, 0xF3, 0x0D, 0x0A
+};
+
+var decoder = new PositionDecoder(NullLogger<PositionDecoder>.Instance);
+
+// GT06 latitude starts at byte 11 of the frame; longitude follows at byte 15
+var gt06 = decoder.DecodeGt06Position(gt06Frame, offset: 11);
+if (gt06 is not null)
+{
+    Console.WriteLine($"GT06 lat={gt06.Latitude:F6} lon={gt06.Longitude:F6}");
+}
+
+// ProtocolParser needs a detector; the three built-in handlers cover auto-detection
+var detector = new ProtocolAutoDetector(
+    new IProtocolHandler[] { new GT06ProtocolHandler(), new H02ProtocolHandler(), new TK103ProtocolHandler() },
+    NullLogger<ProtocolAutoDetector>.Instance);
+var parser = new ProtocolParser(decoder, detector, NullLogger<ProtocolParser>.Instance);
+
+// The full GT06 frame does not decode through ProtocolParser yet (see note)
+var fullFrame = parser.Parse(gt06Frame, ProtocolType.GT06);
+Console.WriteLine($"ProtocolParser GT06 frame: success={fullFrame.IsSuccess} error={fullFrame.Error?.ErrorCode}");
+
+// TK103 ASCII position segment: explicit protocol, decodes end to end
+byte[] tk103Frame = Encoding.ASCII.GetBytes("4042.7680,N,07400.3600,W");
+var result = parser.Parse(tk103Frame, ProtocolType.TK103);
+if (result.IsSuccess)
+{
+    var loc = result.Value;
+    Console.WriteLine($"TK103 lat={loc!.Latitude:F6} lon={loc.Longitude:F6}");
+}
+else
+{
+    Console.WriteLine($"Parse failed: {result.Error?.ErrorCode} - {result.Error?.Message}");
+}
+```
+
+Output:
+
+```
+GT06 lat=24.566933 lon=48.039227
+ProtocolParser GT06 frame: success=False error=DECODE_FAILED
+TK103 lat=40.712800 lon=-74.006000
+```
+
+The TK103 input is the ASCII text `4042.7680,N,07400.3600,W`, which is `34 30 34 32 2E 37 36 38 30 2C 4E 2C 30 37 34 30 30 2E 33 36 30 30 2C 57` in hex. It comes from `DeviceRegistryIntegrationTests`.
+
+Notes:
+
+- **Decoded fields.** The decoder sets `Latitude` and `Longitude` only. `Timestamp` is the decode time (`DateTime.UtcNow`), not the time in the frame. `Speed`, `Altitude`, `DeviceId` and `Protocol` stay at their defaults, so set them yourself if you need them.
+- **Hemisphere is not applied to GT06.** `DecodeGt06Position` ignores the N/S and E/W status bits, so GT06 coordinates are always positive. Trackers south of the equator or west of Greenwich will report the wrong sign until this is fixed.
+- **Full GT06 frames fail in `ProtocolParser`.** `ProtocolParser` passes the whole frame to `DecodeGt06Position`, which reads coordinates from offset 0, so it returns `DECODE_FAILED`. Call `PositionDecoder.DecodeGt06Position(frame, offset: 11)` directly for GT06, as shown above.
+- **Auto-detection and TK103.** `Parse(bytes)` without a protocol detects TK103 only from a leading `(`, which the segment format above does not have. Pass `ProtocolType.TK103` explicitly.
+
 ## PerformanceBenchmark
 
 The `PerformanceBenchmark` class provides comprehensive benchmarking and performance testing capabilities for GPS tracker protocol parsing and storage operations. It includes methods for setting up test environments, parsing various protocol frames (GT06, H02, TK103), protocol detection, frame validation, location data collection, and batch processing.
