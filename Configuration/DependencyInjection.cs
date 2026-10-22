@@ -8,6 +8,7 @@ namespace GpsTrackerProtocol.Configuration;
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using GpsTrackerProtocol.Data;
 using GpsTrackerProtocol.Services;
 using GpsTrackerProtocol.Infrastructure;
@@ -95,6 +96,29 @@ public static class DependencyInjection
         // Register utilities
         services.AddSingleton<IPerformanceMonitor, PerformanceMonitor>();
         services.AddSingleton<ISimulationService, SimulationService>();
+
+        return services;
+    }
+
+    /// <summary>
+    /// Registers <see cref="GpsListenerOptions"/> with <see cref="GpsListenerOptionsValidator"/>.
+    /// Validation runs on host start (<c>ValidateOnStart</c>) and on first resolution of
+    /// <c>IOptions&lt;GpsListenerOptions&gt;</c>, so bad ports or limits stop the process before it binds.
+    /// </summary>
+    /// <param name="services">The service collection to add to.</param>
+    /// <param name="configure">Optional action that sets listener values before validation.</param>
+    public static IServiceCollection AddGpsListenerOptions(
+        this IServiceCollection services,
+        Action<GpsListenerOptions>? configure = null)
+    {
+        var builder = services.AddOptions<GpsListenerOptions>();
+        if (configure is not null)
+        {
+            builder.Configure(configure);
+        }
+        builder.ValidateOnStart();
+
+        services.AddSingleton<IValidateOptions<GpsListenerOptions>, GpsListenerOptionsValidator>();
 
         return services;
     }

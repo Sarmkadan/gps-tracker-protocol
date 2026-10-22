@@ -8,6 +8,7 @@ using System.Net;
 using System.Net.Sockets;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using GpsTrackerProtocol.Domain;
 using GpsTrackerProtocol.Domain.Models;
 using GpsTrackerProtocol.Services;
@@ -25,12 +26,41 @@ public class RealTimeGpsServer
     private readonly IDeviceService _deviceService;
     private readonly ILocationDataService _locationService;
     private readonly IProtocolParserService _parserService;
+    private readonly GpsListenerOptions _options;
+    private readonly SemaphoreSlim _connectionSlots;
     private TcpListener? _tcpListener;
     private UdpClient? _udpClient;
     private CancellationTokenSource? _cancellationTokenSource;
 
+    /// <summary>
+    /// Creates a server with default <see cref="GpsListenerOptions"/>.
+    /// </summary>
     public RealTimeGpsServer()
+        : this(new GpsListenerOptions())
     {
+    }
+
+    /// <summary>
+    /// Creates a server with the given listener options.
+    /// </summary>
+    /// <param name="options">Listener settings; validated before anything is bound.</param>
+    /// <exception cref="OptionsValidationException">
+    /// Thrown when one or more listener options are out of range. The exception lists every violation.
+    /// </exception>
+    public RealTimeGpsServer(GpsListenerOptions options)
+    {
+        ArgumentNullException.ThrowIfNull(options);
+
+        var validation = new GpsListenerOptionsValidator().Validate(null, options);
+        if (validation.Failed)
+        {
+            throw new OptionsValidationException(
+                nameof(GpsListenerOptions), typeof(GpsListenerOptions), validation.Failures);
+        }
+
+        _options = options;
+        _connectionSlots = new SemaphoreSlim(options.MaxConnections, options.MaxConnections);
+
         var services = new ServiceCollection();
         services.AddGpsTrackerServices();
         services.AddLogging(builder => builder.AddConsole());
@@ -41,6 +71,9 @@ public class RealTimeGpsServer
         _locationService = _provider.GetRequiredService<ILocationDataService>();
         _parserService = _provider.GetRequiredService<IProtocolParserService>();
     }
+
+    /// <summary>Starts listening on the ports from the constructor's <see cref="GpsListenerOptions"/></summary>
+    public Task StartAsync() => StartAsync(_options.TcpPort, _options.UdpPort);
 
     /// <summary>Starts listening for GPS data on TCP and UDP ports</summary>
     public async Task StartAsync(int tcpPort = 5000, int udpPort = 5001)
@@ -66,6 +99,13 @@ public class RealTimeGpsServer
             while (!cancellationToken.IsCancellationRequested)
             {
                 var client = await _tcpListener.AcceptTcpClientAsync(cancellationToken).ConfigureAwait(false);
+                if (!_connectionSlots.Wait(0))
+                {
+                    _logger.LogWarning("Connection limit of {0} reached; rejecting client", _options.MaxConnections);
+                    client.Dispose();
+                    continue;
+                }
+
                 _ = ProcessTcpClientAsync(client, cancellationToken);
             }
         }
@@ -78,34 +118,54 @@ public class RealTimeGpsServer
     /// <summary>Processes a single TCP client connection</summary>
     private async Task ProcessTcpClientAsync(TcpClient client, CancellationToken cancellationToken)
     {
-        using (client)
-        using (var stream = client.GetStream())
+        try
         {
-            var remoteEndpoint = client.Client.RemoteEndPoint as IPEndPoint;
-            _logger.LogInformation("Client connected from {0}:{1}", remoteEndpoint?.Address, remoteEndpoint?.Port);
-
-            try
+            using (client)
+            using (var stream = client.GetStream())
             {
-                var buffer = new byte[1024];
-                while (!cancellationToken.IsCancellationRequested)
+                var remoteEndpoint = client.Client.RemoteEndPoint as IPEndPoint;
+                _logger.LogInformation("Client connected from {0}:{1}", remoteEndpoint?.Address, remoteEndpoint?.Port);
+
+                try
                 {
-                    int bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
-                    if (bytesRead == 0) break;
+                    var buffer = new byte[_options.ReceiveBufferSize];
+                    while (!cancellationToken.IsCancellationRequested)
+                    {
+                        using var idleCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+                        idleCts.CancelAfter(_options.IdleTimeout);
 
-                    var frameData = buffer[..bytesRead];
-                    await ProcessFrameAsync(frameData, remoteEndpoint?.Address?.ToString() ?? "Unknown").ConfigureAwait(false);
+                        int bytesRead;
+                        try
+                        {
+                            bytesRead = await stream.ReadAsync(buffer.AsMemory(), idleCts.Token).ConfigureAwait(false);
+                        }
+                        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+                        {
+                            _logger.LogInformation("Closing idle client after {0}", _options.IdleTimeout);
+                            break;
+                        }
+
+                        if (bytesRead == 0) break;
+
+                        var frameData = buffer[..bytesRead];
+                        await ProcessFrameAsync(frameData, remoteEndpoint?.Address?.ToString() ?? "Unknown").ConfigureAwait(false);
+                    }
                 }
-            }
-            catch (IOException ex)
-            {
-                _logger.LogError(ex, "Error processing TCP client");
-            }
-            catch (InvalidOperationException ex)
-            {
-                _logger.LogError(ex, "Error processing TCP client");
-            }
+                catch (IOException ex)
+                {
+                    _logger.LogError(ex, "Error processing TCP client");
+                }
+                catch (InvalidOperationException ex)
+                {
+                    _logger.LogError(ex, "Error processing TCP client");
+                }
 
-            _logger.LogInformation("Client disconnected");
+                _logger.LogInformation("Client disconnected");
+            }
+        }
+        finally
+        {
+            _connectionSlots.Release();
         }
     }
 
@@ -183,16 +243,18 @@ public class RealTimeGpsServer
 
     public static async Task Main(string[] args)
     {
-        var server = new RealTimeGpsServer();
         var tcpPort = args.Length > 0 && int.TryParse(args[0], out var tcp) ? tcp : 5000;
         var udpPort = args.Length > 1 && int.TryParse(args[1], out var udp) ? udp : 5001;
+
+        // Throws OptionsValidationException listing every bad value before any port is bound.
+        var server = new RealTimeGpsServer(new GpsListenerOptions { TcpPort = tcpPort, UdpPort = udpPort });
 
         var cts = new CancellationTokenSource();
         Console.CancelKeyPress += (s, e) => { e.Cancel = true; cts.Cancel(); };
 
         try
         {
-            var serverTask = server.StartAsync(tcpPort, udpPort);
+            var serverTask = server.StartAsync();
             await Task.Delay(Timeout.Infinite, cts.Token).ConfigureAwait(false);
         }
         catch (OperationCanceledException)
