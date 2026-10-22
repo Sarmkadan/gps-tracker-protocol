@@ -8,6 +8,7 @@ using System.Net;
 using System.Net.Sockets;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using GpsTrackerProtocol.Domain;
 using GpsTrackerProtocol.Domain.Models;
 using GpsTrackerProtocol.Services;
 using GpsTrackerProtocol;
@@ -133,8 +134,8 @@ public class RealTimeGpsServer
     {
         try
         {
-            var protocol = await _parserService.DetectProtocolAsync(data).ConfigureAwait(false);
-            if (protocol == ProtocolType.Unknown)
+            var detection = await _parserService.DetectProtocolAsync(data).ConfigureAwait(false);
+            if (detection.Result != ProtocolDetectionResult.Detected)
             {
                 _logger.LogWarning("Unknown protocol from {0}", sourceAddress);
                 return;
@@ -143,7 +144,7 @@ public class RealTimeGpsServer
             var frame = new GpsFrame
             {
                 RawData = data,
-                Protocol = protocol,
+                Protocol = detection.DetectedProtocol,
                 ReceivedAt = DateTime.UtcNow,
                 SourceAddress = sourceAddress
             };
@@ -155,7 +156,7 @@ public class RealTimeGpsServer
                 return;
             }
 
-            var location = await _parserService.ExtractLocationDataAsync(frame).ConfigureAwait(false);
+            var location = await _parserService.ParseFrameAsync(frame).ConfigureAwait(false);
             if (location is null) return;
 
             var stored = await _locationService.StoreLocationAsync(location).ConfigureAwait(false);
