@@ -1,3 +1,163 @@
+## Getting Started
+
+Install the package:
+
+```bash
+dotnet add package gps-tracker-protocol
+```
+
+The example below starts a TCP listener on port 5000, subscribes to `LocationUpdatedEvent`, and prints each position it receives. It shuts down cleanly on Ctrl+C. It uses the built-in DI registration (`AddGpsTrackerServices()`), so no other setup is needed.
+
+```csharp
+using System.Net;
+using System.Net.Sockets;
+using GpsTrackerProtocol.Configuration;
+using GpsTrackerProtocol.Domain;
+using GpsTrackerProtocol.Domain.Models;
+using GpsTrackerProtocol.Events;
+using GpsTrackerProtocol.Services;
+using Microsoft.Extensions.DependencyInjection;
+
+const int Port = 5000;
+
+var services = new ServiceCollection()
+    .AddGpsTrackerLogging()
+    .AddGpsTrackerServices()
+    .BuildServiceProvider();
+
+var devices = services.GetRequiredService<IDeviceService>();
+var parser = services.GetRequiredService<IProtocolParserService>();
+var locations = services.GetRequiredService<ILocationDataService>();
+var events = services.GetRequiredService<IEventPublisher>();
+
+// Trackers must be registered before their positions can be stored.
+// For GT06 the device ID is the 5 ASCII bytes at offset 4 of each frame.
+await devices.RegisterDeviceAsync(new Device
+{
+    Id = "12345",
+    Imei = "351234567890123",
+    DeviceName = "Truck 1",
+    Protocol = GpsTrackerProtocol.Domain.ProtocolType.GT06
+});
+
+// Subscribe to position events
+using var subscription = events.Subscribe<LocationUpdatedEvent>(e =>
+{
+    var loc = e.Location;
+    Console.WriteLine($"Device={loc.DeviceId} Lat={loc.Latitude:F6} Lon={loc.Longitude:F6} " +
+                      $"Speed={loc.Speed:F1} km/h Time={loc.Timestamp:yyyy-MM-dd HH:mm:ss} UTC");
+    return Task.CompletedTask;
+});
+
+using var cts = new CancellationTokenSource();
+Console.CancelKeyPress += (_, e) =>
+{
+    e.Cancel = true; // let the shutdown path below run instead of killing the process
+    cts.Cancel();
+};
+
+// IPAddress.Any lets trackers on the network connect; use IPAddress.Any for local tests
+var listener = new TcpListener(IPAddress.Any, Port);
+listener.Start();
+Console.WriteLine($"Listening on TCP port {Port}. Press Ctrl+C to stop.");
+
+var sessions = new List<Task>();
+try
+{
+    while (!cts.IsCancellationRequested)
+    {
+        var client = await listener.AcceptTcpClientAsync(cts.Token);
+        sessions.RemoveAll(t => t.IsCompleted);
+        sessions.Add(HandleClientAsync(client, cts.Token));
+    }
+}
+catch (OperationCanceledException)
+{
+    // Ctrl+C: fall through to shutdown
+}
+finally
+{
+    listener.Stop();
+}
+
+// Wait for open connections to finish their current read and close
+await Task.WhenAll(sessions);
+Console.WriteLine("Stopped.");
+
+async Task HandleClientAsync(TcpClient client, CancellationToken ct)
+{
+    using (client)
+    using (var stream = client.GetStream())
+    {
+        // TCP is a byte stream: one read may hold part of a frame or several frames
+        var reassembler = new FrameReassembler();
+        var buffer = new byte[1024];
+        try
+        {
+            while (true)
+            {
+                int read = await stream.ReadAsync(buffer.AsMemory(), ct);
+                if (read == 0) break; // tracker closed the connection
+
+                foreach (var frame in reassembler.ExtractFrames(buffer.AsSpan(0, read)))
+                    await HandleFrameAsync(frame.ToArray());
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Shutting down
+        }
+        catch (IOException ex)
+        {
+            Console.WriteLine($"Connection error: {ex.Message}");
+        }
+    }
+}
+
+async Task HandleFrameAsync(byte[] raw)
+{
+    try
+    {
+        var detection = await parser.DetectProtocolAsync(raw);
+        if (detection.Result != ProtocolDetectionResult.Detected)
+        {
+            Console.WriteLine("Skipped frame: unknown protocol");
+            return;
+        }
+
+        var frame = new GpsFrame
+        {
+            RawData = raw,
+            Protocol = detection.DetectedProtocol,
+            ReceivedAt = DateTime.UtcNow
+        };
+        if (!await parser.ValidateFrameAsync(frame)) return;
+
+        var location = await parser.ParseFrameAsync(frame);
+        var stored = await locations.StoreLocationAsync(location);
+
+        // The library stores positions but does not publish LocationUpdatedEvent, so the host does
+        await events.PublishAsync(new LocationUpdatedEvent
+        {
+            AggregateId = stored.DeviceId,
+            DeviceId = stored.DeviceId,
+            Location = stored
+        });
+    }
+    catch (GpsTrackerException ex)
+    {
+        Console.WriteLine($"Frame rejected: {ex.Message}");
+    }
+}
+```
+
+Notes:
+
+- **Register trackers first.** `StoreLocationAsync` rejects positions from unknown devices. The device `Id` must match the device ID in the frame. For GT06 that is the 5 ASCII bytes at offset 4. The IMEI must be 14 to 16 digits.
+- **The host publishes the event.** The library stores positions but does not publish `LocationUpdatedEvent` itself. The example publishes it after `StoreLocationAsync`. Your own code can do the same, or subscribe to the built-in geofence and speed events.
+- **TCP is a byte stream.** One read can contain part of a frame or several frames. `FrameReassembler` buffers the bytes and returns only complete frames.
+- **Bind address.** `IPAddress.Any` accepts connections from any interface, so restrict port 5000 with a firewall or put it behind a reverse proxy. Use `IPAddress.Loopback` for local testing.
+
 ## PerformanceBenchmark
 
 The `PerformanceBenchmark` class provides comprehensive benchmarking and performance testing capabilities for GPS tracker protocol parsing and storage operations. It includes methods for setting up test environments, parsing various protocol frames (GT06, H02, TK103), protocol detection, frame validation, location data collection, and batch processing.
