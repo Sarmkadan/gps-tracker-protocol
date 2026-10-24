@@ -57,10 +57,10 @@ public class InMemoryRepository<T> : IRepository<T> where T : class
     /// Initializes a new instance of the InMemoryRepository with the specified retention policy.
     /// </summary>
     /// <param name="retentionPolicy">Retention policy configuration. Pass null for unlimited retention.</param>
-    /// <exception cref="ArgumentNullException">Thrown if <paramref name="retentionPolicy"/> is null.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown if <c>MaxPointsPerDevice</c> or <c>MaxAge</c> is negative.</exception>
     public InMemoryRepository(RepositoryRetentionPolicy? retentionPolicy)
     {
-        _retentionPolicy = retentionPolicy;
+        _retentionPolicy = RepositoryRetentionPolicyValidation.EnsureValid(retentionPolicy);
     }
 
     /// <summary>

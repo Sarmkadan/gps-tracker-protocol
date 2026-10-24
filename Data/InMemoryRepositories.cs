@@ -27,7 +27,7 @@ public class InMemoryDeviceRepository : IDeviceRepository
 
     public InMemoryDeviceRepository(RepositoryRetentionPolicy? retentionPolicy)
     {
-        _retentionPolicy = retentionPolicy;
+        _retentionPolicy = RepositoryRetentionPolicyValidation.EnsureValid(retentionPolicy);
     }
 
     public async Task<Device?> GetByIdAsync(string id)
@@ -249,7 +249,7 @@ public class InMemoryJourneyRepository : IJourneyRepository
 
     public InMemoryJourneyRepository(RepositoryRetentionPolicy? retentionPolicy)
     {
-        _retentionPolicy = retentionPolicy;
+        _retentionPolicy = RepositoryRetentionPolicyValidation.EnsureValid(retentionPolicy);
     }
 
     public async Task<Journey?> GetByIdAsync(string id)
@@ -400,7 +400,7 @@ public class InMemoryCommandRepository : ICommandRepository
 
     public InMemoryCommandRepository(RepositoryRetentionPolicy? retentionPolicy)
     {
-        _retentionPolicy = retentionPolicy;
+        _retentionPolicy = RepositoryRetentionPolicyValidation.EnsureValid(retentionPolicy);
     }
 
     public async Task<Command?> GetByIdAsync(string id)
@@ -542,7 +542,7 @@ public class InMemoryResponseMessageRepository : IResponseMessageRepository
 
     public InMemoryResponseMessageRepository(RepositoryRetentionPolicy? retentionPolicy)
     {
-        _retentionPolicy = retentionPolicy;
+        _retentionPolicy = RepositoryRetentionPolicyValidation.EnsureValid(retentionPolicy);
     }
 
     public async Task<ResponseMessage?> GetByIdAsync(string id)

@@ -7,6 +7,7 @@
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading;
+using GpsTrackerProtocol.Configuration;
 
 namespace GpsTrackerProtocol.Infrastructure;
 
@@ -45,9 +46,21 @@ public class RateLimitingService : IRateLimiter, IDisposable
     private readonly Timer _evictionTimer;
     private readonly object _evictionLock = new();
 
+    /// <summary>
+    /// Initializes a new instance of the rate limiting service with the specified configuration.
+    /// </summary>
+    /// <param name="config">The rate limit configuration. Must have a positive, finite <see cref="RateLimitConfig.MaxTokens"/>
+    /// and <see cref="RateLimitConfig.RefillRate"/>.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="config"/> is null.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <c>MaxTokens</c> or <c>RefillRate</c> is zero, negative, NaN or infinite.</exception>
     public RateLimitingService(RateLimitConfig config)
     {
         ArgumentNullException.ThrowIfNull(config);
+
+        ConfigurationGuards.RequireFinite(config.MaxTokens, "config.MaxTokens");
+        ConfigurationGuards.RequirePositive(config.MaxTokens, "config.MaxTokens");
+        ConfigurationGuards.RequireFinite(config.RefillRate, "config.RefillRate");
+        ConfigurationGuards.RequirePositive(config.RefillRate, "config.RefillRate");
 
         _config = config;
         _windowSize = TimeSpan.FromSeconds(1.0 / _config.RefillRate * _config.MaxTokens);
@@ -225,8 +238,10 @@ public sealed class TokenBucket : IDisposable
 
     public TokenBucket(double maxTokens, double refillRate)
     {
-        ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(maxTokens, 0);
-        ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(refillRate, 0);
+        ConfigurationGuards.RequireFinite(maxTokens, nameof(maxTokens));
+        ConfigurationGuards.RequirePositive(maxTokens, nameof(maxTokens));
+        ConfigurationGuards.RequireFinite(refillRate, nameof(refillRate));
+        ConfigurationGuards.RequirePositive(refillRate, nameof(refillRate));
 
         _maxTokens = maxTokens;
         _tokens = maxTokens;
