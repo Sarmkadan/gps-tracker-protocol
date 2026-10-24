@@ -95,7 +95,7 @@ public class H02ProtocolParser : IFrameParser<LocationData>, IProtocolParser
                         string timePart = parts[3][..6];
                         try
                         {
-                            location.Timestamp = DateTime.ParseExact(datePart + timePart, "ddMMyyHHmmss", null, System.Globalization.DateTimeStyles.AssumeUniversal);
+                            location.Timestamp = DateTime.ParseExact(datePart + timePart, "ddMMyyHHmmss", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.AssumeUniversal);
                         }
                         catch
                         {
@@ -106,8 +106,8 @@ public class H02ProtocolParser : IFrameParser<LocationData>, IProtocolParser
                     location.Latitude = ParseCoordinate(parts[4], parts[5]);
                     // Use the E/W indicator at parts[7], not parts[6] which is the longitude value.
                     location.Longitude = ParseCoordinate(parts[6], parts[7]);
-                    location.Speed = double.Parse(parts[8]);
-                    location.Bearing = double.Parse(parts[9]);
+                    location.Speed = double.Parse(parts[8], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture);
+                    location.Bearing = double.Parse(parts[9], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture);
                 }
             }
             else if (parts.Length >= 9)
@@ -119,7 +119,7 @@ public class H02ProtocolParser : IFrameParser<LocationData>, IProtocolParser
                     string datePart = parts[9][..6];
                     try
                     {
-                        location.Timestamp = DateTime.ParseExact(datePart + timeStr, "ddMMyyHHmmss", null, System.Globalization.DateTimeStyles.AssumeUniversal);
+                        location.Timestamp = DateTime.ParseExact(datePart + timeStr, "ddMMyyHHmmss", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.AssumeUniversal);
                     }
                     catch
                     {
@@ -129,8 +129,8 @@ public class H02ProtocolParser : IFrameParser<LocationData>, IProtocolParser
 
                 location.Latitude = ParseCoordinate(parts[3], parts[4]);
                 location.Longitude = ParseCoordinate(parts[5], parts[6]);
-                location.Speed = double.Parse(parts[7]);
-                location.Bearing = double.Parse(parts[8]);
+                location.Speed = double.Parse(parts[7], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture);
+                location.Bearing = double.Parse(parts[8], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture);
             }
             else
             {
@@ -258,7 +258,7 @@ public class H02ProtocolParser : IFrameParser<LocationData>, IProtocolParser
 
     private double ParseCoordinate(string value, string direction)
     {
-        if (!double.TryParse(value, out var coord))
+        if (!double.TryParse(value, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var coord))
             return 0;
 
         var degrees = Math.Floor(coord / 100);

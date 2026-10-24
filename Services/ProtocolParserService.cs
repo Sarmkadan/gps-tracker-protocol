@@ -233,12 +233,12 @@ public class ProtocolParserService : IProtocolParserService
                 if (parts.Length >= 10)
                 {
                     if (parts.Length > 10 && parts[10].Length >= 6)
-                    location.Timestamp = DateTime.ParseExact(parts[10][..6] + parts[3], "ddMMyyHHmmss", null);
+                    location.Timestamp = DateTime.ParseExact(parts[10][..6] + parts[3], "ddMMyyHHmmss", System.Globalization.CultureInfo.InvariantCulture);
                     location.Latitude = ParseCoordinate(parts[4], parts[5]);
                     // Use the E/W indicator at parts[7], not parts[6] which is the longitude value.
                     location.Longitude = ParseCoordinate(parts[6], parts[7]);
-                    location.Speed = double.Parse(parts[8]);
-                    location.Bearing = double.Parse(parts[9]);
+                    location.Speed = double.Parse(parts[8], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture);
+                    location.Bearing = double.Parse(parts[9], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture);
                 }
             }
             else if (parts.Length >= 9)
@@ -246,11 +246,11 @@ public class ProtocolParserService : IProtocolParserService
                 // $GPRMC,{HHMMSS.ss},{A/V},{lat},{NS},{lon},{EW},{speed},{bearing},{DDMMYY},...
                 var timeStr = parts[1].Length >= 6 ? parts[1][..6] : parts[1];
                 if (parts.Length > 9 && parts[9].Length >= 6)
-                location.Timestamp = DateTime.ParseExact(parts[9][..6] + timeStr, "ddMMyyHHmmss", null);
+                location.Timestamp = DateTime.ParseExact(parts[9][..6] + timeStr, "ddMMyyHHmmss", System.Globalization.CultureInfo.InvariantCulture);
                 location.Latitude = ParseCoordinate(parts[3], parts[4]);
                 location.Longitude = ParseCoordinate(parts[5], parts[6]);
-                location.Speed = double.Parse(parts[7]);
-                location.Bearing = double.Parse(parts[8]);
+                location.Speed = double.Parse(parts[7], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture);
+                location.Bearing = double.Parse(parts[8], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture);
             }
 
             if (!location.IsValid())
@@ -281,11 +281,11 @@ public class ProtocolParserService : IProtocolParserService
 
             if (parts.Length >= 8)
             {
-                location.Timestamp = DateTime.ParseExact(parts[1], "yyyyMMddHHmmss", null);
+                location.Timestamp = DateTime.ParseExact(parts[1], "yyyyMMddHHmmss", System.Globalization.CultureInfo.InvariantCulture);
                 location.Latitude = ParseCoordinate(parts[2], parts[3]);
                 location.Longitude = ParseCoordinate(parts[4], parts[5]);
-                location.Speed = double.Parse(parts[6]);
-                location.Bearing = double.Parse(parts[7]);
+                location.Speed = double.Parse(parts[6], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture);
+                location.Bearing = double.Parse(parts[7], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture);
             }
 
             if (!location.IsValid())
@@ -511,7 +511,7 @@ public class ProtocolParserService : IProtocolParserService
 
     private double ParseCoordinate(string value, string direction)
     {
-        if (!double.TryParse(value, out var coord))
+        if (!double.TryParse(value, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var coord))
         return 0;
 
         var degrees = Math.Floor(coord / 100);

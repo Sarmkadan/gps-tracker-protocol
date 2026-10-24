@@ -336,7 +336,7 @@ public class CommandLineInterface : ICommandLineInterface
 
         var journeyId = args[0];
         double multiplier = DefaultReplayMultiplier;
-        if (args.Length > 1 && !double.TryParse(args[1], out multiplier))
+        if (args.Length > 1 && !double.TryParse(args[1], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out multiplier))
         {
             Console.Error.WriteLine("Invalid speed multiplier; must be a positive number.");
             return 1;

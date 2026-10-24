@@ -6,6 +6,8 @@
 
 namespace GpsTrackerProtocol.Utilities;
 
+using System.Globalization;
+
 /// <summary>
 /// String utility extensions for parsing and formatting.
 /// Used for NMEA sentence parsing and device ID manipulation.
@@ -26,7 +28,7 @@ public static class StringExtensions
         if (string.IsNullOrWhiteSpace(value))
             return defaultValue;
 
-        return double.TryParse(value, out var result) ? result : defaultValue;
+        return double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var result) ? result : defaultValue;
     }
 
     /// <summary>
@@ -43,7 +45,7 @@ public static class StringExtensions
         if (string.IsNullOrWhiteSpace(value))
             return defaultValue;
 
-        return int.TryParse(value, out var result) ? result : defaultValue;
+        return int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var result) ? result : defaultValue;
     }
 
     /// <summary>

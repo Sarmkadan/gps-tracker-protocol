@@ -120,7 +120,7 @@ public static class DateTimeExtensions
             < 3600 => $"{(int)timeSpan.TotalMinutes} minute{(timeSpan.TotalMinutes >= 2 ? "s" : "")} ago",
             < 86400 => $"{(int)timeSpan.TotalHours} hour{(timeSpan.TotalHours >= 2 ? "s" : "")} ago",
             < 604800 => $"{(int)timeSpan.TotalDays} day{(timeSpan.TotalDays >= 2 ? "s" : "")} ago",
-            _ => utcDateTime.ToString("yyyy-MM-dd")
+            _ => utcDateTime.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture)
         };
     }
 

@@ -6,6 +6,8 @@
 
 namespace GpsTrackerProtocol.Utilities;
 
+using System.Globalization;
+
 /// <summary>
 /// Dictionary extension methods for safe and convenient access.
 /// </summary>
@@ -53,7 +55,7 @@ public static class DictionaryExtensions
             return value switch
             {
                 int intVal => intVal,
-                _ when int.TryParse(value?.ToString(), out var intVal) => intVal,
+                _ when int.TryParse(Convert.ToString(value, CultureInfo.InvariantCulture), NumberStyles.Integer, CultureInfo.InvariantCulture, out var intVal) => intVal,
                 _ => defaultValue
             };
         }
@@ -82,7 +84,7 @@ public static class DictionaryExtensions
             return value switch
             {
                 double doubleVal => doubleVal,
-                _ when double.TryParse(value?.ToString(), out var doubleVal) => doubleVal,
+                _ when double.TryParse(Convert.ToString(value, CultureInfo.InvariantCulture), NumberStyles.Float, CultureInfo.InvariantCulture, out var doubleVal) => doubleVal,
                 _ => defaultValue
             };
         }
@@ -111,7 +113,7 @@ public static class DictionaryExtensions
             return value switch
             {
                 long longVal => longVal,
-                _ when long.TryParse(value?.ToString(), out var longVal) => longVal,
+                _ when long.TryParse(Convert.ToString(value, CultureInfo.InvariantCulture), NumberStyles.Integer, CultureInfo.InvariantCulture, out var longVal) => longVal,
                 _ => defaultValue
             };
         }
@@ -158,7 +160,7 @@ public static class DictionaryExtensions
             return value switch
             {
                 bool boolVal => boolVal,
-                _ when bool.TryParse(value?.ToString(), out var boolVal) => boolVal,
+                _ when bool.TryParse(Convert.ToString(value, CultureInfo.InvariantCulture), out var boolVal) => boolVal,
                 _ => defaultValue
             };
         }

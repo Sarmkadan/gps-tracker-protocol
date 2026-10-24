@@ -124,5 +124,5 @@ public class LocationData
 
     /// <inheritdoc />
     public override string ToString() =>
-        $"Location({Latitude:F6}, {Longitude:F6}) - Speed: {Speed:F2}km/h - {Timestamp:O}";
+        FormattableString.Invariant($"Location({Latitude:F6}, {Longitude:F6}) - Speed: {Speed:F2}km/h - {Timestamp:O}");
 }

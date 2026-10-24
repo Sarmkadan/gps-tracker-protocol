@@ -111,7 +111,7 @@ public class Tk103ProtocolParser : IFrameParser<LocationData>, IProtocolParser
                 // Format: (IMEI),YYYYMMDDHHMMSS,lat,NS,lon,EW,speed,course
                 try
                 {
-                    location.Timestamp = DateTime.ParseExact(parts[1], "yyyyMMddHHmmss", null, System.Globalization.DateTimeStyles.AssumeUniversal);
+                    location.Timestamp = DateTime.ParseExact(parts[1], "yyyyMMddHHmmss", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.AssumeUniversal);
                 }
                 catch
                 {
@@ -120,8 +120,8 @@ public class Tk103ProtocolParser : IFrameParser<LocationData>, IProtocolParser
 
                 location.Latitude = ParseCoordinate(parts[2], parts[3]);
                 location.Longitude = ParseCoordinate(parts[4], parts[5]);
-                location.Speed = double.Parse(parts[6]);
-                location.Bearing = double.Parse(parts[7]);
+                location.Speed = double.Parse(parts[6], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture);
+                location.Bearing = double.Parse(parts[7], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture);
             }
             else
             {
@@ -262,7 +262,7 @@ public class Tk103ProtocolParser : IFrameParser<LocationData>, IProtocolParser
 
     private double ParseCoordinate(string value, string direction)
     {
-        if (!double.TryParse(value, out var coord))
+        if (!double.TryParse(value, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var coord))
             return 0;
 
         var degrees = Math.Floor(coord / 100);
