@@ -7,9 +7,11 @@
 namespace GpsTrackerProtocol.Services;
 
 using Microsoft.Extensions.Logging;
+using GpsTrackerProtocol.Configuration;
 using GpsTrackerProtocol.Data;
 using GpsTrackerProtocol.Domain;
 using GpsTrackerProtocol.Domain.Models;
+using GpsTrackerProtocol.Events;
 
 /// <summary>
 /// Aggregates health and status metrics for individual devices and the whole fleet.
@@ -50,20 +52,42 @@ public class DeviceDiagnosticsService : IDeviceDiagnosticsService
     private readonly ILocationDataRepository _locationRepository;
     private readonly IJourneyRepository _journeyRepository;
     private readonly ILogger<DeviceDiagnosticsService> _logger;
+    private readonly IEventPublisher? _eventPublisher;
+    private readonly LowBatteryAlertOptions _lowBatteryOptions;
 
     // Stores the most recent self-test per device so it surfaces in the next GetDiagnosticsAsync call.
     private readonly Dictionary<string, DeviceSelfTestResult> _selfTestCache = new();
     private readonly object _cacheLock = new();
 
-    /// <summary>Initialises the service with required dependencies.</summary>
+    // Devices that have already raised a low-battery alert and have not yet recovered.
+    private readonly HashSet<string> _lowBatteryAlerted = new();
+    private readonly object _lowBatteryLock = new();
+
+    /// <summary>
+    /// Initialises the service with required dependencies.
+    /// When <paramref name="eventPublisher"/> is supplied, low-battery alerts are published as
+    /// <see cref="LowBatteryAlertEvent"/> from <see cref="GetDiagnosticsAsync"/>.
+    /// </summary>
     public DeviceDiagnosticsService(
         IUnitOfWork unitOfWork,
-        ILogger<DeviceDiagnosticsService> logger)
+        ILogger<DeviceDiagnosticsService> logger,
+        IEventPublisher? eventPublisher = null,
+        LowBatteryAlertOptions? lowBatteryOptions = null)
     {
         _deviceRepository   = unitOfWork.Devices;
         _locationRepository = unitOfWork.LocationData;
         _journeyRepository  = unitOfWork.Journeys;
         _logger             = logger;
+        _eventPublisher     = eventPublisher;
+        _lowBatteryOptions  = lowBatteryOptions ?? new LowBatteryAlertOptions();
+
+        var threshold = _lowBatteryOptions.ThresholdPercent;
+        var margin    = _lowBatteryOptions.RecoveryMarginPercent;
+        if (threshold is < 1 or > 100)
+            throw new ArgumentOutOfRangeException(nameof(lowBatteryOptions), "ThresholdPercent must be between 1 and 100.");
+        if (margin is < 0 or > 100 || threshold + margin > 100)
+            throw new ArgumentOutOfRangeException(nameof(lowBatteryOptions),
+                "RecoveryMarginPercent must be between 0 and 100, and ThresholdPercent + RecoveryMarginPercent must not exceed 100.");
     }
 
     /// <inheritdoc/>
@@ -118,6 +142,8 @@ public class DeviceDiagnosticsService : IDeviceDiagnosticsService
             ActiveJourneys        = journeyList.Count(j => j.Status == 0),
             SelfTest              = selfTest
         };
+
+        await EvaluateLowBatteryAsync(report).ConfigureAwait(false);
 
         _logger.LogDebug("Diagnostics report generated for device {DeviceId}", deviceId);
         return report;
@@ -194,6 +220,49 @@ public class DeviceDiagnosticsService : IDeviceDiagnosticsService
     }
 
     // ── helpers ────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Publishes a <see cref="LowBatteryAlertEvent"/> when the battery first drops below the threshold.
+    /// The device is then muted until its battery reaches threshold + recovery margin.
+    /// Unknown battery levels (-1) leave the alert state unchanged.
+    /// </summary>
+    private async Task EvaluateLowBatteryAsync(DeviceDiagnosticsReport report)
+    {
+        if (_eventPublisher is null || report.BatteryLevel < 0)
+            return;
+
+        var threshold = _lowBatteryOptions.ThresholdPercent;
+        var rearmAt   = threshold + _lowBatteryOptions.RecoveryMarginPercent;
+
+        bool shouldAlert;
+        lock (_lowBatteryLock)
+        {
+            if (report.BatteryLevel < threshold)
+                shouldAlert = _lowBatteryAlerted.Add(report.DeviceId);
+            else
+            {
+                shouldAlert = false;
+                if (report.BatteryLevel >= rearmAt)
+                    _lowBatteryAlerted.Remove(report.DeviceId);
+            }
+        }
+
+        if (!shouldAlert)
+            return;
+
+        _logger.LogWarning(
+            "Low battery for device {DeviceId}: {BatteryLevel}% (threshold {Threshold}%)",
+            report.DeviceId, report.BatteryLevel, threshold);
+
+        await _eventPublisher.PublishAsync(new LowBatteryAlertEvent
+        {
+            AggregateId      = report.DeviceId,
+            DeviceId         = report.DeviceId,
+            DeviceName       = report.DeviceName,
+            BatteryLevel     = report.BatteryLevel,
+            ThresholdPercent = threshold
+        }).ConfigureAwait(false);
+    }
 
     private static string ClassifySignal(int dBm) => dBm switch
     {
