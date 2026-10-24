@@ -230,26 +230,12 @@ Notes:
 - **Full GT06 frames fail in `ProtocolParser`.** `ProtocolParser` passes the whole frame to `DecodeGt06Position`, which reads coordinates from offset 0, so it returns `DECODE_FAILED`. Call `PositionDecoder.DecodeGt06Position(frame, offset: 11)` directly for GT06, as shown above.
 - **Auto-detection and TK103.** `Parse(bytes)` without a protocol detects TK103 only from a leading `(`, which the segment format above does not have. Pass `ProtocolType.TK103` explicitly.
 
-## PerformanceBenchmark
+## Benchmarks
 
-The `PerformanceBenchmark` class provides comprehensive benchmarking and performance testing capabilities for GPS tracker protocol parsing and storage operations. It includes methods for setting up test environments, parsing various protocol frames (GT06, H02, TK103), protocol detection, frame validation, location data collection, and batch processing.
+Benchmarks are not part of the NuGet package. They live in the `gps-tracker-protocol.Benchmarks` project (BenchmarkDotNet), which references the library and is intended for development and CI only. Run them from a repository checkout:
 
-Example usage for performance benchmarking:
-```csharp
-using GpsTrackerProtocol.Domain.Models;
-using GpsTrackerProtocol.Services;
-
-public class PerformanceBenchmarkExample
-{
-    public async Task RunBenchmarkAsync()
-    {
-        var benchmark = new PerformanceBenchmark();
-        await benchmark.BenchmarkFrameValidationAsync(10000);
-        await benchmark.BenchmarkLocationStorageAsync(10000);
-        await benchmark.BenchmarkLocationQueryAsync(5000, 500);
-        await benchmark.RunStressTestAsync(50, 100);
-    }
-}
+```bash
+dotnet run -c Release --project gps-tracker-protocol.Benchmarks -- --filter "*LocationAggregationWorker*"
 ```
 
 ## BatchDataImporter

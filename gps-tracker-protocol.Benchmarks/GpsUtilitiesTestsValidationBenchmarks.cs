@@ -16,7 +16,7 @@ namespace GpsTrackerProtocol.Benchmarks
     public class GpsUtilitiesTestsValidationBenchmarks
     {
         [Params(10, 100, 1000)]
-        public int N
+        public int N { get; set; }
 
         [GlobalSetup]
         public void Setup()
