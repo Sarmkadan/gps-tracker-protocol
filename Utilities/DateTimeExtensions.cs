@@ -14,6 +14,11 @@ public static class DateTimeExtensions
     /// <summary>
     /// Converts DateTime to Unix timestamp (seconds since epoch).
     /// </summary>
+    /// <remarks>
+    /// Values that are not <see cref="DateTimeKind.Utc"/> are converted with <see cref="DateTime.ToUniversalTime"/>,
+    /// so <see cref="DateTimeKind.Unspecified"/> values are interpreted as local time.
+    /// Fractional seconds are truncated.
+    /// </remarks>
     /// <param name="dateTime">The DateTime to convert.</param>
     /// <returns>Unix timestamp in seconds.</returns>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when the date is before Unix epoch.</exception>
@@ -35,9 +40,12 @@ public static class DateTimeExtensions
     /// <summary>
     /// Converts Unix timestamp to DateTime.
     /// </summary>
+    /// <remarks>
+    /// The result has <see cref="DateTimeKind.Utc"/> kind.
+    /// </remarks>
     /// <param name="unixTimestamp">Unix timestamp in seconds.</param>
-    /// <returns>DateTime representing the Unix timestamp.</returns>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown when timestamp is negative.</exception>
+    /// <returns>UTC DateTime representing the Unix timestamp.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when timestamp is negative or too large to represent as a DateTime.</exception>
     public static DateTime FromUnixTimestamp(long unixTimestamp)
     {
         if (unixTimestamp < 0)
@@ -52,6 +60,9 @@ public static class DateTimeExtensions
     /// <summary>
     /// Rounds DateTime down to nearest interval (e.g., 5 minutes).
     /// </summary>
+    /// <remarks>
+    /// Alignment is based on ticks since 0001-01-01, so the result keeps the original <see cref="DateTimeKind"/>.
+    /// </remarks>
     /// <param name="dateTime">The DateTime to round down.</param>
     /// <param name="interval">The rounding interval.</param>
     /// <returns>DateTime rounded down to the nearest interval.</returns>
@@ -67,6 +78,10 @@ public static class DateTimeExtensions
     /// <summary>
     /// Rounds DateTime up to nearest interval.
     /// </summary>
+    /// <remarks>
+    /// Alignment is based on ticks since 0001-01-01, so the result keeps the original <see cref="DateTimeKind"/>.
+    /// A value already on an interval boundary is returned unchanged.
+    /// </remarks>
     /// <param name="dateTime">The DateTime to round up.</param>
     /// <param name="interval">The rounding interval.</param>
     /// <returns>DateTime rounded up to the nearest interval.</returns>
@@ -84,6 +99,10 @@ public static class DateTimeExtensions
     /// <summary>
     /// Checks if DateTime is within past N seconds.
     /// </summary>
+    /// <remarks>
+    /// Compares against <see cref="DateTime.UtcNow"/>. Future values are also reported as within range,
+    /// because the elapsed time is negative. <see cref="DateTimeKind.Unspecified"/> values are interpreted as local time.
+    /// </remarks>
     /// <param name="dateTime">The DateTime to check.</param>
     /// <param name="seconds">Number of seconds to check within.</param>
     /// <returns>True if the DateTime is within the specified seconds from now; otherwise false.</returns>
@@ -103,6 +122,10 @@ public static class DateTimeExtensions
     /// <summary>
     /// Gets human-readable time difference (e.g., "5 minutes ago").
     /// </summary>
+    /// <remarks>
+    /// Compares against <see cref="DateTime.UtcNow"/>. Under one minute, including future values, returns "just now".
+    /// Values seven days or older are returned as a UTC date in <c>yyyy-MM-dd</c> format.
+    /// </remarks>
     /// <param name="dateTime">The DateTime to convert to relative time.</param>
     /// <returns>Human-readable relative time string.</returns>
     public static string ToRelativeTime(this DateTime dateTime)
@@ -125,15 +148,21 @@ public static class DateTimeExtensions
     }
 
     /// <summary>
-    /// Gets the start of day in UTC.
+    /// Gets the start of the day (midnight).
     /// </summary>
+    /// <remarks>
+    /// No time zone conversion is performed. The result keeps the original <see cref="DateTimeKind"/>.
+    /// </remarks>
     /// <param name="dateTime">The DateTime to get start of day for.</param>
     /// <returns>DateTime representing the start of the day (midnight).</returns>
     public static DateTime GetStartOfDay(this DateTime dateTime) => dateTime.Date;
 
     /// <summary>
-    /// Gets the end of day in UTC.
+    /// Gets the end of the day (last tick before the next midnight).
     /// </summary>
+    /// <remarks>
+    /// No time zone conversion is performed. The result keeps the original <see cref="DateTimeKind"/>.
+    /// </remarks>
     /// <param name="dateTime">The DateTime to get end of day for.</param>
     /// <returns>DateTime representing the end of the day (23:59:59.9999999).</returns>
     public static DateTime GetEndOfDay(this DateTime dateTime) => dateTime.Date.AddDays(1).AddTicks(-1);
@@ -141,6 +170,9 @@ public static class DateTimeExtensions
     /// <summary>
     /// Gets the start of month.
     /// </summary>
+    /// <remarks>
+    /// The result has <see cref="DateTimeKind.Unspecified"/> kind; the original kind is not preserved.
+    /// </remarks>
     /// <param name="dateTime">The DateTime to get start of month for.</param>
     /// <returns>DateTime representing the first day of the month at midnight.</returns>
     public static DateTime GetStartOfMonth(this DateTime dateTime) => new DateTime(dateTime.Year, dateTime.Month, 1);
@@ -148,6 +180,9 @@ public static class DateTimeExtensions
     /// <summary>
     /// Gets the end of month.
     /// </summary>
+    /// <remarks>
+    /// The result has <see cref="DateTimeKind.Unspecified"/> kind; the original kind is not preserved.
+    /// </remarks>
     /// <param name="dateTime">The DateTime to get end of month for.</param>
     /// <returns>DateTime representing the last tick of the last day of the month.</returns>
     public static DateTime GetEndOfMonth(this DateTime dateTime) => dateTime.GetStartOfMonth().AddMonths(1).AddTicks(-1);
@@ -155,6 +190,9 @@ public static class DateTimeExtensions
     /// <summary>
     /// Checks if two DateTimes are on the same day.
     /// </summary>
+    /// <remarks>
+    /// Only the date portions are compared. No time zone conversion is performed, and <see cref="DateTimeKind"/> is ignored.
+    /// </remarks>
     /// <param name="date1">First DateTime to compare.</param>
     /// <param name="date2">Second DateTime to compare.</param>
     /// <returns>True if both dates are on the same day; otherwise false.</returns>
@@ -163,6 +201,9 @@ public static class DateTimeExtensions
     /// <summary>
     /// Formats DateTime as ISO 8601 string.
     /// </summary>
+    /// <remarks>
+    /// Uses the round-trip <c>"o"</c> format. The output ends with <c>Z</c> for UTC values and includes an offset for local values.
+    /// </remarks>
     /// <param name="dateTime">The DateTime to format.</param>
     /// <returns>ISO 8601 formatted string.</returns>
     public static string ToIso8601String(this DateTime dateTime) => dateTime.ToString("o");
