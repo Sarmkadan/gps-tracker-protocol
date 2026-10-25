@@ -23,10 +23,11 @@ using GpsTrackerProtocol.Parsers;
 public sealed class FrameReassembler
 {
     /// <summary>
-    /// Hard cap, in bytes, on the amount of unconsumed data this reassembler
-    /// will buffer while waiting for a frame to complete. Protects against a
-    /// misbehaving or malicious device that never sends a valid terminator,
-    /// which would otherwise grow the buffer without bound.
+    /// Threshold, in bytes, for the amount of unconsumed data this reassembler
+    /// may keep while waiting for a frame to complete. When the residual buffer
+    /// exceeds this value after extraction, all buffered bytes are discarded.
+    /// Protects against a misbehaving or malicious device that never sends a
+    /// valid terminator, which would otherwise grow the buffer without bound.
     /// </summary>
     public const int MaxBufferSizeBytes = 8192;
 
