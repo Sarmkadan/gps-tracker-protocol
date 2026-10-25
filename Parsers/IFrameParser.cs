@@ -14,15 +14,20 @@ public interface IFrameParser<T> where T : class
     /// Parses a frame from raw byte data.
     /// </summary>
     /// <param name="frameData">The raw frame data to parse.</param>
-    /// <returns>A ParseResult containing either the parsed data or a ParseError.</returns>
-    /// <exception cref="ArgumentNullException">Thrown if input is null (if applicable, though ReadOnlySpan is a struct).</exception>
+    /// <returns>
+    /// A <see cref="ParseResult{T}"/> containing either the parsed data or a <c>ParseError</c>
+    /// with the failure details and byte offset.
+    /// </returns>
     ParseResult<T> Parse(ReadOnlySpan<byte> frameData);
 
     /// <summary>
     /// Attempts to parse a frame from raw byte data without throwing exceptions for malformed frames.
     /// </summary>
     /// <param name="frameData">The raw frame data to parse.</param>
-    /// <param name="result">The parsed result.</param>
+    /// <param name="result">
+    /// When this method returns, contains the parsed data if parsing succeeded;
+    /// otherwise <c>null</c>.
+    /// </param>
     /// <returns>True if parsing succeeded, false otherwise.</returns>
     bool TryParse(ReadOnlySpan<byte> frameData, out T? result);
 
