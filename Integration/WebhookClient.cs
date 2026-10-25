@@ -59,9 +59,12 @@ public class WebhookClient : ExternalApiClient, IWebhookClient
     /// </summary>
     /// <param name="httpClient">HTTP client used to send webhook requests.</param>
     /// <param name="logger">Logger for delivery results and warnings.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="httpClient"/> or <paramref name="logger"/> is null.</exception>
     public WebhookClient(HttpClient httpClient, ILogger<WebhookClient> logger)
         : base(httpClient, logger)
     {
+        ArgumentNullException.ThrowIfNull(httpClient);
+        ArgumentNullException.ThrowIfNull(logger);
     }
 
     /// <summary>
