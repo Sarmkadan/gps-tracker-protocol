@@ -3266,3 +3266,81 @@ public class EventPublisherExample
 ```
 
 Built-in event types defined alongside the publisher include `LocationUpdatedEvent`, `JourneyStartedEvent`, `JourneyCompletedEvent`, `DeviceRegisteredEvent`, `CommandExecutedEvent`, and `SpeedLimitExceededEvent`. Custom events can be added by implementing `IDomainEvent`.
+
+## CommandService
+
+`CommandService` (`Services/CommandService.cs`) manages the lifecycle of commands sent to tracking devices: validating and creating them, tracking execution and failures, re-queuing expired commands for retry, and deleting old records. It implements `ICommandService` and is registered as a singleton by `AddGpsTrackerServices()`.
+
+The service has two construction paths:
+
+- **Unit of work** (`new CommandService(IUnitOfWork)`) - the primary path. Uses `unitOfWork.Commands` and `unitOfWork.Devices`. All `ICommandService` members work.
+- **Legacy generic repositories** (`new CommandService(IRepository<Command>, IRepository<Device>)`) - supports the extra members `SendCommandAsync`, `GetCommandsForDeviceAsync`, and `AcknowledgeCommandAsync`. Calling those on a unit-of-work instance throws `InvalidOperationException`.
+
+### Public API
+
+| Member | Description |
+|--------|-------------|
+| `Task<Command> CreateCommandAsync(Command command)` | Validates the command with `Command.IsValid()`, checks that the target device exists and is active, then sets `CreatedAt` (UTC now), `Status = Pending`, and an `Id` if none is set. Persists and returns the command. Throws `ArgumentNullException`, `ValidationException`, or `DeviceException`. |
+| `Task<Command?> GetCommandAsync(string commandId)` | Returns the command, or `null` if not found. Throws `ArgumentException` for a null/whitespace ID. |
+| `Task<IEnumerable<Command>> GetPendingCommandsAsync()` | Returns all commands in the pending state. |
+| `Task<IEnumerable<Command>> GetCommandHistoryAsync(string deviceId)` | Returns all commands for a device, newest first. Throws `ArgumentException` for a null/whitespace device ID. |
+| `Task<bool> ExecuteCommandAsync(string commandId)` | Calls `Command.Execute()` (sets `ExecutedAt` and `Status = Executed`), persists, and returns `true`. Throws `CommandException` if the command is not found. |
+| `Task<bool> MarkCommandAsFailedAsync(string commandId)` | Calls `Command.CanRetry()`. If retries remain, increments `RetryCount`, sets `Status = Pending`, persists, and returns `true`. If the limit is reached, `CanRetry()` sets `Status = Failed`; the service persists that and returns `false`. Throws `CommandException` if the command is not found. |
+| `Task<int> RetryFailedCommandsAsync()` | Loads pending commands created more than `ConfigConstants.COMMAND_EXECUTION_TIMEOUT_SECONDS` (120 s) ago and passes each through `MarkCommandAsFailedAsync`. Returns how many were re-queued. |
+| `Task<int> CleanupOldCommandsAsync(DateTime olderThan)` | Deletes commands created before `olderThan` and returns the count. Throws `ArgumentException` if `olderThan` is not in the past. |
+| `Task<Command?> SendCommandAsync(string deviceId, string commandType, string payload)` | *Legacy only.* Creates a sent command (`IsSent = true`, `SentTime` = UTC now) for an existing device. Does not run `IsValid()` or check `IsActive`. Returns `null` if the device does not exist. |
+| `Task<IEnumerable<Command>> GetCommandsForDeviceAsync(string deviceId)` | *Legacy only.* Returns all commands whose `DeviceId` matches. |
+| `Task AcknowledgeCommandAsync(string commandId)` | *Legacy only.* Sets `IsAcknowledged = true` and `AcknowledgedTime` (UTC now). Returns silently if the command is not found. |
+
+### Example
+
+```csharp
+using GpsTrackerProtocol.Data;
+using GpsTrackerProtocol.Domain;
+using GpsTrackerProtocol.Domain.Models;
+using GpsTrackerProtocol.Services;
+
+public static class CommandServiceExample
+{
+    public static async Task RunAsync()
+    {
+        await using var unitOfWork = new InMemoryUnitOfWork();
+        var commandService = new CommandService(unitOfWork);
+
+        await unitOfWork.Devices.CreateAsync(new Device
+        {
+            Id = "device-001",
+            Imei = "123456789012345",
+            IsActive = true
+        });
+
+        // Create a command. SetGpsInterval requires an "interval" parameter (see Command.IsValid()).
+        var command = await commandService.CreateCommandAsync(new Command
+        {
+            DeviceId = "device-001",
+            Type = CommandType.SetGpsInterval,
+            Parameters = new Dictionary<string, object> { ["interval"] = 30 }
+        });
+
+        var pending = await commandService.GetPendingCommandsAsync();
+        Console.WriteLine($"Pending: {pending.Count()}");
+
+        // Mark it executed once the device confirms the action.
+        await commandService.ExecuteCommandAsync(command.Id);
+
+        var history = await commandService.GetCommandHistoryAsync("device-001");
+        Console.WriteLine($"History: {history.Count()}");
+
+        // Report a failure; the command is re-queued while RetryCount < MaxRetries.
+        var requeued = await commandService.MarkCommandAsFailedAsync(command.Id);
+        Console.WriteLine($"Re-queued: {requeued}");
+
+        // Periodic housekeeping, e.g. from a background worker.
+        var retried = await commandService.RetryFailedCommandsAsync();
+        var cleaned = await commandService.CleanupOldCommandsAsync(DateTime.UtcNow.AddDays(-30));
+        Console.WriteLine($"Retried: {retried}, cleaned: {cleaned}");
+    }
+}
+```
+
+`Command.MaxRetries` defaults to `3`. The example above was compiled and run against the library using `InMemoryUnitOfWork`.
