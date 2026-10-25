@@ -802,6 +802,78 @@ public class DeviceServiceExample
 }
 ```
 
+## DeviceService
+
+`DeviceService` (`Services/DeviceService.cs`) manages the lifecycle of GPS tracking devices: registering them by IMEI, looking them up, deregistering (soft-delete), recording heartbeats from connected trackers, and reporting connection status for fleet monitoring. It implements `IDeviceService` and is registered as a singleton by `AddGpsTrackerServices()`.
+
+The service has two construction paths:
+
+- **Unit of work** (`new DeviceService(IUnitOfWork)`) - the primary path. Uses `unitOfWork.Devices` and `unitOfWork.LocationData`. All `IDeviceService` members work.
+- **Legacy generic repository** (`new DeviceService(IRepository<Device>)`) - supports `RegisterDeviceAsync(string)`, `GetDeviceByIdAsync`, `UpdateDeviceStatusAsync`, and `GetAllDevicesAsync`. The other members use the unit-of-work device repository, so calling them on a legacy instance is not supported and throws `NullReferenceException`.
+
+### Public API
+
+| Member | Description |
+|--------|-------------|
+| `Task<Device> RegisterDeviceAsync(Device device, CancellationToken ct = default)` | Validates the device with `Device.IsValid()` (non-empty `Id`, IMEI of 14-16 digits), rejects an IMEI that is already registered, then sets `LastSeen` (UTC now) and `Status = Offline`. Any `Status` the caller set is overwritten. Persists and returns the device. Throws `ArgumentNullException`, `ValidationException`, or `DeviceException` (duplicate IMEI). |
+| `Task<Device> RegisterDeviceAsync(string deviceId, CancellationToken ct = default)` | *Legacy only.* Returns the existing device if one has that ID; otherwise creates an active device (`IsActive = true`, `RegistrationDate` = UTC now) and returns it. |
+| `Task<Device?> GetDeviceAsync(string deviceId, CancellationToken ct = default)` | Returns the device by ID, or `null` if not found. Throws `ArgumentException` for a null/whitespace ID. |
+| `Task<Device?> GetDeviceByIdAsync(string deviceId, CancellationToken ct = default)` | *Legacy only.* Returns the device by ID from the generic repository, or `null`. Does not validate the ID. |
+| `Task<Device?> GetDeviceByImeiAsync(string imei, CancellationToken ct = default)` | Returns the device with the given IMEI, or `null`. Throws `ArgumentException` for a null/whitespace IMEI. |
+| `Task<IEnumerable<Device>> GetAllDevicesAsync(CancellationToken ct = default)` | Returns all devices. Works with either construction path. |
+| `Task<IEnumerable<Device>> GetOnlineDevicesAsync(CancellationToken ct = default)` | Returns devices whose `Status` is `Online`. |
+| `Task<IEnumerable<Device>> GetOfflineDevicesAsync(TimeSpan timeout, CancellationToken ct = default)` | Returns devices whose last heartbeat is older than `timeout`. |
+| `Task<bool> UpdateDeviceAsync(Device device, CancellationToken ct = default)` | Checks that the device exists and passes `IsValid()`, then persists it. Returns `true`. Throws `ArgumentNullException`, `DeviceException` (not found), or `ValidationException`. |
+| `Task UpdateDeviceStatusAsync(string deviceId, bool isActive, CancellationToken ct = default)` | *Legacy only.* Sets `IsActive` and persists. Returns silently if the device is not found. |
+| `Task<bool> DeregisterDeviceAsync(string deviceId, CancellationToken ct = default)` | Soft-deletes the device: sets `IsActive = false` and persists, keeping the record. Returns `true`. Throws `ArgumentException` for a null/whitespace ID, or `DeviceException` if not found. |
+| `Task UpdateDeviceHeartbeatAsync(string deviceId, string? ipAddress = null, int port = 0, CancellationToken ct = default)` | Calls `Device.UpdateHeartbeat()`: sets `LastSeen` (UTC now), `Status = Online`, increments `ConnectionCount`, and updates `IpAddress` and `Port` when they are supplied (`port > 0`). Persists. Throws `DeviceException` if not found. |
+| `Task<DeviceStatusDto?> GetDeviceStatusAsync(string deviceId, CancellationToken ct = default)` | Returns a status snapshot (`DeviceStatusDto`), or `null` if not found. `IsConnected` is `true` when `Status` is `Online`. Throws `ArgumentException` for a null/whitespace ID. |
+| `Task<IEnumerable<DeviceStatusDto>> GetAllDeviceStatusesAsync(CancellationToken ct = default)` | Returns a status snapshot for every device. |
+
+`DeregisterDeviceAsync` does not delete the record, so a deregistered device still appears in `GetAllDevicesAsync` with `IsActive = false`. Filter on `IsActive` if you only want active devices.
+
+### Example
+
+```csharp
+using GpsTrackerProtocol.Data;
+using GpsTrackerProtocol.Domain.Models;
+using GpsTrackerProtocol.Services;
+
+public static class DeviceServiceExample
+{
+    public static async Task RunAsync()
+    {
+        await using var unitOfWork = new InMemoryUnitOfWork();
+        var deviceService = new DeviceService(unitOfWork);
+
+        // Register a device. Id is required and the IMEI must be 14-16 digits.
+        var device = await deviceService.RegisterDeviceAsync(new Device
+        {
+            Id = "device-001",
+            Imei = "123456789012345",
+            DeviceName = "Truck GPS Unit #1"
+        });
+        Console.WriteLine($"Registered: {device.DeviceName}, status: {device.Status}");
+
+        // Called from the protocol listener whenever the tracker reports in.
+        await deviceService.UpdateDeviceHeartbeatAsync("device-001", "203.0.113.10", 5023);
+
+        var online = await deviceService.GetOnlineDevicesAsync();
+        Console.WriteLine($"Online devices: {online.Count()}");
+
+        // Devices that have not reported for 10 minutes.
+        var offline = await deviceService.GetOfflineDevicesAsync(TimeSpan.FromMinutes(10));
+        Console.WriteLine($"Offline devices: {offline.Count()}");
+
+        var status = await deviceService.GetDeviceStatusAsync("device-001");
+        Console.WriteLine($"Connected: {status?.IsConnected}, last seen: {status?.LastSeen:u}");
+
+        // Soft-delete: the record is kept with IsActive = false.
+        await deviceService.DeregisterDeviceAsync("device-001");
+    }
+}
+```
+
 ## IFleetDashboardService
 
 The `IFleetDashboardService` interface provides functionality for managing a fleet of vehicles and generating real-time analytics dashboards. It allows registering vehicles, tracking their status, computing optimized routes, and generating fleet-wide KPI metrics by aggregating data from GPS devices, location history, and fuel tracking services.
