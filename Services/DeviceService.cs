@@ -129,6 +129,8 @@ public class DeviceService : IDeviceService
     /// <param name="unitOfWork">The unit of work providing the device and location data repositories.</param>
     public DeviceService(IUnitOfWork unitOfWork)
     {
+        ArgumentNullException.ThrowIfNull(unitOfWork);
+
         _repository = unitOfWork.Devices;
         _locationRepository = unitOfWork.LocationData;
     }
@@ -139,6 +141,8 @@ public class DeviceService : IDeviceService
     /// <param name="repository">The generic repository used to store devices.</param>
     public DeviceService(IRepository<Device> repository)
     {
+        ArgumentNullException.ThrowIfNull(repository);
+
         _legacyRepository = repository;
     }
 
@@ -152,6 +156,8 @@ public class DeviceService : IDeviceService
     /// <exception cref="InvalidOperationException">Thrown when the service was not constructed with a generic repository.</exception>
     public async Task<Device> RegisterDeviceAsync(string deviceId, CancellationToken cancellationToken = default)
     {
+        ArgumentNullException.ThrowIfNull(deviceId);
+
         if (_legacyRepository is null)
             throw new InvalidOperationException(GenericRepositoryRequiredMessage);
 
@@ -179,6 +185,8 @@ public class DeviceService : IDeviceService
     /// <exception cref="InvalidOperationException">Thrown when the service was not constructed with a generic repository.</exception>
     public async Task<Device?> GetDeviceByIdAsync(string deviceId, CancellationToken cancellationToken = default)
     {
+        ArgumentNullException.ThrowIfNull(deviceId);
+
         if (_legacyRepository is null)
             throw new InvalidOperationException(GenericRepositoryRequiredMessage);
 
@@ -195,6 +203,8 @@ public class DeviceService : IDeviceService
     /// <exception cref="InvalidOperationException">Thrown when the service was not constructed with a generic repository.</exception>
     public async Task UpdateDeviceStatusAsync(string deviceId, bool isActive, CancellationToken cancellationToken = default)
     {
+        ArgumentNullException.ThrowIfNull(deviceId);
+
         if (_legacyRepository is null)
             throw new InvalidOperationException(GenericRepositoryRequiredMessage);
 
@@ -345,6 +355,8 @@ public class DeviceService : IDeviceService
     /// <exception cref="DeviceException">Thrown when the device is not found.</exception>
     public async Task UpdateDeviceHeartbeatAsync(string deviceId, string? ipAddress = null, int port = DefaultPort, CancellationToken cancellationToken = default)
     {
+        ArgumentNullException.ThrowIfNull(deviceId);
+
         var device = await _repository.GetByIdAsync(deviceId, cancellationToken).ConfigureAwait(false);
         if (device is null)
             throw new DeviceException($"Device {deviceId} not found", deviceId);
