@@ -53,6 +53,10 @@ public class GeocodingService : ExternalApiClient, IGeocodingService
     public GeocodingService(HttpClient httpClient, ILogger<GeocodingService> logger, ICachingService cache)
         : base(httpClient, logger)
     {
+        ArgumentNullException.ThrowIfNull(httpClient);
+        ArgumentNullException.ThrowIfNull(logger);
+        ArgumentNullException.ThrowIfNull(cache);
+
         _cache = cache;
     }
 
@@ -124,6 +128,8 @@ public class GeocodingService : ExternalApiClient, IGeocodingService
     /// </exception>
     public async Task<bool> IsInRegionAsync(double latitude, double longitude, string regionCode)
     {
+        ArgumentNullException.ThrowIfNull(regionCode);
+
         var geocoding = await ReverseGeocodeAsync(latitude, longitude).ConfigureAwait(false);
         return geocoding.Success && !string.IsNullOrEmpty(geocoding.Country);
     }
