@@ -84,6 +84,18 @@ public interface ILocationDataService
 /// </summary>
 public class LocationDataService : ILocationDataService
 {
+    private const int DEFAULT_HISTORY_LIMIT = 100;
+    private const int MIN_LOCATIONS_FOR_DISTANCE = 2;
+
+    private const string DEVICE_ID_EMPTY_MESSAGE = "Device ID cannot be empty";
+    private const string LOCATION_VALIDATION_FAILED_MESSAGE = "Location data validation failed";
+    private const string LIMIT_NOT_POSITIVE_MESSAGE = "Limit must be greater than 0";
+    private const string START_NOT_BEFORE_END_MESSAGE = "Start time must be before end time";
+    private const string INVALID_LATITUDE_MESSAGE = "Invalid latitude";
+    private const string INVALID_LONGITUDE_MESSAGE = "Invalid longitude";
+    private const string RADIUS_NOT_POSITIVE_MESSAGE = "Radius must be positive";
+    private const string CLEANUP_DATE_NOT_PAST_MESSAGE = "Cleanup date must be in the past";
+
     private readonly ILocationDataRepository _repository;
     private readonly IDeviceRepository _deviceRepository;
 
@@ -112,7 +124,7 @@ public class LocationDataService : ILocationDataService
             throw new ArgumentNullException(nameof(location));
 
         if (!location.IsValid())
-            throw new ValidationException("Location data validation failed", nameof(location));
+            throw new ValidationException(LOCATION_VALIDATION_FAILED_MESSAGE, nameof(location));
 
         var device = await _deviceRepository.GetByIdAsync(location.DeviceId, cancellationToken).ConfigureAwait(false);
         if (device is null)
@@ -140,7 +152,7 @@ public class LocationDataService : ILocationDataService
     public async Task<LocationData?> GetLatestLocationAsync(string deviceId, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(deviceId))
-            throw new ArgumentException("Device ID cannot be empty", nameof(deviceId));
+            throw new ArgumentException(DEVICE_ID_EMPTY_MESSAGE, nameof(deviceId));
 
         return await _repository.GetLatestByDeviceIdAsync(deviceId, cancellationToken).ConfigureAwait(false);
     }
@@ -153,13 +165,13 @@ public class LocationDataService : ILocationDataService
     /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <returns>A collection of location data, ordered by timestamp descending.</returns>
     /// <exception cref="ArgumentException">Thrown when <paramref name="deviceId"/> is null, empty, or whitespace, or when <paramref name="limit"/> is not greater than 0.</exception>
-    public async Task<IEnumerable<LocationData>> GetLocationHistoryAsync(string deviceId, int limit = 100, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<LocationData>> GetLocationHistoryAsync(string deviceId, int limit = DEFAULT_HISTORY_LIMIT, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(deviceId))
-            throw new ArgumentException("Device ID cannot be empty", nameof(deviceId));
+            throw new ArgumentException(DEVICE_ID_EMPTY_MESSAGE, nameof(deviceId));
 
         if (limit <= 0)
-            throw new ArgumentException("Limit must be greater than 0", nameof(limit));
+            throw new ArgumentException(LIMIT_NOT_POSITIVE_MESSAGE, nameof(limit));
 
         var history = await _repository.GetByDeviceIdAsync(deviceId, cancellationToken).ConfigureAwait(false);
         return history.OrderByDescending(l => l.Timestamp).Take(Math.Min(limit, ConfigConstants.MAX_LOCATION_HISTORY)).ToList();
@@ -177,10 +189,10 @@ public class LocationDataService : ILocationDataService
     public async Task<IEnumerable<LocationData>> GetLocationsByTimeRangeAsync(string deviceId, DateTime start, DateTime end, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(deviceId))
-            throw new ArgumentException("Device ID cannot be empty", nameof(deviceId));
+            throw new ArgumentException(DEVICE_ID_EMPTY_MESSAGE, nameof(deviceId));
 
         if (start >= end)
-            throw new ArgumentException("Start time must be before end time");
+            throw new ArgumentException(START_NOT_BEFORE_END_MESSAGE);
 
         return await _repository.GetByDeviceAndTimeRangeAsync(deviceId, start, end, cancellationToken).ConfigureAwait(false);
     }
@@ -198,13 +210,13 @@ public class LocationDataService : ILocationDataService
     public async Task<IEnumerable<LocationData>> GetLocationsNearbyAsync(double latitude, double longitude, double radiusKm, CancellationToken cancellationToken = default)
     {
         if (latitude < MeasurementBounds.MIN_LATITUDE || latitude > MeasurementBounds.MAX_LATITUDE)
-            throw new ValidationException("Invalid latitude", nameof(latitude), latitude);
+            throw new ValidationException(INVALID_LATITUDE_MESSAGE, nameof(latitude), latitude);
 
         if (longitude < MeasurementBounds.MIN_LONGITUDE || longitude > MeasurementBounds.MAX_LONGITUDE)
-            throw new ValidationException("Invalid longitude", nameof(longitude), longitude);
+            throw new ValidationException(INVALID_LONGITUDE_MESSAGE, nameof(longitude), longitude);
 
         if (radiusKm <= 0)
-            throw new ArgumentException("Radius must be positive", nameof(radiusKm));
+            throw new ArgumentException(RADIUS_NOT_POSITIVE_MESSAGE, nameof(radiusKm));
 
         return await _repository.GetWithinRadiusAsync(latitude, longitude, radiusKm, cancellationToken).ConfigureAwait(false);
     }
@@ -223,7 +235,7 @@ public class LocationDataService : ILocationDataService
         var locations = await GetLocationsByTimeRangeAsync(deviceId, start, end, cancellationToken).ConfigureAwait(false);
         var sortedLocations = locations.OrderBy(l => l.Timestamp).ToList();
 
-        if (sortedLocations.Count < 2)
+        if (sortedLocations.Count < MIN_LOCATIONS_FOR_DISTANCE)
             return 0;
 
         double totalDistance = 0;
@@ -245,7 +257,7 @@ public class LocationDataService : ILocationDataService
     public async Task<int> CleanupOldDataAsync(DateTime olderThan, CancellationToken cancellationToken = default)
     {
         if (olderThan >= DateTime.UtcNow)
-            throw new ArgumentException("Cleanup date must be in the past");
+            throw new ArgumentException(CLEANUP_DATE_NOT_PAST_MESSAGE);
 
         return await _repository.DeleteOlderThanAsync(olderThan, cancellationToken).ConfigureAwait(false);
     }
