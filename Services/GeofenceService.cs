@@ -67,6 +67,13 @@ public class GeofenceService : IGeofenceService
         _logger = logger;
     }
 
+    /// <summary>
+    /// Registers or replaces a circular geofence. Invalid coordinates are logged and ignored.
+    /// </summary>
+    /// <param name="id">Unique identifier of the geofence. An existing geofence with the same id is overwritten.</param>
+    /// <param name="centerLat">Latitude of the zone center, in degrees.</param>
+    /// <param name="centerLon">Longitude of the zone center, in degrees.</param>
+    /// <param name="radiusKm">Zone radius in kilometers.</param>
     public void AddGeofence(string id, double centerLat, double centerLon, double radiusKm)
     {
         if (!GpsUtilities.IsValidCoordinate(centerLat, centerLon))
@@ -88,6 +95,16 @@ public class GeofenceService : IGeofenceService
             id, centerLat, centerLon, radiusKm);
     }
 
+    /// <summary>
+    /// Checks whether a position lies inside the specified geofence.
+    /// </summary>
+    /// <param name="geofenceId">Identifier of the geofence to check.</param>
+    /// <param name="latitude">Latitude of the position, in degrees.</param>
+    /// <param name="longitude">Longitude of the position, in degrees.</param>
+    /// <returns>
+    /// <c>true</c> if the distance to the center is less than or equal to the radius;
+    /// <c>false</c> if the point is outside or the geofence does not exist.
+    /// </returns>
     public bool IsInsideGeofence(string geofenceId, double latitude, double longitude)
     {
         if (!_geofences.TryGetValue(geofenceId, out var geofence))
@@ -100,6 +117,16 @@ public class GeofenceService : IGeofenceService
         return distance <= geofence.RadiusKm;
     }
 
+    /// <summary>
+    /// Returns the ids of geofences that could be near a position.
+    /// </summary>
+    /// <param name="latitude">Latitude of the position, in degrees.</param>
+    /// <param name="longitude">Longitude of the position, in degrees.</param>
+    /// <param name="searchRadiusKm">Search radius around the position, in kilometers.</param>
+    /// <returns>
+    /// Ids of geofences whose center is within <paramref name="searchRadiusKm"/> plus their own radius
+    /// of the position. This is a candidate list: a match does not guarantee the position is inside the zone.
+    /// </returns>
     public IEnumerable<string> GetNearbyGeofences(double latitude, double longitude, double searchRadiusKm)
     {
         var nearby = new List<string>();
