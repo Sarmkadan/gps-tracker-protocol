@@ -103,8 +103,11 @@ public class LocationDataService : ILocationDataService
     /// Initializes a new instance of the <see cref="LocationDataService"/> class.
     /// </summary>
     /// <param name="unitOfWork">The unit of work providing location data and device repositories.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="unitOfWork"/> is null.</exception>
     public LocationDataService(IUnitOfWork unitOfWork)
     {
+        ArgumentNullException.ThrowIfNull(unitOfWork);
+
         _repository = unitOfWork.LocationData;
         _deviceRepository = unitOfWork.Devices;
     }
