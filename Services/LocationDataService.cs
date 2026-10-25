@@ -87,6 +87,10 @@ public class LocationDataService : ILocationDataService
     private readonly ILocationDataRepository _repository;
     private readonly IDeviceRepository _deviceRepository;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="LocationDataService"/> class.
+    /// </summary>
+    /// <param name="unitOfWork">The unit of work providing location data and device repositories.</param>
     public LocationDataService(IUnitOfWork unitOfWork)
     {
         _repository = unitOfWork.LocationData;
@@ -96,6 +100,12 @@ public class LocationDataService : ILocationDataService
     /// <summary>
     /// Stores a new location data point.
     /// </summary>
+    /// <param name="location">The location data to store.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>The stored location data.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="location"/> is null.</exception>
+    /// <exception cref="ValidationException">Thrown when the location data fails validation.</exception>
+    /// <exception cref="DeviceException">Thrown when the device referenced by the location does not exist.</exception>
     public async Task<LocationData> StoreLocationAsync(LocationData location, CancellationToken cancellationToken = default)
     {
         if (location is null)
@@ -123,6 +133,10 @@ public class LocationDataService : ILocationDataService
     /// <summary>
     /// Gets the latest location for a device.
     /// </summary>
+    /// <param name="deviceId">The device ID.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>The latest location data if found, otherwise null.</returns>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="deviceId"/> is null, empty, or whitespace.</exception>
     public async Task<LocationData?> GetLatestLocationAsync(string deviceId, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(deviceId))
@@ -134,6 +148,11 @@ public class LocationDataService : ILocationDataService
     /// <summary>
     /// Gets location history for a device with limit.
     /// </summary>
+    /// <param name="deviceId">The device ID.</param>
+    /// <param name="limit">The maximum number of records to return.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>A collection of location data, ordered by timestamp descending.</returns>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="deviceId"/> is null, empty, or whitespace, or when <paramref name="limit"/> is not greater than 0.</exception>
     public async Task<IEnumerable<LocationData>> GetLocationHistoryAsync(string deviceId, int limit = 100, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(deviceId))
@@ -149,6 +168,12 @@ public class LocationDataService : ILocationDataService
     /// <summary>
     /// Gets location data within a time range.
     /// </summary>
+    /// <param name="deviceId">The device ID.</param>
+    /// <param name="start">The start time.</param>
+    /// <param name="end">The end time.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>A collection of location data within the specified range.</returns>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="deviceId"/> is null, empty, or whitespace, or when <paramref name="start"/> is not before <paramref name="end"/>.</exception>
     public async Task<IEnumerable<LocationData>> GetLocationsByTimeRangeAsync(string deviceId, DateTime start, DateTime end, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(deviceId))
@@ -163,6 +188,13 @@ public class LocationDataService : ILocationDataService
     /// <summary>
     /// Gets locations within a specified radius.
     /// </summary>
+    /// <param name="latitude">The latitude.</param>
+    /// <param name="longitude">The longitude.</param>
+    /// <param name="radiusKm">The radius in kilometers.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>A collection of location data within the specified radius.</returns>
+    /// <exception cref="ValidationException">Thrown when <paramref name="latitude"/> or <paramref name="longitude"/> is out of bounds.</exception>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="radiusKm"/> is not positive.</exception>
     public async Task<IEnumerable<LocationData>> GetLocationsNearbyAsync(double latitude, double longitude, double radiusKm, CancellationToken cancellationToken = default)
     {
         if (latitude < MeasurementBounds.MIN_LATITUDE || latitude > MeasurementBounds.MAX_LATITUDE)
@@ -180,6 +212,12 @@ public class LocationDataService : ILocationDataService
     /// <summary>
     /// Calculates total travel distance for a device in a time period.
     /// </summary>
+    /// <param name="deviceId">The device ID.</param>
+    /// <param name="start">The start time.</param>
+    /// <param name="end">The end time.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>The total distance traveled in kilometers, or 0 when fewer than two locations exist in the period.</returns>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="deviceId"/> is null, empty, or whitespace, or when <paramref name="start"/> is not before <paramref name="end"/>.</exception>
     public async Task<double> CalculateTravelDistanceAsync(string deviceId, DateTime start, DateTime end, CancellationToken cancellationToken = default)
     {
         var locations = await GetLocationsByTimeRangeAsync(deviceId, start, end, cancellationToken).ConfigureAwait(false);
@@ -200,6 +238,10 @@ public class LocationDataService : ILocationDataService
     /// <summary>
     /// Cleans up old location data.
     /// </summary>
+    /// <param name="olderThan">The threshold date.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>The number of records deleted.</returns>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="olderThan"/> is not in the past.</exception>
     public async Task<int> CleanupOldDataAsync(DateTime olderThan, CancellationToken cancellationToken = default)
     {
         if (olderThan >= DateTime.UtcNow)
