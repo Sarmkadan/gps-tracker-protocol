@@ -115,7 +115,8 @@ public class Journey
     }
 
     /// <summary>
-    /// Completes the journey and calculates summary metrics.
+    /// Marks the journey as completed, sets <see cref="EndTime"/> to the current UTC time, and stores
+    /// summary metrics (total distance, average and maximum speed, duration) in <see cref="Metadata"/>.
     /// </summary>
     public void Complete()
     {
