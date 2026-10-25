@@ -230,6 +230,81 @@ Notes:
 - **Full GT06 frames fail in `ProtocolParser`.** `ProtocolParser` passes the whole frame to `DecodeGt06Position`, which reads coordinates from offset 0, so it returns `DECODE_FAILED`. Call `PositionDecoder.DecodeGt06Position(frame, offset: 11)` directly for GT06, as shown above.
 - **Auto-detection and TK103.** `Parse(bytes)` without a protocol detects TK103 only from a leading `(`, which the segment format above does not have. Pass `ProtocolType.TK103` explicitly.
 
+## FrameReassembler
+
+`FrameReassembler` turns the raw byte stream of one TCP connection into complete protocol frames. TCP does not preserve message boundaries, so a single read can hold half a frame, one frame, or several frames. The reassembler keeps the unconsumed bytes between calls and returns only frames it can cut out in full.
+
+It recognizes three framings, selected by the first byte of each frame:
+
+- **GT06** starts with `78 78` or `79 79`. The third byte is a length that sets the frame size. The frame ends with `0D 0A`.
+- **H02** starts with `$` or `*` and ends with `CRLF`.
+- **TK103** starts with `(` and ends with `CRLF`.
+
+The frame returned includes its start and end markers. Bytes that match none of these starts are skipped.
+
+### Public API
+
+| Member | Description |
+|--------|-------------|
+| `class FrameReassembler` | Sealed. Holds the buffer for one connection. Create one per connection. |
+| `ExtractFrames(ReadOnlySpan<byte> chunk)` | Appends `chunk` to the buffer and returns every frame that is now complete, in arrival order. Returns an empty sequence when no frame is complete yet. |
+| `Reset()` | Discards all buffered bytes. The next call starts resynchronizing from scratch. |
+| `const int MaxBufferSizeBytes` | `8192`. If unconsumed data is still larger than this after extraction, the buffer is cleared. |
+
+### Example
+
+The example splits a 15-byte GT06 frame across two reads. The first read is incomplete, so nothing is returned. The second read completes the frame and also starts a second frame, whose first byte stays buffered until more data arrives.
+
+```csharp
+using System.Linq;
+using GpsTrackerProtocol.Services;
+
+// A 15-byte GT06 frame: start 78 78, declared length 0x08, 10 payload bytes, end 0D 0A
+byte[] frame = { 0x78, 0x78, 0x08, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0D, 0x0A };
+
+var reassembler = new FrameReassembler();
+
+// Read 1: only the first 6 bytes have arrived, so no frame is complete yet
+var early = reassembler.ExtractFrames(frame.AsSpan(0, 6)).ToList();
+Console.WriteLine($"Read 1: {early.Count} complete frame(s)");
+
+// Read 2: the rest of the first frame, followed by the first byte of a second frame
+byte[] read2 = frame[6..].Append((byte)0x78).ToArray();
+foreach (var complete in reassembler.ExtractFrames(read2))
+    Console.WriteLine($"Read 2: {Convert.ToHexString(complete.Span)}");
+```
+
+Output:
+
+```
+Read 1: 0 complete frame(s)
+Read 2: 7878080102030405060708090A0D0A
+```
+
+In a socket loop, call `ExtractFrames` once per read and keep the same instance for the life of the connection:
+
+```csharp
+var reassembler = new FrameReassembler();
+var buffer = new byte[1024];
+
+while (true)
+{
+    int read = await stream.ReadAsync(buffer.AsMemory(), ct);
+    if (read == 0) break; // connection closed
+
+    foreach (var frame in reassembler.ExtractFrames(buffer.AsSpan(0, read)))
+        await HandleFrameAsync(frame.ToArray());
+}
+```
+
+Notes:
+
+- **One instance per connection.** The reassembler keeps state between calls and is not thread-safe. Feed each connection's bytes to its own instance, in order.
+- **Returned frames are copies.** Each `ReadOnlyMemory<byte>` owns its own array, so you can keep it after the call returns, even though the input buffer is reused.
+- **Framing only.** The reassembler checks start markers, lengths and terminators. It does not verify checksums or decode fields. Pass each frame to a protocol parser to validate and decode it.
+- **Garbage is skipped silently.** Bytes that do not start a known frame, and frames whose length or terminator does not match, are dropped without an error. Nothing is reported to the caller.
+- **Buffer limit.** If unconsumed bytes exceed `MaxBufferSizeBytes` after extraction, the whole buffer is cleared, including any partial frame. Frames already returned by that call are still returned. This guards against a device that never sends a valid terminator.
+
 ## Benchmarks
 
 Benchmarks are not part of the NuGet package. They live in the `gps-tracker-protocol.Benchmarks` project (BenchmarkDotNet), which references the library and is intended for development and CI only. Run them from a repository checkout:
