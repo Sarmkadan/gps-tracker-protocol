@@ -38,6 +38,32 @@ public static class DateTimeExtensions
     }
 
     /// <summary>
+    /// Converts DateTime to Unix timestamp (milliseconds since epoch).
+    /// </summary>
+    /// <remarks>
+    /// Values that are not <see cref="DateTimeKind.Utc"/> are converted with <see cref="DateTime.ToUniversalTime"/>,
+    /// so <see cref="DateTimeKind.Unspecified"/> values are interpreted as local time.
+    /// Fractional milliseconds are truncated.
+    /// </remarks>
+    /// <param name="dateTime">The DateTime to convert.</param>
+    /// <returns>Unix timestamp in milliseconds.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when the date is before Unix epoch.</exception>
+    public static long ToUnixMillis(this DateTime dateTime)
+    {
+        var epoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        var utcDateTime = dateTime.Kind == DateTimeKind.Utc
+            ? dateTime
+            : dateTime.ToUniversalTime();
+
+        if (utcDateTime < epoch)
+        {
+            throw new ArgumentOutOfRangeException(nameof(dateTime), "DateTime cannot be before Unix epoch (1970-01-01).");
+        }
+
+        return (utcDateTime - epoch).Ticks / TimeSpan.TicksPerMillisecond;
+    }
+
+    /// <summary>
     /// Converts Unix timestamp to DateTime.
     /// </summary>
     /// <remarks>
