@@ -43,6 +43,8 @@ public class WeatherApiClient : ExternalApiClient, IWeatherApiClient
     public WeatherApiClient(HttpClient httpClient, ILogger<WeatherApiClient> logger)
         : base(httpClient, logger)
     {
+        ArgumentNullException.ThrowIfNull(httpClient);
+        ArgumentNullException.ThrowIfNull(logger);
     }
 
     /// <summary>
