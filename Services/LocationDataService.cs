@@ -19,23 +19,26 @@ public interface ILocationDataService
     /// Stores a new location data point.
     /// </summary>
     /// <param name="location">The location data to store.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <returns>The stored location data.</returns>
-    Task<LocationData> StoreLocationAsync(LocationData location);
+    Task<LocationData> StoreLocationAsync(LocationData location, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Gets the latest location for a device.
     /// </summary>
     /// <param name="deviceId">The device ID.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <returns>The latest location data if found, otherwise null.</returns>
-    Task<LocationData?> GetLatestLocationAsync(string deviceId);
+    Task<LocationData?> GetLatestLocationAsync(string deviceId, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Gets location history for a device with limit.
     /// </summary>
     /// <param name="deviceId">The device ID.</param>
     /// <param name="limit">The maximum number of records to return.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <returns>A collection of location data.</returns>
-    Task<IEnumerable<LocationData>> GetLocationHistoryAsync(string deviceId, int limit = 100);
+    Task<IEnumerable<LocationData>> GetLocationHistoryAsync(string deviceId, int limit = 100, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Gets location data within a time range.
@@ -43,8 +46,9 @@ public interface ILocationDataService
     /// <param name="deviceId">The device ID.</param>
     /// <param name="start">The start time.</param>
     /// <param name="end">The end time.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <returns>A collection of location data.</returns>
-    Task<IEnumerable<LocationData>> GetLocationsByTimeRangeAsync(string deviceId, DateTime start, DateTime end);
+    Task<IEnumerable<LocationData>> GetLocationsByTimeRangeAsync(string deviceId, DateTime start, DateTime end, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Gets locations within a specified radius.
@@ -52,8 +56,9 @@ public interface ILocationDataService
     /// <param name="latitude">The latitude.</param>
     /// <param name="longitude">The longitude.</param>
     /// <param name="radiusKm">The radius in kilometers.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <returns>A collection of location data.</returns>
-    Task<IEnumerable<LocationData>> GetLocationsNearbyAsync(double latitude, double longitude, double radiusKm);
+    Task<IEnumerable<LocationData>> GetLocationsNearbyAsync(double latitude, double longitude, double radiusKm, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Calculates total travel distance for a device in a time period.
@@ -61,15 +66,17 @@ public interface ILocationDataService
     /// <param name="deviceId">The device ID.</param>
     /// <param name="start">The start time.</param>
     /// <param name="end">The end time.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <returns>The total distance traveled in kilometers.</returns>
-    Task<double> CalculateTravelDistanceAsync(string deviceId, DateTime start, DateTime end);
+    Task<double> CalculateTravelDistanceAsync(string deviceId, DateTime start, DateTime end, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Cleans up old location data.
     /// </summary>
     /// <param name="olderThan">The threshold date.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <returns>The number of records deleted.</returns>
-    Task<int> CleanupOldDataAsync(DateTime olderThan);
+    Task<int> CleanupOldDataAsync(DateTime olderThan, CancellationToken cancellationToken = default);
 }
 
 /// <summary>
@@ -89,7 +96,7 @@ public class LocationDataService : ILocationDataService
     /// <summary>
     /// Stores a new location data point.
     /// </summary>
-    public async Task<LocationData> StoreLocationAsync(LocationData location)
+    public async Task<LocationData> StoreLocationAsync(LocationData location, CancellationToken cancellationToken = default)
     {
         if (location is null)
             throw new ArgumentNullException(nameof(location));
@@ -97,18 +104,18 @@ public class LocationDataService : ILocationDataService
         if (!location.IsValid())
             throw new ValidationException("Location data validation failed", nameof(location));
 
-        var device = await _deviceRepository.GetByIdAsync(location.DeviceId).ConfigureAwait(false);
+        var device = await _deviceRepository.GetByIdAsync(location.DeviceId, cancellationToken).ConfigureAwait(false);
         if (device is null)
             throw new DeviceException($"Device {location.DeviceId} not found", location.DeviceId);
 
         if (location.Timestamp == default)
             location.Timestamp = DateTime.UtcNow;
 
-        var stored = await _repository.CreateAsync(location).ConfigureAwait(false);
+        var stored = await _repository.CreateAsync(location, cancellationToken).ConfigureAwait(false);
 
         // Update device location cache
         device.UpdateHeartbeat();
-        await _deviceRepository.UpdateAsync(device).ConfigureAwait(false);
+        await _deviceRepository.UpdateAsync(device, cancellationToken).ConfigureAwait(false);
 
         return stored;
     }
@@ -116,18 +123,18 @@ public class LocationDataService : ILocationDataService
     /// <summary>
     /// Gets the latest location for a device.
     /// </summary>
-    public async Task<LocationData?> GetLatestLocationAsync(string deviceId)
+    public async Task<LocationData?> GetLatestLocationAsync(string deviceId, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(deviceId))
             throw new ArgumentException("Device ID cannot be empty", nameof(deviceId));
 
-        return await _repository.GetLatestByDeviceIdAsync(deviceId).ConfigureAwait(false);
+        return await _repository.GetLatestByDeviceIdAsync(deviceId, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Gets location history for a device with limit.
     /// </summary>
-    public async Task<IEnumerable<LocationData>> GetLocationHistoryAsync(string deviceId, int limit = 100)
+    public async Task<IEnumerable<LocationData>> GetLocationHistoryAsync(string deviceId, int limit = 100, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(deviceId))
             throw new ArgumentException("Device ID cannot be empty", nameof(deviceId));
@@ -135,14 +142,14 @@ public class LocationDataService : ILocationDataService
         if (limit <= 0)
             throw new ArgumentException("Limit must be greater than 0", nameof(limit));
 
-        var history = await _repository.GetByDeviceIdAsync(deviceId).ConfigureAwait(false);
+        var history = await _repository.GetByDeviceIdAsync(deviceId, cancellationToken).ConfigureAwait(false);
         return history.OrderByDescending(l => l.Timestamp).Take(Math.Min(limit, ConfigConstants.MAX_LOCATION_HISTORY)).ToList();
     }
 
     /// <summary>
     /// Gets location data within a time range.
     /// </summary>
-    public async Task<IEnumerable<LocationData>> GetLocationsByTimeRangeAsync(string deviceId, DateTime start, DateTime end)
+    public async Task<IEnumerable<LocationData>> GetLocationsByTimeRangeAsync(string deviceId, DateTime start, DateTime end, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(deviceId))
             throw new ArgumentException("Device ID cannot be empty", nameof(deviceId));
@@ -150,13 +157,13 @@ public class LocationDataService : ILocationDataService
         if (start >= end)
             throw new ArgumentException("Start time must be before end time");
 
-        return await _repository.GetByDeviceAndTimeRangeAsync(deviceId, start, end).ConfigureAwait(false);
+        return await _repository.GetByDeviceAndTimeRangeAsync(deviceId, start, end, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Gets locations within a specified radius.
     /// </summary>
-    public async Task<IEnumerable<LocationData>> GetLocationsNearbyAsync(double latitude, double longitude, double radiusKm)
+    public async Task<IEnumerable<LocationData>> GetLocationsNearbyAsync(double latitude, double longitude, double radiusKm, CancellationToken cancellationToken = default)
     {
         if (latitude < MeasurementBounds.MIN_LATITUDE || latitude > MeasurementBounds.MAX_LATITUDE)
             throw new ValidationException("Invalid latitude", nameof(latitude), latitude);
@@ -167,15 +174,15 @@ public class LocationDataService : ILocationDataService
         if (radiusKm <= 0)
             throw new ArgumentException("Radius must be positive", nameof(radiusKm));
 
-        return await _repository.GetWithinRadiusAsync(latitude, longitude, radiusKm).ConfigureAwait(false);
+        return await _repository.GetWithinRadiusAsync(latitude, longitude, radiusKm, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Calculates total travel distance for a device in a time period.
     /// </summary>
-    public async Task<double> CalculateTravelDistanceAsync(string deviceId, DateTime start, DateTime end)
+    public async Task<double> CalculateTravelDistanceAsync(string deviceId, DateTime start, DateTime end, CancellationToken cancellationToken = default)
     {
-        var locations = await GetLocationsByTimeRangeAsync(deviceId, start, end).ConfigureAwait(false);
+        var locations = await GetLocationsByTimeRangeAsync(deviceId, start, end, cancellationToken).ConfigureAwait(false);
         var sortedLocations = locations.OrderBy(l => l.Timestamp).ToList();
 
         if (sortedLocations.Count < 2)
@@ -193,11 +200,11 @@ public class LocationDataService : ILocationDataService
     /// <summary>
     /// Cleans up old location data.
     /// </summary>
-    public async Task<int> CleanupOldDataAsync(DateTime olderThan)
+    public async Task<int> CleanupOldDataAsync(DateTime olderThan, CancellationToken cancellationToken = default)
     {
         if (olderThan >= DateTime.UtcNow)
             throw new ArgumentException("Cleanup date must be in the past");
 
-        return await _repository.DeleteOlderThanAsync(olderThan).ConfigureAwait(false);
+        return await _repository.DeleteOlderThanAsync(olderThan, cancellationToken).ConfigureAwait(false);
     }
 }

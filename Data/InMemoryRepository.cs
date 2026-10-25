@@ -266,18 +266,18 @@ public class InMemoryRepository<T> : IRepository<T> where T : class
         return DateTime.MinValue;
     }
 
-    public virtual Task<T?> GetByIdAsync(string id)
+    public virtual Task<T?> GetByIdAsync(string id, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(id);
         return Task.FromResult(_store.TryGetValue(id, out var entity) ? CreateSnapshot(entity) : null);
     }
 
-    public virtual Task<IEnumerable<T>> GetAllAsync()
+    public virtual Task<IEnumerable<T>> GetAllAsync(CancellationToken cancellationToken = default)
     {
         return Task.FromResult<IEnumerable<T>>(_store.Values.Select(CreateSnapshot).ToList());
     }
 
-    public virtual async Task<T> CreateAsync(T entity)
+    public virtual async Task<T> CreateAsync(T entity, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(entity);
 
@@ -292,7 +292,7 @@ public class InMemoryRepository<T> : IRepository<T> where T : class
         return snapshot;
     }
 
-    public virtual Task<T> UpdateAsync(T entity)
+    public virtual Task<T> UpdateAsync(T entity, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(entity);
 
@@ -469,7 +469,7 @@ public class InMemoryLocationDataRepository : InMemoryRepository<LocationData>, 
         await Task.CompletedTask;
     }
 
-    public async Task<IEnumerable<LocationData>> GetByDeviceIdAsync(string deviceId)
+    public async Task<IEnumerable<LocationData>> GetByDeviceIdAsync(string deviceId, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(deviceId);
         return _store.Values.Where(l => l.DeviceId == deviceId).Select(CreateSnapshot).ToList();
@@ -483,7 +483,7 @@ public class InMemoryLocationDataRepository : InMemoryRepository<LocationData>, 
             .ToList();
     }
 
-    public async Task<IEnumerable<LocationData>> GetByDeviceAndTimeRangeAsync(string deviceId, DateTime start, DateTime end)
+    public async Task<IEnumerable<LocationData>> GetByDeviceAndTimeRangeAsync(string deviceId, DateTime start, DateTime end, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(deviceId);
         return _store.Values
@@ -493,7 +493,7 @@ public class InMemoryLocationDataRepository : InMemoryRepository<LocationData>, 
             .ToList();
     }
 
-    public async Task<LocationData?> GetLatestByDeviceIdAsync(string deviceId)
+    public async Task<LocationData?> GetLatestByDeviceIdAsync(string deviceId, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(deviceId);
         return _store.Values
@@ -503,7 +503,7 @@ public class InMemoryLocationDataRepository : InMemoryRepository<LocationData>, 
             .FirstOrDefault();
     }
 
-    public async Task<IEnumerable<LocationData>> GetWithinRadiusAsync(double latitude, double longitude, double radiusKm)
+    public async Task<IEnumerable<LocationData>> GetWithinRadiusAsync(double latitude, double longitude, double radiusKm, CancellationToken cancellationToken = default)
     {
         var center = new LocationData { Latitude = latitude, Longitude = longitude };
         return _store.Values
@@ -512,7 +512,7 @@ public class InMemoryLocationDataRepository : InMemoryRepository<LocationData>, 
             .ToList();
     }
 
-    public async Task<int> DeleteOlderThanAsync(DateTime dateTime)
+    public async Task<int> DeleteOlderThanAsync(DateTime dateTime, CancellationToken cancellationToken = default)
     {
         await _deleteLock.WaitAsync();
         try

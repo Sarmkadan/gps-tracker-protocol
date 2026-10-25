@@ -14,17 +14,17 @@ using GpsTrackerProtocol.Domain.Models;
 /// </summary>
 public interface IRepository<T> where T : class
 {
-    Task<T?> GetByIdAsync(string id);
-    Task<IEnumerable<T>> GetAllAsync();
-    Task<T> CreateAsync(T entity);
-    Task<T> UpdateAsync(T entity);
+    Task<T?> GetByIdAsync(string id, CancellationToken cancellationToken = default);
+    Task<IEnumerable<T>> GetAllAsync(CancellationToken cancellationToken = default);
+    Task<T> CreateAsync(T entity, CancellationToken cancellationToken = default);
+    Task<T> UpdateAsync(T entity, CancellationToken cancellationToken = default);
     Task<bool> DeleteAsync(string id);
     Task<bool> ExistsAsync(string id);
 
     /// <summary>
     /// Adds a new entity. Convenience alias for <see cref="CreateAsync"/>.
     /// </summary>
-    Task<T> AddAsync(T entity) => CreateAsync(entity);
+    Task<T> AddAsync(T entity, CancellationToken cancellationToken = default) => CreateAsync(entity, cancellationToken);
 
     /// <summary>
     /// Finds all entities matching the given predicate.
@@ -41,12 +41,12 @@ public interface IRepository<T> where T : class
 /// </summary>
 public interface ILocationDataRepository : IRepository<LocationData>
 {
-    Task<IEnumerable<LocationData>> GetByDeviceIdAsync(string deviceId);
+    Task<IEnumerable<LocationData>> GetByDeviceIdAsync(string deviceId, CancellationToken cancellationToken = default);
     Task<IEnumerable<LocationData>> GetByTimeRangeAsync(DateTime start, DateTime end);
-    Task<IEnumerable<LocationData>> GetByDeviceAndTimeRangeAsync(string deviceId, DateTime start, DateTime end);
-    Task<LocationData?> GetLatestByDeviceIdAsync(string deviceId);
-    Task<IEnumerable<LocationData>> GetWithinRadiusAsync(double latitude, double longitude, double radiusKm);
-    Task<int> DeleteOlderThanAsync(DateTime dateTime);
+    Task<IEnumerable<LocationData>> GetByDeviceAndTimeRangeAsync(string deviceId, DateTime start, DateTime end, CancellationToken cancellationToken = default);
+    Task<LocationData?> GetLatestByDeviceIdAsync(string deviceId, CancellationToken cancellationToken = default);
+    Task<IEnumerable<LocationData>> GetWithinRadiusAsync(double latitude, double longitude, double radiusKm, CancellationToken cancellationToken = default);
+    Task<int> DeleteOlderThanAsync(DateTime dateTime, CancellationToken cancellationToken = default);
 }
 
 /// <summary>
@@ -54,12 +54,12 @@ public interface ILocationDataRepository : IRepository<LocationData>
 /// </summary>
 public interface IDeviceRepository : IRepository<Device>
 {
-    Task<Device?> GetByImeiAsync(string imei);
-    Task<IEnumerable<Device>> GetByStatusAsync(DeviceStatus status);
+    Task<Device?> GetByImeiAsync(string imei, CancellationToken cancellationToken = default);
+    Task<IEnumerable<Device>> GetByStatusAsync(DeviceStatus status, CancellationToken cancellationToken = default);
     Task<IEnumerable<Device>> GetByProtocolAsync(ProtocolType protocol);
     Task<IEnumerable<Device>> GetActiveDevicesAsync();
     Task<int> GetTotalCountAsync();
-    Task<IEnumerable<Device>> GetOfflineDevicesAsync(TimeSpan timeout);
+    Task<IEnumerable<Device>> GetOfflineDevicesAsync(TimeSpan timeout, CancellationToken cancellationToken = default);
 }
 
 /// <summary>

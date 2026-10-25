@@ -30,18 +30,18 @@ public class InMemoryDeviceRepository : IDeviceRepository
         _retentionPolicy = RepositoryRetentionPolicyValidation.EnsureValid(retentionPolicy);
     }
 
-    public async Task<Device?> GetByIdAsync(string id)
+    public async Task<Device?> GetByIdAsync(string id, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(id);
         return _store.TryGetValue(id, out var entity) ? CreateSnapshot(entity) : null;
     }
 
-    public async Task<IEnumerable<Device>> GetAllAsync()
+    public async Task<IEnumerable<Device>> GetAllAsync(CancellationToken cancellationToken = default)
     {
         return _store.Values.Select(CreateSnapshot).ToList();
     }
 
-    public async Task<Device> CreateAsync(Device entity)
+    public async Task<Device> CreateAsync(Device entity, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(entity);
 
@@ -56,7 +56,7 @@ public class InMemoryDeviceRepository : IDeviceRepository
         return snapshot;
     }
 
-    public async Task<Device> UpdateAsync(Device entity)
+    public async Task<Device> UpdateAsync(Device entity, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(entity);
 
@@ -80,13 +80,13 @@ public class InMemoryDeviceRepository : IDeviceRepository
         return _store.ContainsKey(id);
     }
 
-    public async Task<Device?> GetByImeiAsync(string imei)
+    public async Task<Device?> GetByImeiAsync(string imei, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrEmpty(imei);
         return _store.Values.FirstOrDefault(d => d.Imei == imei) is Device device ? CreateSnapshot(device) : null;
     }
 
-    public async Task<IEnumerable<Device>> GetByStatusAsync(DeviceStatus status)
+    public async Task<IEnumerable<Device>> GetByStatusAsync(DeviceStatus status, CancellationToken cancellationToken = default)
     {
         return _store.Values.Where(d => d.Status == status).Select(CreateSnapshot).ToList();
     }
@@ -106,7 +106,7 @@ public class InMemoryDeviceRepository : IDeviceRepository
         return _store.Count;
     }
 
-    public async Task<IEnumerable<Device>> GetOfflineDevicesAsync(TimeSpan timeout)
+    public async Task<IEnumerable<Device>> GetOfflineDevicesAsync(TimeSpan timeout, CancellationToken cancellationToken = default)
     {
         return _store.Values.Where(d => d.IsOffline(timeout)).Select(CreateSnapshot).ToList();
     }
@@ -252,18 +252,18 @@ public class InMemoryJourneyRepository : IJourneyRepository
         _retentionPolicy = RepositoryRetentionPolicyValidation.EnsureValid(retentionPolicy);
     }
 
-    public async Task<Journey?> GetByIdAsync(string id)
+    public async Task<Journey?> GetByIdAsync(string id, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(id);
         return _store.TryGetValue(id, out var entity) ? CreateSnapshot(entity) : null;
     }
 
-    public async Task<IEnumerable<Journey>> GetAllAsync()
+    public async Task<IEnumerable<Journey>> GetAllAsync(CancellationToken cancellationToken = default)
     {
         return _store.Values.Select(CreateSnapshot).ToList();
     }
 
-    public async Task<Journey> CreateAsync(Journey entity)
+    public async Task<Journey> CreateAsync(Journey entity, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(entity);
 
@@ -278,7 +278,7 @@ public class InMemoryJourneyRepository : IJourneyRepository
         return snapshot;
     }
 
-    public async Task<Journey> UpdateAsync(Journey entity)
+    public async Task<Journey> UpdateAsync(Journey entity, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(entity);
 
@@ -403,18 +403,18 @@ public class InMemoryCommandRepository : ICommandRepository
         _retentionPolicy = RepositoryRetentionPolicyValidation.EnsureValid(retentionPolicy);
     }
 
-    public async Task<Command?> GetByIdAsync(string id)
+    public async Task<Command?> GetByIdAsync(string id, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(id);
         return _store.TryGetValue(id, out var entity) ? CreateSnapshot(entity) : null;
     }
 
-    public async Task<IEnumerable<Command>> GetAllAsync()
+    public async Task<IEnumerable<Command>> GetAllAsync(CancellationToken cancellationToken = default)
     {
         return _store.Values.Select(CreateSnapshot).ToList();
     }
 
-    public async Task<Command> CreateAsync(Command entity)
+    public async Task<Command> CreateAsync(Command entity, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(entity);
 
@@ -429,7 +429,7 @@ public class InMemoryCommandRepository : ICommandRepository
         return snapshot;
     }
 
-    public async Task<Command> UpdateAsync(Command entity)
+    public async Task<Command> UpdateAsync(Command entity, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(entity);
 
@@ -545,18 +545,18 @@ public class InMemoryResponseMessageRepository : IResponseMessageRepository
         _retentionPolicy = RepositoryRetentionPolicyValidation.EnsureValid(retentionPolicy);
     }
 
-    public async Task<ResponseMessage?> GetByIdAsync(string id)
+    public async Task<ResponseMessage?> GetByIdAsync(string id, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(id);
         return _store.TryGetValue(id, out var entity) ? CreateSnapshot(entity) : null;
     }
 
-    public async Task<IEnumerable<ResponseMessage>> GetAllAsync()
+    public async Task<IEnumerable<ResponseMessage>> GetAllAsync(CancellationToken cancellationToken = default)
     {
         return _store.Values.Select(CreateSnapshot).ToList();
     }
 
-    public async Task<ResponseMessage> CreateAsync(ResponseMessage entity)
+    public async Task<ResponseMessage> CreateAsync(ResponseMessage entity, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(entity);
 
@@ -571,7 +571,7 @@ public class InMemoryResponseMessageRepository : IResponseMessageRepository
         return snapshot;
     }
 
-    public async Task<ResponseMessage> UpdateAsync(ResponseMessage entity)
+    public async Task<ResponseMessage> UpdateAsync(ResponseMessage entity, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(entity);
 
