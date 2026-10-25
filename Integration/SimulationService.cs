@@ -24,12 +24,21 @@ public interface ISimulationService
         double centerLat, double centerLon, double radiusKm);
 }
 
+/// <summary>
+/// Default <see cref="ISimulationService"/> implementation. Generates synthetic GT06 locations
+/// and persists each one through <see cref="ILocationDataService"/>.
+/// </summary>
 public class SimulationService : ISimulationService
 {
     private readonly ILocationDataService _locationService;
     private readonly ILogger<SimulationService> _logger;
     private readonly Random _random = new();
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SimulationService"/> class.
+    /// </summary>
+    /// <param name="locationService">Service used to store the generated locations.</param>
+    /// <param name="logger">Logger for simulation diagnostics.</param>
     public SimulationService(
         ILocationDataService locationService,
         ILogger<SimulationService> logger)
@@ -38,6 +47,20 @@ public class SimulationService : ISimulationService
         _logger = logger;
     }
 
+    /// <summary>
+    /// Simulates a straight-line route between two coordinates at an assumed average speed of
+    /// 50 km/h, with evenly spaced points and randomized speed, altitude, and accuracy.
+    /// Each point is stored through the location service as it is generated.
+    /// </summary>
+    /// <param name="deviceId">Identifier of the device the locations belong to.</param>
+    /// <param name="startLat">Latitude of the route start, in degrees.</param>
+    /// <param name="startLon">Longitude of the route start, in degrees.</param>
+    /// <param name="endLat">Latitude of the route end, in degrees.</param>
+    /// <param name="endLon">Longitude of the route end, in degrees.</param>
+    /// <param name="points">Number of points to generate, including both endpoints.
+    /// Must be at least 2.</param>
+    /// <returns>The generated locations, ordered from start to end.</returns>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="points"/> is less than 2.</exception>
     public async Task<IEnumerable<LocationData>> SimulateRouteAsync(string deviceId,
         double startLat, double startLon, double endLat, double endLon, int points)
     {
@@ -82,6 +105,16 @@ public class SimulationService : ISimulationService
         return locations;
     }
 
+    /// <summary>
+    /// Generates a single random location within a circle around a center point, with
+    /// randomized speed, heading, altitude, and accuracy. The location is stored
+    /// through the location service before it is returned.
+    /// </summary>
+    /// <param name="deviceId">Identifier of the device the location belongs to.</param>
+    /// <param name="centerLat">Latitude of the circle center, in degrees.</param>
+    /// <param name="centerLon">Longitude of the circle center, in degrees.</param>
+    /// <param name="radiusKm">Radius of the circle, in kilometers.</param>
+    /// <returns>The generated location.</returns>
     public async Task<LocationData> GenerateRandomLocationAsync(string deviceId,
         double centerLat, double centerLon, double radiusKm)
     {
