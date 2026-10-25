@@ -64,6 +64,8 @@ public class GeofenceService : IGeofenceService
     /// <param name="logger">Logger used for geofence registration and validation messages.</param>
     public GeofenceService(ILogger<GeofenceService> logger)
     {
+        ArgumentNullException.ThrowIfNull(logger);
+
         _logger = logger;
     }
 
@@ -76,6 +78,8 @@ public class GeofenceService : IGeofenceService
     /// <param name="radiusKm">Zone radius in kilometers.</param>
     public void AddGeofence(string id, double centerLat, double centerLon, double radiusKm)
     {
+        ArgumentNullException.ThrowIfNull(id);
+
         if (!GpsUtilities.IsValidCoordinate(centerLat, centerLon))
         {
             _logger.LogWarning("Invalid geofence coordinates: {Lat}, {Lon}", centerLat, centerLon);
@@ -107,6 +111,8 @@ public class GeofenceService : IGeofenceService
     /// </returns>
     public bool IsInsideGeofence(string geofenceId, double latitude, double longitude)
     {
+        ArgumentNullException.ThrowIfNull(geofenceId);
+
         if (!_geofences.TryGetValue(geofenceId, out var geofence))
             return false;
 
