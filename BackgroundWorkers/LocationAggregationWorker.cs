@@ -48,6 +48,10 @@ public class LocationAggregationWorker : RecurringBackgroundWorker
             {
                 await AggregateDeviceLocationAsync(device.Id).ConfigureAwait(false);
             }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error aggregating locations for device {DeviceId}", device.Id);
