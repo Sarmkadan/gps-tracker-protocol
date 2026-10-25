@@ -86,7 +86,7 @@ public class Device
     }
 
     public override string ToString() =>
-        $"Device({DeviceName}) - IMEI: {Imei} - {Protocol} - {Status}";
+        $"Device({Id}) {DeviceName} - IMEI: {Imei} - {Protocol} - {Status}";
 }
 
 /// <summary>
