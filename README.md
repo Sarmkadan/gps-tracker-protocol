@@ -372,6 +372,83 @@ public class LocationDataServiceExample
 }
 ```
 
+## LocationDataService
+
+`LocationDataService` is the default implementation of `ILocationDataService` (`GpsTrackerProtocol.Services`). It sits on top of `IUnitOfWork` and handles the persistence side of GPS readings: it validates incoming `LocationData`, checks that the owning device is registered, and answers history, time-range, radius, and distance queries.
+
+Behavior worth knowing:
+
+- **Constructor**: `new LocationDataService(IUnitOfWork unitOfWork)`. It reads `unitOfWork.LocationData` and `unitOfWork.Devices`. `AddGpsTrackerServices()` registers it as a singleton behind `ILocationDataService`.
+- **Storing**: `StoreLocationAsync` rejects invalid readings (`LocationData.IsValid()` fails) with `ValidationException`. It throws `DeviceException` if the device does not exist. A default `Timestamp` is replaced with `DateTime.UtcNow`. After a successful store, the device's heartbeat is updated and saved.
+- **History**: `GetLocationHistoryAsync` returns newest first. The requested `limit` is capped at `ConfigConstants.MAX_LOCATION_HISTORY` (10,000).
+- **Time range**: `GetLocationsByTimeRangeAsync` requires `start < end`. Results come back in the order the repository returns them, not sorted.
+- **Nearby**: `GetLocationsNearbyAsync` validates latitude and longitude against `MeasurementBounds`, and `radiusKm` must be positive.
+- **Travel distance**: `CalculateTravelDistanceAsync` sorts the points in the window by timestamp and sums the Haversine distance between consecutive points, in kilometers. It returns `0` when there are fewer than two points.
+- **Cleanup**: `CleanupOldDataAsync` requires `olderThan` to be in the past and returns the number of records deleted.
+
+### Public API
+
+| Member | Returns | Notes |
+|--------|---------|-------|
+| `StoreLocationAsync(LocationData, CancellationToken)` | `Task<LocationData>` | Validates, checks the device exists, stores, updates heartbeat |
+| `GetLatestLocationAsync(string deviceId, CancellationToken)` | `Task<LocationData?>` | `null` when no data exists |
+| `GetLocationHistoryAsync(string deviceId, int limit = 100, CancellationToken)` | `Task<IEnumerable<LocationData>>` | Newest first, `limit` > 0 |
+| `GetLocationsByTimeRangeAsync(string deviceId, DateTime start, DateTime end, CancellationToken)` | `Task<IEnumerable<LocationData>>` | `start` must be before `end` |
+| `GetLocationsNearbyAsync(double latitude, double longitude, double radiusKm, CancellationToken)` | `Task<IEnumerable<LocationData>>` | Radius in kilometers |
+| `CalculateTravelDistanceAsync(string deviceId, DateTime start, DateTime end, CancellationToken)` | `Task<double>` | Total distance in kilometers |
+| `CleanupOldDataAsync(DateTime olderThan, CancellationToken)` | `Task<int>` | Number of records deleted |
+
+### Example
+
+```csharp
+using GpsTrackerProtocol.Data;
+using GpsTrackerProtocol.Domain;
+using GpsTrackerProtocol.Domain.Models;
+using GpsTrackerProtocol.Services;
+
+var unitOfWork = new InMemoryUnitOfWork();
+var locationService = new LocationDataService(unitOfWork);
+
+// The device must exist before any location can be stored for it
+await unitOfWork.Devices.CreateAsync(new Device
+{
+    Id = "device-001",
+    Imei = "123456789012345",
+    DeviceName = "Truck 7",
+    Protocol = ProtocolType.GT06
+});
+
+// Store two readings about ten minutes apart
+var start = DateTime.UtcNow.AddMinutes(-10);
+await locationService.StoreLocationAsync(new LocationData
+{
+    DeviceId = "device-001",
+    Latitude = 40.7128,
+    Longitude = -74.0060,
+    Speed = 60,
+    Timestamp = start,
+    SatelliteCount = 8,
+    Protocol = ProtocolType.GT06
+});
+await locationService.StoreLocationAsync(new LocationData
+{
+    DeviceId = "device-001",
+    Latitude = 40.7580,
+    Longitude = -73.9855,
+    Speed = 55,
+    Timestamp = start.AddMinutes(10),
+    SatelliteCount = 9,
+    Protocol = ProtocolType.GT06
+});
+
+var latest = await locationService.GetLatestLocationAsync("device-001");
+Console.WriteLine($"Latest: {latest?.Latitude:F4}, {latest?.Longitude:F4}");
+
+var distanceKm = await locationService.CalculateTravelDistanceAsync(
+    "device-001", start.AddMinutes(-1), DateTime.UtcNow);
+Console.WriteLine($"Distance: {distanceKm:F2} km");
+```
+
 ## DomainAndServiceTestsValidation
 
 The `DomainAndServiceTestsValidation` class provides validation extension methods for domain models and services used in `DomainAndServiceTests`. It includes validation methods for `LocationData`, `Device`, `GpsFrame`, and `GeofenceService` entities, along with convenience methods to check validity and throw exceptions when validation fails.
