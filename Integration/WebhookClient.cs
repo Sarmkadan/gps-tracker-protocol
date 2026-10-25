@@ -17,8 +17,28 @@ using GpsTrackerProtocol.Events;
 /// </summary>
 public interface IWebhookClient
 {
+    /// <summary>
+    /// POSTs a location update payload to the specified URL.
+    /// Retries up to three times on transient HTTP failures.
+    /// </summary>
+    /// <param name="webhookUrl">Absolute HTTP or HTTPS URL to deliver to.</param>
+    /// <param name="location">Location data to send.</param>
     Task SendLocationUpdateAsync(string webhookUrl, LocationData location);
+
+    /// <summary>
+    /// POSTs a journey completion payload to the specified URL.
+    /// Retries up to three times on transient HTTP failures.
+    /// </summary>
+    /// <param name="webhookUrl">Absolute HTTP or HTTPS URL to deliver to.</param>
+    /// <param name="journey">Completed journey to summarize.</param>
     Task SendJourneyCompletedAsync(string webhookUrl, Journey journey);
+
+    /// <summary>
+    /// POSTs a device status payload to the specified URL.
+    /// Retries up to three times on transient HTTP failures.
+    /// </summary>
+    /// <param name="webhookUrl">Absolute HTTP or HTTPS URL to deliver to.</param>
+    /// <param name="device">Device whose current status is sent.</param>
     Task SendDeviceStatusAsync(string webhookUrl, Device device);
 
     /// <summary>
@@ -28,13 +48,31 @@ public interface IWebhookClient
     Task SendGeofenceEventAsync(string webhookUrl, GeofenceWebhookPayload payload);
 }
 
+/// <summary>
+/// Default <see cref="IWebhookClient"/> implementation that delivers webhook payloads
+/// over HTTP using the shared <see cref="ExternalApiClient"/> retry logic.
+/// </summary>
 public class WebhookClient : ExternalApiClient, IWebhookClient
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="WebhookClient"/> class.
+    /// </summary>
+    /// <param name="httpClient">HTTP client used to send webhook requests.</param>
+    /// <param name="logger">Logger for delivery results and warnings.</param>
     public WebhookClient(HttpClient httpClient, ILogger<WebhookClient> logger)
         : base(httpClient, logger)
     {
     }
 
+    /// <summary>
+    /// Sends a <c>location_update</c> webhook containing the device ID, coordinates,
+    /// speed, bearing, altitude and timestamp of the given location.
+    /// Returns without sending if <paramref name="webhookUrl"/> is empty or not a valid
+    /// absolute HTTP or HTTPS URI.
+    /// </summary>
+    /// <param name="webhookUrl">Absolute HTTP or HTTPS URL to deliver to.</param>
+    /// <param name="location">Location data to send.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="location"/> is null.</exception>
     public async Task SendLocationUpdateAsync(string webhookUrl, LocationData location)
     {
         if (string.IsNullOrWhiteSpace(webhookUrl))
@@ -81,6 +119,15 @@ public class WebhookClient : ExternalApiClient, IWebhookClient
         });
     }
 
+    /// <summary>
+    /// Sends a <c>journey_completed</c> webhook summarizing the journey: ID, device, start
+    /// and end times, total distance, duration in minutes and waypoint count.
+    /// Returns without sending if <paramref name="webhookUrl"/> is empty or not a valid
+    /// absolute HTTP or HTTPS URI.
+    /// </summary>
+    /// <param name="webhookUrl">Absolute HTTP or HTTPS URL to deliver to.</param>
+    /// <param name="journey">Completed journey to summarize.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="journey"/> is null.</exception>
     public async Task SendJourneyCompletedAsync(string webhookUrl, Journey journey)
     {
         if (string.IsNullOrWhiteSpace(webhookUrl))
@@ -127,6 +174,15 @@ public class WebhookClient : ExternalApiClient, IWebhookClient
         });
     }
 
+    /// <summary>
+    /// Sends a <c>device_status</c> webhook with the device ID, IMEI, name, active flag,
+    /// status and last-seen time.
+    /// Returns without sending if <paramref name="webhookUrl"/> is empty or not a valid
+    /// absolute HTTP or HTTPS URI.
+    /// </summary>
+    /// <param name="webhookUrl">Absolute HTTP or HTTPS URL to deliver to.</param>
+    /// <param name="device">Device whose current status is sent.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="device"/> is null.</exception>
     public async Task SendDeviceStatusAsync(string webhookUrl, Device device)
     {
         if (string.IsNullOrWhiteSpace(webhookUrl))
@@ -172,6 +228,13 @@ public class WebhookClient : ExternalApiClient, IWebhookClient
         });
     }
 
+    /// <summary>
+    /// POSTs a <see cref="GeofenceWebhookPayload"/> to the specified URL.
+    /// Retries up to three times on transient HTTP failures.
+    /// </summary>
+    /// <param name="webhookUrl">Absolute HTTP or HTTPS URL to deliver to.</param>
+    /// <param name="payload">Geofence event to send.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="payload"/> is null.</exception>
     public async Task SendGeofenceEventAsync(string webhookUrl, GeofenceWebhookPayload payload)
     {
         if (string.IsNullOrWhiteSpace(webhookUrl))
