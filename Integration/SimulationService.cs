@@ -30,6 +30,26 @@ public interface ISimulationService
 /// </summary>
 public class SimulationService : ISimulationService
 {
+    private const double ASSUMED_AVERAGE_SPEED_KMH = 50.0;
+    private const int MIN_ROUTE_POINTS = 2;
+    private const double ROUTE_SPEED_VARIATION_KMH = 10.0;
+    private const double ROUTE_ALTITUDE_BASE_M = 100.0;
+    private const double ROUTE_ALTITUDE_RANGE_M = 50.0;
+    private const int ROUTE_SATELLITE_BASE = 12;
+    private const int ROUTE_SATELLITE_JITTER_MIN = -2;
+    private const int ROUTE_SATELLITE_JITTER_MAX_EXCLUSIVE = 3;
+    private const double ROUTE_ACCURACY_BASE_M = 5.0;
+    private const double ROUTE_ACCURACY_RANGE_M = 5.0;
+
+    private const double KM_PER_DEGREE_LATITUDE = 111.2;
+    private const double RANDOM_MAX_SPEED_KMH = 100.0;
+    private const double RANDOM_ALTITUDE_BASE_M = 100.0;
+    private const double RANDOM_ALTITUDE_RANGE_M = 200.0;
+    private const int RANDOM_SATELLITE_BASE = 8;
+    private const int RANDOM_SATELLITE_JITTER_MAX_EXCLUSIVE = 16;
+    private const double RANDOM_ACCURACY_BASE_M = 3.0;
+    private const double RANDOM_ACCURACY_RANGE_M = 10.0;
+
     private readonly ILocationDataService _locationService;
     private readonly ILogger<SimulationService> _logger;
     private readonly Random _random = new();
@@ -69,15 +89,15 @@ public class SimulationService : ISimulationService
     {
         ArgumentNullException.ThrowIfNull(deviceId);
 
-        if (points < 2)
-            throw new ArgumentException("Points must be at least 2");
+        if (points < MIN_ROUTE_POINTS)
+            throw new ArgumentException($"Points must be at least {MIN_ROUTE_POINTS}");
 
         var locations = new List<LocationData>();
         var distance = GpsUtilities.CalculateDistanceKm(startLat, startLon, endLat, endLon);
         var bearing = GpsUtilities.CalculateBearing(startLat, startLon, endLat, endLon);
 
         var currentTime = DateTime.UtcNow;
-        var estimatedDuration = TimeSpan.FromHours(distance / 50); // Assume 50 km/h average
+        var estimatedDuration = TimeSpan.FromHours(distance / ASSUMED_AVERAGE_SPEED_KMH);
         var timeBetweenPoints = estimatedDuration / (points - 1);
 
         for (int i = 0; i < points; i++)
@@ -91,12 +111,15 @@ public class SimulationService : ISimulationService
                 DeviceId = deviceId,
                 Latitude = latitude,
                 Longitude = longitude,
-                Speed = 50.0 + (_random.NextDouble() - 0.5) * 10, // 45-55 km/h with variation
+                Speed = ASSUMED_AVERAGE_SPEED_KMH
+                    + (_random.NextDouble() - 0.5) * ROUTE_SPEED_VARIATION_KMH,
                 Bearing = bearing,
-                Altitude = 100.0 + (_random.NextDouble() * 50),
+                Altitude = ROUTE_ALTITUDE_BASE_M + (_random.NextDouble() * ROUTE_ALTITUDE_RANGE_M),
                 Timestamp = currentTime.Add(timeBetweenPoints * i),
-                SatelliteCount = 12 + _random.Next(-2, 3),
-                Accuracy = 5.0 + _random.NextDouble() * 5,
+                SatelliteCount = ROUTE_SATELLITE_BASE
+                    + _random.Next(ROUTE_SATELLITE_JITTER_MIN,
+                        ROUTE_SATELLITE_JITTER_MAX_EXCLUSIVE),
+                Accuracy = ROUTE_ACCURACY_BASE_M + _random.NextDouble() * ROUTE_ACCURACY_RANGE_M,
                 Protocol = ProtocolType.GT06
             };
 
@@ -129,8 +152,8 @@ public class SimulationService : ISimulationService
         var angle = _random.NextDouble() * 2 * Math.PI;
         var r = _random.NextDouble() * radiusKm;
 
-        var latOffset = (r / 111.2); // 1 degree latitude ≈ 111.2 km
-        var lonOffset = (r / (111.2 * Math.Cos(centerLat * Math.PI / 180)));
+        var latOffset = (r / KM_PER_DEGREE_LATITUDE); // 1 degree latitude ≈ 111.2 km
+        var lonOffset = (r / (KM_PER_DEGREE_LATITUDE * Math.Cos(centerLat * Math.PI / 180)));
 
         var latitude = centerLat + (Math.Cos(angle) * latOffset);
         var longitude = centerLon + (Math.Sin(angle) * lonOffset);
@@ -140,12 +163,13 @@ public class SimulationService : ISimulationService
             DeviceId = deviceId,
             Latitude = latitude,
             Longitude = longitude,
-            Speed = _random.NextDouble() * 100,
+            Speed = _random.NextDouble() * RANDOM_MAX_SPEED_KMH,
             Bearing = _random.NextDouble() * 360,
-            Altitude = 100.0 + (_random.NextDouble() * 200),
+            Altitude = RANDOM_ALTITUDE_BASE_M + (_random.NextDouble() * RANDOM_ALTITUDE_RANGE_M),
             Timestamp = DateTime.UtcNow,
-            SatelliteCount = 8 + _random.Next(0, 16),
-            Accuracy = 3.0 + (_random.NextDouble() * 10),
+            SatelliteCount = RANDOM_SATELLITE_BASE
+                + _random.Next(0, RANDOM_SATELLITE_JITTER_MAX_EXCLUSIVE),
+            Accuracy = RANDOM_ACCURACY_BASE_M + (_random.NextDouble() * RANDOM_ACCURACY_RANGE_M),
             Protocol = ProtocolType.GT06
         };
 
