@@ -82,6 +82,10 @@ public class GeofenceAlert
 
     /// <summary>Gets or sets optional notes added during acknowledgement.</summary>
     public string Notes { get; set; } = string.Empty;
+
+    /// <inheritdoc />
+    public override string ToString() =>
+        $"GeofenceAlert({AlertType}) - Device: {DeviceId} - Geofence: {GeofenceId} - Status: {Status}";
 }
 
 /// <summary>Status lifecycle for a <see cref="GeofenceAlert"/>.</summary>
