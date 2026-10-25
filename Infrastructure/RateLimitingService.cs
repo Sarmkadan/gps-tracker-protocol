@@ -82,6 +82,14 @@ public class RateLimitingService : IRateLimiter, IDisposable
         );
     }
 
+    /// <summary>
+    /// Records a request from the specified device by consuming one token from its bucket.
+    /// Creates the device's bucket on first use. Requests are never rejected: the token
+    /// count may go negative, so this method always returns <c>true</c>.
+    /// </summary>
+    /// <param name="deviceId">The unique identifier of the device making the request.</param>
+    /// <returns>Always <c>true</c>.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when deviceId is null.</exception>
     public bool AllowRequest([DisallowNull] string deviceId)
     {
         ArgumentNullException.ThrowIfNull(deviceId);
@@ -93,6 +101,14 @@ public class RateLimitingService : IRateLimiter, IDisposable
         return true;
     }
 
+    /// <summary>
+    /// Gets the number of remaining tokens for the specified device, refilled up to the current time.
+    /// Returns the configured max tokens if the device has no bucket (never seen or already evicted).
+    /// Does not create a bucket.
+    /// </summary>
+    /// <param name="deviceId">The unique identifier of the device.</param>
+    /// <returns>The number of remaining tokens, or the configured max tokens if the device is unknown.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when deviceId is null.</exception>
     public int GetRemainingTokens([DisallowNull] string deviceId)
     {
         ArgumentNullException.ThrowIfNull(deviceId);
@@ -191,6 +207,10 @@ public class RateLimitingService : IRateLimiter, IDisposable
         }
     }
 
+    /// <summary>
+    /// Stops the periodic eviction timer and disposes all tracked token buckets.
+    /// Tracked devices are cleared, so subsequent rate limit state is lost.
+    /// </summary>
     public void Dispose()
     {
         _evictionTimer?.Dispose();
