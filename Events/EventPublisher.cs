@@ -9,12 +9,21 @@ using Microsoft.Extensions.Logging;
 
 namespace GpsTrackerProtocol.Events;
 
+/// <summary>
+/// In-process, thread-safe implementation of <see cref="IEventPublisher"/>.
+/// Handlers are stored per event type and invoked synchronously under a lock when an event is published.
+/// </summary>
 public class EventPublisher : IEventPublisher
 {
     private readonly Dictionary<Type, List<Delegate>> _subscribers = new();
     private readonly ILogger<EventPublisher> _logger;
     private readonly object _lock = new();
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="EventPublisher"/> class.
+    /// </summary>
+    /// <param name="logger">Logger used for publish, subscribe and handler-error diagnostics.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="logger"/> is <c>null</c>.</exception>
     public EventPublisher(ILogger<EventPublisher> logger)
     {
         ArgumentNullException.ThrowIfNull(logger);
@@ -22,6 +31,14 @@ public class EventPublisher : IEventPublisher
         _logger = logger;
     }
 
+    /// <summary>
+    /// Publishes an event to all handlers subscribed to its type <typeparamref name="T"/>.
+    /// Exceptions thrown by individual handlers are logged and do not stop the other handlers.
+    /// </summary>
+    /// <typeparam name="T">The domain event type.</typeparam>
+    /// <param name="event">The event instance to publish.</param>
+    /// <returns>A task that completes once all subscribed handlers have finished.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="event"/> is <c>null</c>.</exception>
     public async Task PublishAsync<T>(T @event) where T : IDomainEvent
     {
         ArgumentNullException.ThrowIfNull(@event);
@@ -53,6 +70,15 @@ public class EventPublisher : IEventPublisher
         }
     }
 
+    /// <summary>
+    /// Registers a handler for events of type <typeparamref name="T"/>.
+    /// </summary>
+    /// <typeparam name="T">The domain event type to subscribe to.</typeparam>
+    /// <param name="handler">The asynchronous callback invoked for each published event of type <typeparamref name="T"/>.</param>
+    /// <returns>
+    /// An <see cref="IDisposable"/> that removes this handler when disposed.
+    /// </returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="handler"/> is <c>null</c>.</exception>
     public IDisposable Subscribe<T>(Func<T, Task> handler) where T : IDomainEvent
     {
         ArgumentNullException.ThrowIfNull(handler);
