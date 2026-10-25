@@ -19,9 +19,18 @@ using GpsTrackerProtocol.Utilities;
 /// </summary>
 public interface ICommandLineInterface
 {
+    /// <summary>
+    /// Executes the command given by the supplied arguments.
+    /// </summary>
+    /// <param name="args">Command-line arguments, where the first element is the command name.</param>
+    /// <returns>A process exit code: 0 on success, non-zero on failure.</returns>
     Task<int> ExecuteAsync(string[] args);
 }
 
+/// <summary>
+/// Default implementation of <see cref="ICommandLineInterface"/>.
+/// Writes results to the console and returns an exit code for the host process.
+/// </summary>
 public class CommandLineInterface : ICommandLineInterface
 {
     private readonly ILogger<CommandLineInterface> _logger;
@@ -61,6 +70,19 @@ public class CommandLineInterface : ICommandLineInterface
     private const int SelfTestWarnExitCode = 2;
     private const int JourneyStatusActive = 1;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CommandLineInterface"/> class.
+    /// </summary>
+    /// <param name="logger">Logger used to record command execution failures.</param>
+    /// <param name="parserService">Service that detects, validates, and parses raw frames.</param>
+    /// <param name="deviceService">Service that provides registered devices.</param>
+    /// <param name="locationService">Service that provides location history.</param>
+    /// <param name="journeyService">Service that provides journey history.</param>
+    /// <param name="jsonFormatter">Formatter used for JSON output.</param>
+    /// <param name="csvFormatter">Formatter used for CSV output.</param>
+    /// <param name="geofenceAlerting">Service that manages geofence alert rules and alerts.</param>
+    /// <param name="routeReplay">Service that replays a journey's route.</param>
+    /// <param name="diagnostics">Service that reports device diagnostics and self-tests.</param>
     public CommandLineInterface(
         ILogger<CommandLineInterface> logger,
         IProtocolParserService parserService,
@@ -85,6 +107,13 @@ public class CommandLineInterface : ICommandLineInterface
         _diagnostics = diagnostics;
     }
 
+    /// <summary>
+    /// Parses the first argument as a command name and dispatches to its handler.
+    /// Prints help when no arguments are given. Unexpected exceptions are logged
+    /// and reported to standard error instead of being thrown.
+    /// </summary>
+    /// <param name="args">Command-line arguments, where the first element is the command name.</param>
+    /// <returns>A process exit code: 0 on success, 1 on error or unknown command, or the handler's code.</returns>
     public async Task<int> ExecuteAsync(string[] args)
     {
         try
