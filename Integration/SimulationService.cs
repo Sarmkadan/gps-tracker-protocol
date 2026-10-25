@@ -43,6 +43,9 @@ public class SimulationService : ISimulationService
         ILocationDataService locationService,
         ILogger<SimulationService> logger)
     {
+        ArgumentNullException.ThrowIfNull(locationService);
+        ArgumentNullException.ThrowIfNull(logger);
+
         _locationService = locationService;
         _logger = logger;
     }
@@ -64,6 +67,8 @@ public class SimulationService : ISimulationService
     public async Task<IEnumerable<LocationData>> SimulateRouteAsync(string deviceId,
         double startLat, double startLon, double endLat, double endLon, int points)
     {
+        ArgumentNullException.ThrowIfNull(deviceId);
+
         if (points < 2)
             throw new ArgumentException("Points must be at least 2");
 
@@ -118,6 +123,8 @@ public class SimulationService : ISimulationService
     public async Task<LocationData> GenerateRandomLocationAsync(string deviceId,
         double centerLat, double centerLon, double radiusKm)
     {
+        ArgumentNullException.ThrowIfNull(deviceId);
+
         // Generate random point within circle using polar coordinates
         var angle = _random.NextDouble() * 2 * Math.PI;
         var r = _random.NextDouble() * radiusKm;
