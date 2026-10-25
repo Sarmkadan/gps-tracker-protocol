@@ -128,9 +128,12 @@ public class Journey
         Metadata["duration_minutes"] = GetDuration().TotalMinutes;
     }
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Returns a short human-readable summary of the journey: its identifier, total distance and duration.
+    /// </summary>
+    /// <returns>A string such as <c>Journey 3f2a...: 12.35 km in 42.0 min</c>.</returns>
     public override string ToString() =>
-        $"Journey({Id}) - {DeviceId} - {Waypoints.Count} points - {GetDuration().TotalMinutes:F1}min";
+        $"Journey {Id}: {GetTotalDistance():F2} km in {GetDuration().TotalMinutes:F1} min";
 }
 
 /// <summary>
