@@ -95,6 +95,17 @@ public class CommandLineInterface : ICommandLineInterface
         IRouteReplayService routeReplay,
         IDeviceDiagnosticsService diagnostics)
     {
+        ArgumentNullException.ThrowIfNull(logger);
+        ArgumentNullException.ThrowIfNull(parserService);
+        ArgumentNullException.ThrowIfNull(deviceService);
+        ArgumentNullException.ThrowIfNull(locationService);
+        ArgumentNullException.ThrowIfNull(journeyService);
+        ArgumentNullException.ThrowIfNull(jsonFormatter);
+        ArgumentNullException.ThrowIfNull(csvFormatter);
+        ArgumentNullException.ThrowIfNull(geofenceAlerting);
+        ArgumentNullException.ThrowIfNull(routeReplay);
+        ArgumentNullException.ThrowIfNull(diagnostics);
+
         _logger = logger;
         _parserService = parserService;
         _deviceService = deviceService;
@@ -116,6 +127,8 @@ public class CommandLineInterface : ICommandLineInterface
     /// <returns>A process exit code: 0 on success, 1 on error or unknown command, or the handler's code.</returns>
     public async Task<int> ExecuteAsync(string[] args)
     {
+        ArgumentNullException.ThrowIfNull(args);
+
         try
         {
             if (args.Length == 0)
