@@ -42,6 +42,7 @@ public class NotificationService : INotificationService
     /// <param name="logger">Logger used to record each alert.</param>
     public NotificationService(ILogger<NotificationService> logger)
     {
+        ArgumentNullException.ThrowIfNull(logger);
         _logger = logger;
     }
 
