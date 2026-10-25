@@ -18,18 +18,46 @@ using Microsoft.Extensions.Logging;
 /// </summary>
 public interface IWeatherApiClient
 {
+    /// <summary>
+    /// Gets the current weather conditions at the specified coordinates.
+    /// </summary>
+    /// <param name="latitude">Latitude in decimal degrees.</param>
+    /// <param name="longitude">Longitude in decimal degrees.</param>
+    /// <returns>The current weather data for the location.</returns>
+    /// <exception cref="GpsTrackerException">Thrown when the weather data cannot be retrieved.</exception>
     Task<WeatherData> GetWeatherAsync(double latitude, double longitude);
 }
 
+/// <summary>
+/// Default <see cref="IWeatherApiClient"/> implementation that queries the Open-Meteo forecast API.
+/// </summary>
 public class WeatherApiClient : ExternalApiClient, IWeatherApiClient
 {
     private const string OpenMeteoUrl = "https://api.open-meteo.com/v1/forecast";
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="WeatherApiClient"/> class.
+    /// </summary>
+    /// <param name="httpClient">The HTTP client used to call the Open-Meteo API.</param>
+    /// <param name="logger">The logger used to record fetch failures.</param>
     public WeatherApiClient(HttpClient httpClient, ILogger<WeatherApiClient> logger)
         : base(httpClient, logger)
     {
     }
 
+    /// <summary>
+    /// Fetches the current temperature, wind speed and weather code at the specified coordinates.
+    /// The request is cancelled after 10 seconds.
+    /// </summary>
+    /// <param name="latitude">Latitude in decimal degrees, formatted with two decimal places.</param>
+    /// <param name="longitude">Longitude in decimal degrees, formatted with two decimal places.</param>
+    /// <returns>
+    /// A <see cref="WeatherData"/> instance with the current conditions and a UTC timestamp.
+    /// </returns>
+    /// <exception cref="GpsTrackerException">
+    /// Thrown when the HTTP request fails, times out, returns a non-success status code,
+    /// or the response does not contain current weather data. The original exception is preserved as the inner exception.
+    /// </exception>
     public async Task<WeatherData> GetWeatherAsync(double latitude, double longitude)
     {
         try
