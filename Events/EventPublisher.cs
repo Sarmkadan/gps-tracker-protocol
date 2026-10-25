@@ -17,11 +17,15 @@ public class EventPublisher : IEventPublisher
 
     public EventPublisher(ILogger<EventPublisher> logger)
     {
+        ArgumentNullException.ThrowIfNull(logger);
+
         _logger = logger;
     }
 
     public async Task PublishAsync<T>(T @event) where T : IDomainEvent
     {
+        ArgumentNullException.ThrowIfNull(@event);
+
         _logger.LogInformation("Publishing event: {EventType} (ID: {EventId})", typeof(T).Name, @event.EventId);
 
         lock (_lock)
@@ -51,6 +55,8 @@ public class EventPublisher : IEventPublisher
 
     public IDisposable Subscribe<T>(Func<T, Task> handler) where T : IDomainEvent
     {
+        ArgumentNullException.ThrowIfNull(handler);
+
         lock (_lock)
         {
             var eventType = typeof(T);
