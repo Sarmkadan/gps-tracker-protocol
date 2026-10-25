@@ -233,7 +233,9 @@ public class RateLimitingService : IRateLimiter, IDisposable
 
         public BucketEntry(TokenBucket bucket, long lastAccessed)
         {
-            Bucket = bucket ?? throw new ArgumentNullException(nameof(bucket));
+            ArgumentNullException.ThrowIfNull(bucket);
+
+            Bucket = bucket;
             LastAccessed = lastAccessed;
         }
 
