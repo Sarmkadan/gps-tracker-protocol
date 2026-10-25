@@ -19,6 +19,10 @@ public interface INotificationService
     Task SendOfflineAlertAsync(string deviceId);
 }
 
+/// <summary>
+/// In-memory implementation of <see cref="INotificationService"/>. Stores every alert as a
+/// <see cref="Notification"/> and writes it to the log at a severity matching the alert type.
+/// </summary>
 public class NotificationService : INotificationService
 {
     private const string DeviceIdErrorMessage = "Device ID cannot be null or empty";
@@ -32,11 +36,25 @@ public class NotificationService : INotificationService
     private readonly ILogger<NotificationService> _logger;
     private readonly List<Notification> _notifications = new();
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="NotificationService"/> class.
+    /// </summary>
+    /// <param name="logger">Logger used to record each alert.</param>
     public NotificationService(ILogger<NotificationService> logger)
     {
         _logger = logger;
     }
 
+    /// <summary>
+    /// Records a speeding violation for the device and logs it as a warning.
+    /// </summary>
+    /// <param name="deviceId">Identifier of the device that exceeded the limit.</param>
+    /// <param name="speed">Measured speed in km/h.</param>
+    /// <param name="speedLimit">Applicable speed limit in km/h.</param>
+    /// <returns>A completed task.</returns>
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="deviceId"/> is null, empty, or whitespace.
+    /// </exception>
     public Task SendSpeedingAlertAsync(string deviceId, double speed, double speedLimit)
     {
         if (string.IsNullOrWhiteSpace(deviceId))
@@ -57,6 +75,16 @@ public class NotificationService : INotificationService
         return Task.CompletedTask;
     }
 
+    /// <summary>
+    /// Records a geofence breach for the device and logs it as a warning.
+    /// </summary>
+    /// <param name="deviceId">Identifier of the device that breached the geofence.</param>
+    /// <param name="latitude">Latitude of the device at the time of the breach.</param>
+    /// <param name="longitude">Longitude of the device at the time of the breach.</param>
+    /// <returns>A completed task.</returns>
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="deviceId"/> is null, empty, or whitespace.
+    /// </exception>
     public Task SendGeofenceAlertAsync(string deviceId, double latitude, double longitude)
     {
         if (string.IsNullOrWhiteSpace(deviceId))
@@ -77,6 +105,14 @@ public class NotificationService : INotificationService
         return Task.CompletedTask;
     }
 
+    /// <summary>
+    /// Records that the device has gone offline and logs it as a critical event.
+    /// </summary>
+    /// <param name="deviceId">Identifier of the device that went offline.</param>
+    /// <returns>A completed task.</returns>
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="deviceId"/> is null, empty, or whitespace.
+    /// </exception>
     public Task SendOfflineAlertAsync(string deviceId)
     {
         if (string.IsNullOrWhiteSpace(deviceId))
@@ -97,6 +133,13 @@ public class NotificationService : INotificationService
         return Task.CompletedTask;
     }
 
+    /// <summary>
+    /// Returns the stored notifications, optionally filtered by device.
+    /// </summary>
+    /// <param name="deviceId">
+    /// Device to filter by. When null, notifications for all devices are returned.
+    /// </param>
+    /// <returns>The matching notifications, in the order they were recorded.</returns>
     public IEnumerable<Notification> GetNotifications(string deviceId = null)
     {
         return deviceId is null
@@ -104,6 +147,14 @@ public class NotificationService : INotificationService
             : _notifications.Where(n => n.DeviceId == deviceId);
     }
 
+    /// <summary>
+    /// Marks the notification with the given identifier as read.
+    /// </summary>
+    /// <param name="notificationId">Identifier of the notification to mark.</param>
+    /// <remarks>
+    /// Does nothing when <paramref name="notificationId"/> is null, empty, whitespace,
+    /// or does not match any stored notification.
+    /// </remarks>
     public void MarkAsRead(string notificationId)
     {
         if (string.IsNullOrWhiteSpace(notificationId))
