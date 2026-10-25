@@ -113,6 +113,12 @@ public interface IDeviceService
 /// </remarks>
 public class DeviceService : IDeviceService
 {
+    private const string GenericRepositoryRequiredMessage = "Service was not constructed with a generic repository.";
+    private const string DeviceIdEmptyMessage = "Device ID cannot be empty";
+    private const string ImeiEmptyMessage = "IMEI cannot be empty";
+    private const string ValidationFailedMessage = "Device validation failed";
+    private const int DefaultPort = 0;
+
     private readonly IDeviceRepository _repository = null!;
     private readonly ILocationDataRepository _locationRepository = null!;
     private readonly IRepository<Device>? _legacyRepository;
@@ -147,7 +153,7 @@ public class DeviceService : IDeviceService
     public async Task<Device> RegisterDeviceAsync(string deviceId, CancellationToken cancellationToken = default)
     {
         if (_legacyRepository is null)
-            throw new InvalidOperationException("Service was not constructed with a generic repository.");
+            throw new InvalidOperationException(GenericRepositoryRequiredMessage);
 
         var existing = await _legacyRepository.GetByIdAsync(deviceId, cancellationToken).ConfigureAwait(false);
         if (existing is not null)
@@ -174,7 +180,7 @@ public class DeviceService : IDeviceService
     public async Task<Device?> GetDeviceByIdAsync(string deviceId, CancellationToken cancellationToken = default)
     {
         if (_legacyRepository is null)
-            throw new InvalidOperationException("Service was not constructed with a generic repository.");
+            throw new InvalidOperationException(GenericRepositoryRequiredMessage);
 
         return await _legacyRepository.GetByIdAsync(deviceId, cancellationToken).ConfigureAwait(false);
     }
@@ -190,7 +196,7 @@ public class DeviceService : IDeviceService
     public async Task UpdateDeviceStatusAsync(string deviceId, bool isActive, CancellationToken cancellationToken = default)
     {
         if (_legacyRepository is null)
-            throw new InvalidOperationException("Service was not constructed with a generic repository.");
+            throw new InvalidOperationException(GenericRepositoryRequiredMessage);
 
         var device = await _legacyRepository.GetByIdAsync(deviceId, cancellationToken).ConfigureAwait(false);
         if (device is null)
@@ -215,7 +221,7 @@ public class DeviceService : IDeviceService
             throw new ArgumentNullException(nameof(device));
 
         if (!device.IsValid())
-            throw new ValidationException("Device validation failed", nameof(device));
+            throw new ValidationException(ValidationFailedMessage, nameof(device));
 
         var existing = await _repository.GetByImeiAsync(device.Imei, cancellationToken).ConfigureAwait(false);
         if (existing is not null)
@@ -238,7 +244,7 @@ public class DeviceService : IDeviceService
     public async Task<Device?> GetDeviceAsync(string deviceId, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(deviceId))
-            throw new ArgumentException("Device ID cannot be empty", nameof(deviceId));
+            throw new ArgumentException(DeviceIdEmptyMessage, nameof(deviceId));
 
         return await _repository.GetByIdAsync(deviceId, cancellationToken).ConfigureAwait(false);
     }
@@ -253,7 +259,7 @@ public class DeviceService : IDeviceService
     public async Task<Device?> GetDeviceByImeiAsync(string imei, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(imei))
-            throw new ArgumentException("IMEI cannot be empty", nameof(imei));
+            throw new ArgumentException(ImeiEmptyMessage, nameof(imei));
 
         return await _repository.GetByImeiAsync(imei, cancellationToken).ConfigureAwait(false);
     }
@@ -300,7 +306,7 @@ public class DeviceService : IDeviceService
             throw new DeviceException($"Device {device.Id} not found", device.Id);
 
         if (!device.IsValid())
-            throw new ValidationException("Device validation failed", nameof(device));
+            throw new ValidationException(ValidationFailedMessage, nameof(device));
 
         await _repository.UpdateAsync(device, cancellationToken).ConfigureAwait(false);
         return true;
@@ -318,7 +324,7 @@ public class DeviceService : IDeviceService
     public async Task<bool> DeregisterDeviceAsync(string deviceId, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(deviceId))
-            throw new ArgumentException("Device ID cannot be empty", nameof(deviceId));
+            throw new ArgumentException(DeviceIdEmptyMessage, nameof(deviceId));
 
         var device = await _repository.GetByIdAsync(deviceId, cancellationToken).ConfigureAwait(false);
         if (device is null)
@@ -337,7 +343,7 @@ public class DeviceService : IDeviceService
     /// <param name="port">The port of the device.</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <exception cref="DeviceException">Thrown when the device is not found.</exception>
-    public async Task UpdateDeviceHeartbeatAsync(string deviceId, string? ipAddress = null, int port = 0, CancellationToken cancellationToken = default)
+    public async Task UpdateDeviceHeartbeatAsync(string deviceId, string? ipAddress = null, int port = DefaultPort, CancellationToken cancellationToken = default)
     {
         var device = await _repository.GetByIdAsync(deviceId, cancellationToken).ConfigureAwait(false);
         if (device is null)
@@ -369,7 +375,7 @@ public class DeviceService : IDeviceService
     public async Task<DeviceStatusDto?> GetDeviceStatusAsync(string deviceId, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(deviceId))
-            throw new ArgumentException("Device ID cannot be empty", nameof(deviceId));
+            throw new ArgumentException(DeviceIdEmptyMessage, nameof(deviceId));
 
         var device = await _repository.GetByIdAsync(deviceId, cancellationToken).ConfigureAwait(false);
         return device is null ? null : ToStatusDto(device);
