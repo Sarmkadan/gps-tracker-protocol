@@ -31,6 +31,25 @@ public sealed class FrameReassembler
     /// </summary>
     public const int MaxBufferSizeBytes = 8192;
 
+    private const byte CarriageReturn = 0x0D;
+    private const byte LineFeed = 0x0A;
+    private const int CrLfLength = 2;
+    private const int MinimumBufferCapacity = 256;
+    private const int BufferGrowthFactor = 2;
+
+    // GT06 frame layout: [marker][marker][length][...][CR][LF]
+    private const int Gt06DoubledMarkerLength = 2;
+    private const int Gt06HeaderLength = 3;
+    private const int Gt06SecondMarkerIndex = 1;
+    private const int Gt06LengthFieldIndex = 2;
+    private const int Gt06FramingOverhead = 7;
+    private const int Gt06CrIndexFromEnd = 2;
+    private const int Gt06LfIndexFromEnd = 1;
+
+    // H02 (GPRMC / HQ) and TK103 text frames
+    private const byte H02GprmcStartMarker = (byte)'$';
+    private const byte H02HqStartMarker = (byte)'*';
+
     private byte[] _buffer = Array.Empty<byte>();
     private int _head;
     private int _count;
@@ -101,20 +120,20 @@ public sealed class FrameReassembler
 
             if (marker is ProtocolConstants.GT06_START_MARKER or ProtocolConstants.GT06_EXTENDED_START_MARKER)
             {
-                if (_count < 2)
+                if (_count < Gt06DoubledMarkerLength)
                     return false; // need the doubled marker byte
 
-                if (_buffer[_head + 1] != marker)
+                if (_buffer[_head + Gt06SecondMarkerIndex] != marker)
                 {
                     DropBytes(1);
                     continue;
                 }
 
-                if (_count < 3)
+                if (_count < Gt06HeaderLength)
                     return false; // need the length byte
 
-                int declaredLength = _buffer[_head + 2];
-                int totalLength = declaredLength + 7;
+                int declaredLength = _buffer[_head + Gt06LengthFieldIndex];
+                int totalLength = declaredLength + Gt06FramingOverhead;
 
                 if (totalLength < ProtocolConstants.GT06_MIN_FRAME_SIZE || totalLength > ProtocolConstants.GT06_MAX_FRAME_SIZE)
                 {
@@ -126,7 +145,7 @@ public sealed class FrameReassembler
                     return false; // frame not fully arrived yet
 
                 // Validate end markers before extracting
-                if (_buffer[_head + totalLength - 2] != ProtocolConstants.GT06_END_MARKER || _buffer[_head + totalLength - 1] != 0x0A)
+                if (_buffer[_head + totalLength - Gt06CrIndexFromEnd] != ProtocolConstants.GT06_END_MARKER || _buffer[_head + totalLength - Gt06LfIndexFromEnd] != LineFeed)
                 {
                     DropBytes(1);
                     continue;
@@ -136,7 +155,7 @@ public sealed class FrameReassembler
                 return true;
             }
 
-            if (marker == (byte)'$' || marker == (byte)'*' || marker == ProtocolConstants.TK103_START_MARKER)
+            if (marker == H02GprmcStartMarker || marker == H02HqStartMarker || marker == ProtocolConstants.TK103_START_MARKER)
             {
                 int maxFrameSize = marker == ProtocolConstants.TK103_START_MARKER
                     ? ProtocolConstants.TK103_MAX_FRAME_SIZE
@@ -145,7 +164,7 @@ public sealed class FrameReassembler
                 int terminatorIndex = FindCrLf();
                 if (terminatorIndex >= 0)
                 {
-                    frame = TakeFrame(terminatorIndex + 2);
+                    frame = TakeFrame(terminatorIndex + CrLfLength);
                     return true;
                 }
 
@@ -174,7 +193,7 @@ public sealed class FrameReassembler
     {
         for (int i = 0; i < _count - 1; i++)
         {
-            if (_buffer[_head + i] == 0x0D && _buffer[_head + i + 1] == 0x0A)
+            if (_buffer[_head + i] == CarriageReturn && _buffer[_head + i + 1] == LineFeed)
                 return i;
         }
 
@@ -217,7 +236,7 @@ public sealed class FrameReassembler
             return;
         }
 
-        int newCapacity = Math.Max(requiredCount, Math.Max(256, _buffer.Length * 2));
+        int newCapacity = Math.Max(requiredCount, Math.Max(MinimumBufferCapacity, _buffer.Length * BufferGrowthFactor));
         var newBuffer = new byte[newCapacity];
         _buffer.AsSpan(_head, _count).CopyTo(newBuffer);
         _buffer = newBuffer;
