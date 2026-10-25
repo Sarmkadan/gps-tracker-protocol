@@ -88,8 +88,11 @@ public class CommandService : ICommandService
     /// Initializes a new instance of the <see cref="CommandService"/> class using a unit of work.
     /// </summary>
     /// <param name="unitOfWork">The unit of work providing access to command and device repositories.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="unitOfWork"/> is <c>null</c>.</exception>
     public CommandService(IUnitOfWork unitOfWork)
     {
+        ArgumentNullException.ThrowIfNull(unitOfWork);
+
         _repository = unitOfWork.Commands;
         _deviceRepository = unitOfWork.Devices;
     }
@@ -99,8 +102,12 @@ public class CommandService : ICommandService
     /// </summary>
     /// <param name="commandRepository">The generic repository for command entities.</param>
     /// <param name="deviceRepository">The generic repository for device entities.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="commandRepository"/> or <paramref name="deviceRepository"/> is <c>null</c>.</exception>
     public CommandService(IRepository<Command> commandRepository, IRepository<Device> deviceRepository)
     {
+        ArgumentNullException.ThrowIfNull(commandRepository);
+        ArgumentNullException.ThrowIfNull(deviceRepository);
+
         _legacyCommandRepository = commandRepository;
         _legacyDeviceRepository = deviceRepository;
     }
@@ -113,9 +120,14 @@ public class CommandService : ICommandService
     /// <param name="commandType">The type of command to send.</param>
     /// <param name="payload">The command payload data.</param>
     /// <returns>The created command, or <c>null</c> if the device was not found.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="deviceId"/>, <paramref name="commandType"/>, or <paramref name="payload"/> is <c>null</c>.</exception>
     /// <exception cref="InvalidOperationException">Thrown when the service was not constructed with generic repositories.</exception>
     public async Task<Command?> SendCommandAsync(string deviceId, string commandType, string payload)
     {
+        ArgumentNullException.ThrowIfNull(deviceId);
+        ArgumentNullException.ThrowIfNull(commandType);
+        ArgumentNullException.ThrowIfNull(payload);
+
         if (_legacyCommandRepository is null || _legacyDeviceRepository is null)
             throw new InvalidOperationException(GenericRepositoriesRequiredMessage);
 
@@ -141,9 +153,12 @@ public class CommandService : ICommandService
     /// </summary>
     /// <param name="deviceId">The unique identifier of the device.</param>
     /// <returns>A collection of commands associated with the device.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="deviceId"/> is <c>null</c>.</exception>
     /// <exception cref="InvalidOperationException">Thrown when the service was not constructed with generic repositories.</exception>
     public async Task<IEnumerable<Command>> GetCommandsForDeviceAsync(string deviceId)
     {
+        ArgumentNullException.ThrowIfNull(deviceId);
+
         if (_legacyCommandRepository is null)
             throw new InvalidOperationException(GenericRepositoriesRequiredMessage);
 
@@ -155,9 +170,12 @@ public class CommandService : ICommandService
     /// If the command is not found, the method returns without error.
     /// </summary>
     /// <param name="commandId">The unique identifier of the command to acknowledge.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="commandId"/> is <c>null</c>.</exception>
     /// <exception cref="InvalidOperationException">Thrown when the service was not constructed with generic repositories.</exception>
     public async Task AcknowledgeCommandAsync(string commandId)
     {
+        ArgumentNullException.ThrowIfNull(commandId);
+
         if (_legacyCommandRepository is null)
             throw new InvalidOperationException(GenericRepositoriesRequiredMessage);
 
@@ -181,8 +199,7 @@ public class CommandService : ICommandService
     /// <exception cref="DeviceException">Thrown when the target device is not found or is inactive.</exception>
     public async Task<Command> CreateCommandAsync(Command command)
     {
-        if (command is null)
-            throw new ArgumentNullException(nameof(command));
+        ArgumentNullException.ThrowIfNull(command);
 
         if (!command.IsValid())
             throw new ValidationException("Command validation failed", nameof(command));
@@ -206,9 +223,12 @@ public class CommandService : ICommandService
     /// </summary>
     /// <param name="commandId">The unique identifier of the command.</param>
     /// <returns>The command if found; otherwise, <c>null</c>.</returns>
-    /// <exception cref="ArgumentException">Thrown when <paramref name="commandId"/> is null or whitespace.</exception>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="commandId"/> is <c>null</c>.</exception>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="commandId"/> is whitespace.</exception>
     public async Task<Command?> GetCommandAsync(string commandId)
     {
+        ArgumentNullException.ThrowIfNull(commandId);
+
         if (string.IsNullOrWhiteSpace(commandId))
             throw new ArgumentException("Command ID cannot be empty", nameof(commandId));
 
@@ -229,9 +249,12 @@ public class CommandService : ICommandService
     /// </summary>
     /// <param name="deviceId">The unique identifier of the device.</param>
     /// <returns>A collection of commands ordered from newest to oldest.</returns>
-    /// <exception cref="ArgumentException">Thrown when <paramref name="deviceId"/> is null or whitespace.</exception>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="deviceId"/> is <c>null</c>.</exception>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="deviceId"/> is whitespace.</exception>
     public async Task<IEnumerable<Command>> GetCommandHistoryAsync(string deviceId)
     {
+        ArgumentNullException.ThrowIfNull(deviceId);
+
         if (string.IsNullOrWhiteSpace(deviceId))
             throw new ArgumentException("Device ID cannot be empty", nameof(deviceId));
 
@@ -244,9 +267,12 @@ public class CommandService : ICommandService
     /// </summary>
     /// <param name="commandId">The unique identifier of the command to execute.</param>
     /// <returns><c>true</c> if the command was successfully marked as executed.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="commandId"/> is <c>null</c>.</exception>
     /// <exception cref="CommandException">Thrown when the command is not found.</exception>
     public async Task<bool> ExecuteCommandAsync(string commandId)
     {
+        ArgumentNullException.ThrowIfNull(commandId);
+
         var command = await _repository.GetByIdAsync(commandId).ConfigureAwait(false);
         if (command is null)
             throw new CommandException($"Command {commandId} not found", commandId);
@@ -261,9 +287,12 @@ public class CommandService : ICommandService
     /// </summary>
     /// <param name="commandId">The unique identifier of the command.</param>
     /// <returns><c>true</c> if the command was re-queued for retry; <c>false</c> if no retries remain.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="commandId"/> is <c>null</c>.</exception>
     /// <exception cref="CommandException">Thrown when the command is not found.</exception>
     public async Task<bool> MarkCommandAsFailedAsync(string commandId)
     {
+        ArgumentNullException.ThrowIfNull(commandId);
+
         var command = await _repository.GetByIdAsync(commandId).ConfigureAwait(false);
         if (command is null)
             throw new CommandException($"Command {commandId} not found", commandId);
