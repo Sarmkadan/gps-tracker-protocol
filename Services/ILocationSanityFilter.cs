@@ -65,11 +65,19 @@ public record struct FilterResult(bool IsAccepted, FilterDecision Decision, stri
 /// <summary>
 /// Service for filtering GPS location data based on quality and plausibility checks.
 /// </summary>
+/// <remarks>
+/// Checks run in order: null island, coordinate bounds, GPS fix, timestamp, altitude, and speed.
+/// The first failing check determines the returned <see cref="FilterDecision"/>.
+/// </remarks>
 public interface ILocationSanityFilter
 {
     /// <summary>
     /// Filters a location point based on GPS fix quality and plausibility.
     /// </summary>
+    /// <remarks>
+    /// The speed check runs only when <paramref name="previousLocation"/> is provided.
+    /// A non-positive <paramref name="maxSpeedKmh"/> falls back to <see cref="LocationSanityFilterConfig.MaxSpeedKmh"/>.
+    /// </remarks>
     /// <param name="location">The location data to filter.</param>
     /// <param name="previousLocation">The previous location in the journey, or null for the first point.</param>
     /// <param name="maxSpeedKmh">Maximum allowed speed between points in km/h. Defaults to 300 km/h.</param>
@@ -79,6 +87,7 @@ public interface ILocationSanityFilter
     /// <summary>
     /// Gets the configuration values used by the filter.
     /// </summary>
+    /// <value>The <see cref="LocationSanityFilterConfig"/> instance the filter was created with.</value>
     LocationSanityFilterConfig Configuration { get; }
 }
 
