@@ -77,6 +77,8 @@ public interface ICommandService
 /// </summary>
 public class CommandService : ICommandService
 {
+    private const string GenericRepositoriesRequiredMessage = "Service was not constructed with generic repositories.";
+
     private readonly ICommandRepository _repository = null!;
     private readonly IDeviceRepository _deviceRepository = null!;
     private readonly IRepository<Command>? _legacyCommandRepository;
@@ -115,7 +117,7 @@ public class CommandService : ICommandService
     public async Task<Command?> SendCommandAsync(string deviceId, string commandType, string payload)
     {
         if (_legacyCommandRepository is null || _legacyDeviceRepository is null)
-            throw new InvalidOperationException("Service was not constructed with generic repositories.");
+            throw new InvalidOperationException(GenericRepositoriesRequiredMessage);
 
         var device = await _legacyDeviceRepository.GetByIdAsync(deviceId).ConfigureAwait(false);
         if (device is null)
@@ -143,7 +145,7 @@ public class CommandService : ICommandService
     public async Task<IEnumerable<Command>> GetCommandsForDeviceAsync(string deviceId)
     {
         if (_legacyCommandRepository is null)
-            throw new InvalidOperationException("Service was not constructed with generic repositories.");
+            throw new InvalidOperationException(GenericRepositoriesRequiredMessage);
 
         return await _legacyCommandRepository.FindManyAsync(c => c.DeviceId == deviceId).ConfigureAwait(false);
     }
@@ -157,7 +159,7 @@ public class CommandService : ICommandService
     public async Task AcknowledgeCommandAsync(string commandId)
     {
         if (_legacyCommandRepository is null)
-            throw new InvalidOperationException("Service was not constructed with generic repositories.");
+            throw new InvalidOperationException(GenericRepositoriesRequiredMessage);
 
         var command = await _legacyCommandRepository.GetByIdAsync(commandId).ConfigureAwait(false);
         if (command is null)
