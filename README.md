@@ -3568,3 +3568,86 @@ public static class CommandServiceExample
 ```
 
 `Command.MaxRetries` defaults to `3`. The example above was compiled and run against the library using `InMemoryUnitOfWork`.
+
+## CommandLineInterface
+
+`CommandLineInterface` (`CLI/CommandLineInterface.cs`) is a command router for operating the library from a terminal or a host process. It parses a raw GPS frame, lists devices, prints location and journey history, exports locations, manages geofence alerts, replays a journey's route, and reports device diagnostics. It implements `ICommandLineInterface` and is registered as a singleton by `AddGpsTrackerServices()`.
+
+The library does not ship an executable. A host application builds the service provider, passes its command-line arguments to `ExecuteAsync`, and returns the result as its process exit code. The usage text printed by `help` uses `GpsTrackerProtocol` as the program name; substitute your host's executable name.
+
+### Usage
+
+```
+GpsTrackerProtocol <command> [options]
+```
+
+| Command | Description |
+|---------|-------------|
+| `parse <protocol> <hex-data>` | Detects the protocol and reports whether the frame is valid. For a valid frame, also prints the parsed location as indented JSON. `protocol` is `GT06`, `H02`, or `TK103` (case-insensitive). Spaces in the hex data are allowed. |
+| `devices` | Lists all registered devices with their ID, name, IMEI, and status. |
+| `location <device-id> [count]` | Prints the device's location history as CSV, up to `count` entries (default `10`). |
+| `journey <device-id>` | Prints the active journeys for a device with waypoint count and total distance in km. |
+| `export <device-id> <format> [output-file]` | Writes location history to a file. `format` is `json` or `csv`. If `output-file` is omitted, the name is `export-<device-id>-<yyyyMMdd-HHmmss>.<format>` in the current directory. |
+| `alerts list <device-id>` | Lists active geofence alerts for a device. |
+| `alerts add <device-id> <geofence-id> <enter\|exit>` | Creates a geofence alert rule that fires on enter or exit. |
+| `alerts ack <alert-id> [notes]` | Acknowledges an alert. Trailing words are joined as notes. |
+| `replay <journey-id> [speed-multiplier]` | Prints the route frames of a journey with coordinates, speed, replay timestamp, and cumulative distance. The multiplier defaults to `1.0` and must be a positive number. |
+| `diagnostics <device-id> [--selftest]` | Shows device status, last contact, packet and location counts, battery, and signal. With `--selftest`, runs the device self-test and prints `PASS` or `WARN` with each warning. |
+| `help` | Prints the usage text. Also printed when no arguments are given. |
+
+Exit codes:
+
+| Code | Meaning |
+|------|---------|
+| `0` | Success. |
+| `1` | Error, missing arguments, unknown command, unsupported export format, or a diagnostics device / alert that does not exist. Unexpected exceptions are logged and reported as `Error: <message>` on standard error. |
+| `2` | `diagnostics --selftest` completed with warnings. |
+
+### Example
+
+Host program that wires up the CLI:
+
+```csharp
+using GpsTrackerProtocol.CLI;
+using GpsTrackerProtocol.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+
+public static class Program
+{
+    public static async Task<int> Main(string[] args)
+    {
+        var services = new ServiceCollection();
+        services.AddLogging(builder => builder.AddConsole());
+        services.AddGpsTrackerServices();
+
+        await using var provider = services.BuildServiceProvider();
+        var cli = provider.GetRequiredService<ICommandLineInterface>();
+
+        return await cli.ExecuteAsync(args);
+    }
+}
+```
+
+Example invocations:
+
+```bash
+# Parse a GT06 login frame
+GpsTrackerProtocol parse GT06 78781F120119110B162334
+
+# Show the last 50 locations for a device as CSV
+GpsTrackerProtocol location device-001 50
+
+# Export a device's history to CSV in a named file
+GpsTrackerProtocol export device-001 csv output.csv
+
+# Create an alert when a device enters a geofence, then list active alerts
+GpsTrackerProtocol alerts add device-001 zone-hq enter
+GpsTrackerProtocol alerts list device-001
+
+# Replay a journey at 10x speed
+GpsTrackerProtocol replay journey-abc 10
+
+# Run the device self-test; exit code 2 means warnings were reported
+GpsTrackerProtocol diagnostics device-001 --selftest
+```
