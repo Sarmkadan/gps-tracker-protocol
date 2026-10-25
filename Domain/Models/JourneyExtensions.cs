@@ -34,6 +34,19 @@ public static class JourneyExtensions
     }
 
     /// <summary>
+    /// Returns the maximum speed recorded during the journey in kilometers per hour.
+    /// </summary>
+    /// <param name="journey">The journey to measure. Must not be <c>null</c>.</param>
+    /// <returns>The highest recorded waypoint speed in kilometers per hour, or 0 if the journey has no waypoints.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="journey"/> is <c>null</c>.</exception>
+    public static double MaxSpeedKmh(this Journey journey)
+    {
+        ArgumentNullException.ThrowIfNull(journey);
+
+        return journey.GetMaxSpeed();
+    }
+
+    /// <summary>
     /// Returns the duration of the journey as a <see cref="TimeSpan"/>.
     /// </summary>
     /// <param name="journey">The journey to measure. Must not be <c>null</c>.</param>
