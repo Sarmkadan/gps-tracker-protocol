@@ -18,7 +18,7 @@ public static class LocationDataExtensions
     private const double RadiansToDegrees = 180.0 / Math.PI;
 
     /// <summary>
-    /// Calculates the great‑circle distance between two location points using the Haversine formula.
+    /// Calculates the great-circle distance between two location points using the Haversine formula.
     /// The result is expressed in meters.
     /// </summary>
     /// <param name="source">The source location.</param>
@@ -58,7 +58,7 @@ public static class LocationDataExtensions
 
     /// <summary>
     /// Calculates the initial bearing (forward azimuth) from the source location to the destination.
-    /// The bearing is expressed in degrees clockwise from true north (0‑360).
+    /// The bearing is expressed in degrees clockwise from true north (0-360).
     /// </summary>
     /// <param name="source">The source location.</param>
     /// <param name="other">The destination location.</param>
@@ -114,6 +114,7 @@ public static class LocationDataExtensions
     /// <param name="source">The location data to check.</param>
     /// <param name="timeSpan">The time span to compare against.</param>
     /// <returns>True if the location data is older than the provided time span.</returns>
+    /// <exception cref="ArgumentNullException">If <paramref name="source"/> is null.</exception>
     public static bool IsStale(this LocationData source, TimeSpan timeSpan)
     {
         if (source is null) throw new ArgumentNullException(nameof(source));
@@ -125,6 +126,7 @@ public static class LocationDataExtensions
     /// </summary>
     /// <param name="source">The location data.</param>
     /// <returns>A string representation of the coordinates.</returns>
+    /// <exception cref="ArgumentNullException">If <paramref name="source"/> is null.</exception>
     public static string ToCoordinateString(this LocationData source)
     {
         if (source is null) throw new ArgumentNullException(nameof(source));
