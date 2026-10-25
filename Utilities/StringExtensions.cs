@@ -213,4 +213,17 @@ public static class StringExtensions
         value = value.TrimStart('#');
         return (value.Length is 6 or 8) && value.All(c => "0123456789ABCDEFabcdef".Contains(c));
     }
+
+    /// <summary>
+    /// Extracts only the digit characters from a string (e.g. "+1 (555) 010-42" becomes "155501042").
+    /// </summary>
+    /// <param name="value">The string to extract digits from.</param>
+    /// <returns>A string containing only the digit characters of <paramref name="value"/>, or empty string if none.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="value"/> is null.</exception>
+    public static string ExtractDigits(this string value)
+    {
+        ArgumentNullException.ThrowIfNull(value);
+
+        return new string(value.Where(char.IsDigit).ToArray());
+    }
 }
